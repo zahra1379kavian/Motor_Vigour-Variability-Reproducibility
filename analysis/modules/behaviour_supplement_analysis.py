@@ -7,7 +7,6 @@ metrics and consolidated metadata, applies the documented subject/session
 exclusion, and writes all derived outputs into figures/Behav_supp.
 """
 
-from __future__ import annotations
 
 import argparse
 import json
@@ -16,7 +15,6 @@ import os
 import re
 import shutil
 import warnings
-from dataclasses import dataclass
 from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-behav-supp")
@@ -101,20 +99,20 @@ BOLD_PAPER_STYLE = {
 }
 
 
-def _bold_figure_text(fig: plt.Figure) -> None:
+def _bold_figure_text(fig):
     for text in fig.findobj(match=Text):
         text.set_fontweight("bold")
 
 
-@dataclass(frozen=True)
 class Measure:
-    name: str
-    source_column: int
-    source_label: str
-    output_column: str
-    unit: str
-    kind: str
-    axis_label: str
+    def __init__(self, name, source_column, source_label, output_column, unit, kind, axis_label):
+        self.name = name
+        self.source_column = source_column
+        self.source_label = source_label
+        self.output_column = output_column
+        self.unit = unit
+        self.kind = kind
+        self.axis_label = axis_label
 
 
 MEASURES = [
@@ -139,7 +137,7 @@ STIM_SHORT = {
 }
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metrics-dir", type=Path, default=DEFAULT_METRICS_DIR)
     parser.add_argument("--consolidated-dir", type=Path, default=DEFAULT_CONSOLIDATED_DIR)
@@ -163,7 +161,7 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _format_p(value: float) -> str:
+def _format_p(value):
     if not np.isfinite(value):
         return "p = NA"
     if value < 0.001:
@@ -171,28 +169,28 @@ def _format_p(value: float) -> str:
     return f"p = {value:.3f}"
 
 
-def _format_num(value: float, digits: int = 2) -> str:
+def _format_num(value, digits=2):
     if not np.isfinite(value):
         return "NA"
     return f"{value:.{digits}f}"
 
 
-def _subject_number(subject: str) -> int:
+def _subject_number(subject):
     match = re.search(r"(\d+)", str(subject))
     if match is None:
         raise ValueError(f"Could not parse subject number from {subject!r}")
     return int(match.group(1))
 
 
-def _pspd_id(subject: str | int) -> str:
+def _pspd_id(subject):
     return f"PSPD{_subject_number(str(subject)):03d}"
 
 
-def _subpd_id(subject: str | int) -> str:
+def _subpd_id(subject):
     return f"sub-pd{_subject_number(str(subject)):03d}"
 
 
-def _opposite_hand(hand: str | float | None) -> str:
+def _opposite_hand(hand):
     hand = "" if hand is None or (isinstance(hand, float) and np.isnan(hand)) else str(hand).upper()
     if hand == "R":
         return "L"
@@ -201,7 +199,7 @@ def _opposite_hand(hand: str | float | None) -> str:
     return ""
 
 
-def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
+def _bh_fdr(p_values):
     p_values = np.asarray(p_values, dtype=float)
     out = np.full_like(p_values, np.nan, dtype=float)
     finite = np.isfinite(p_values)
@@ -219,10 +217,10 @@ def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
     return out
 
 
-def _safe_ttest_1samp(values: np.ndarray) -> dict[str, float | int]:
+def _safe_ttest_1samp(values):
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
-    row: dict[str, float | int] = {
+    row = {
         "n": int(values.size),
         "mean": float(np.mean(values)) if values.size else np.nan,
         "median": float(np.median(values)) if values.size else np.nan,
@@ -249,7 +247,7 @@ def _safe_ttest_1samp(values: np.ndarray) -> dict[str, float | int]:
     return row
 
 
-def _safe_pearson(x: np.ndarray, y: np.ndarray) -> dict[str, float | int]:
+def _safe_pearson(x, y):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
     keep = np.isfinite(x) & np.isfinite(y)
@@ -259,7 +257,7 @@ def _safe_pearson(x: np.ndarray, y: np.ndarray) -> dict[str, float | int]:
     return {"n": int(np.count_nonzero(keep)), "r": float(r), "p": float(p)}
 
 
-def _mean_sem(values: pd.Series) -> tuple[float, float]:
+def _mean_sem(values):
     arr = values.to_numpy(dtype=float)
     arr = arr[np.isfinite(arr)]
     if arr.size == 0:
@@ -267,7 +265,7 @@ def _mean_sem(values: pd.Series) -> tuple[float, float]:
     return float(np.mean(arr)), float(stats.sem(arr)) if arr.size > 1 else np.nan
 
 
-def _mean_ci(values: pd.Series | np.ndarray, confidence: float = 0.95) -> tuple[float, float, float]:
+def _mean_ci(values, confidence=0.95):
     arr = np.asarray(values, dtype=float)
     arr = arr[np.isfinite(arr)]
     if arr.size == 0:
@@ -280,7 +278,7 @@ def _mean_ci(values: pd.Series | np.ndarray, confidence: float = 0.95) -> tuple[
     return mean, mean - half_width, mean + half_width
 
 
-def _save_figure(fig: plt.Figure, stem: Path, dpi: int = 300) -> list[Path]:
+def _save_figure(fig, stem, dpi=300):
     stem.parent.mkdir(parents=True, exist_ok=True)
     png = stem.with_suffix(".png")
     pdf = stem.with_suffix(".pdf")
@@ -290,13 +288,13 @@ def _save_figure(fig: plt.Figure, stem: Path, dpi: int = 300) -> list[Path]:
     return [png, pdf]
 
 
-def _write_csv(df: pd.DataFrame, path: Path) -> Path:
+def _write_csv(df, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(path, index=False)
     return path
 
 
-def _write_markdown_table(df: pd.DataFrame, path: Path) -> Path:
+def _write_markdown_table(df, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         text = df.to_markdown(index=False)
@@ -306,7 +304,7 @@ def _write_markdown_table(df: pd.DataFrame, path: Path) -> Path:
     return path
 
 
-def _load_gvs_params(path: Path) -> pd.DataFrame:
+def _load_gvs_params(path):
     if path.exists():
         params = pd.read_csv(path)
         params = params.loc[params["stim_id"].between(1, 9)].copy()
@@ -337,7 +335,7 @@ def _load_gvs_params(path: Path) -> pd.DataFrame:
     ].copy()
 
 
-def _load_dominant_hand(path: Path, non_dominant_subject: str | None) -> pd.DataFrame:
+def _load_dominant_hand(path, non_dominant_subject):
     if path.exists():
         hand = pd.read_csv(path, sep="\t")
         hand["subject"] = hand["subject"].map(_pspd_id)
@@ -371,8 +369,8 @@ def _load_dominant_hand(path: Path, non_dominant_subject: str | None) -> pd.Data
     return hand
 
 
-def _load_order_map(path: Path) -> dict[tuple[str, str, int, int], int]:
-    order_map: dict[tuple[str, str, int, int], int] = {}
+def _load_order_map(path):
+    order_map = {}
     if not path.exists():
         return order_map
     order = pd.read_csv(path, sep="\t")
@@ -388,21 +386,21 @@ def _load_order_map(path: Path) -> dict[tuple[str, str, int, int], int]:
     return order_map
 
 
-def _load_metric_cells(path: Path) -> list[np.ndarray]:
+def _load_metric_cells(path):
     mat = loadmat(path, squeeze_me=False, struct_as_record=False)
     if "behav_metrics" not in mat:
-        raise RuntimeError(f"{path} does not contain behav_metrics")
+        raise ValueError(f"{path} does not contain behav_metrics")
     cells = np.asarray(mat["behav_metrics"], dtype=object).ravel()
     metrics = [np.asarray(cell, dtype=float) for cell in cells]
     if len(metrics) < 9:
-        raise RuntimeError(f"{path} has {len(metrics)} metric cells; expected at least 9")
+        raise ValueError(f"{path} has {len(metrics)} metric cells; expected at least 9")
     return metrics[:9]
 
 
-def _load_res_fields(path: Path) -> dict[str, np.ndarray]:
+def _load_res_fields(path):
     mat = loadmat(path, squeeze_me=False, struct_as_record=False)
     if "res" not in mat:
-        raise RuntimeError(f"{path} does not contain res")
+        raise ValueError(f"{path} does not contain res")
     res = mat["res"][0, 0]
     fields = {}
     for name in [
@@ -421,7 +419,7 @@ def _load_res_fields(path: Path) -> dict[str, np.ndarray]:
     return fields
 
 
-def _source_to_value(value: float, measure: Measure) -> float:
+def _source_to_value(value, measure):
     if not np.isfinite(value):
         return np.nan
     if measure.kind == "inverse_time":
@@ -431,7 +429,7 @@ def _source_to_value(value: float, measure: Measure) -> float:
     return float(value)
 
 
-def _valid_source_value(value: float, measure: Measure) -> bool:
+def _valid_source_value(value, measure):
     if not np.isfinite(value):
         return False
     if measure.kind == "inverse_time":
@@ -439,14 +437,14 @@ def _valid_source_value(value: float, measure: Measure) -> bool:
     return True
 
 
-def _parse_metrics_name(path: Path) -> tuple[str, str]:
+def _parse_metrics_name(path):
     match = re.match(r"^(PSPD\d+)_(OFF|ON)_behav_metrics\.mat$", path.name)
     if match is None:
         raise ValueError(f"Unrecognized metrics filename: {path.name}")
     return _pspd_id(match.group(1)), match.group(2)
 
 
-def _combine_notes(values: list[str]) -> str:
+def _combine_notes(values):
     cleaned = []
     for value in values:
         if isinstance(value, str) and value and value not in cleaned:
@@ -454,16 +452,10 @@ def _combine_notes(values: list[str]) -> str:
     return "; ".join(cleaned)
 
 
-def build_trial_table(
-    metrics_dir: Path,
-    consolidated_dir: Path,
-    gvs_params: pd.DataFrame,
-    order_map: dict[tuple[str, str, int, int], int],
-    hand_table: pd.DataFrame,
-) -> pd.DataFrame:
+def build_trial_table(metrics_dir, consolidated_dir, gvs_params, order_map, hand_table):
     params = gvs_params.set_index("stim_id").to_dict("index")
     hand = hand_table.set_index("subject").to_dict("index")
-    rows: list[dict[str, object]] = []
+    rows = []
     metric_paths = sorted(metrics_dir.glob("PSPD*_behav_metrics.mat"))
     if not metric_paths:
         raise FileNotFoundError(f"No behavioural metrics files found under {metrics_dir}")
@@ -483,7 +475,7 @@ def build_trial_table(
 
         for stim_id, metric in enumerate(metric_cells, start=1):
             if metric.ndim != 2 or metric.shape[1] < 6:
-                raise RuntimeError(f"{metric_path} stim {stim_id} has shape {metric.shape}; expected >=6 columns")
+                raise ValueError(f"{metric_path} stim {stim_id} has shape {metric.shape}; expected >=6 columns")
             stim_meta = params.get(stim_id, {})
             for trial_in_condition in range(1, min(metric.shape[0], 20) + 1):
                 idx = trial_in_condition - 1
@@ -502,7 +494,7 @@ def build_trial_table(
                 invalid_rt = bool(go_trial and (not missed_trial) and (not rt_source_valid))
                 reward_level = "high" if reward_code in HIGH_REWARD_CODES else "low" if reward_code in LOW_REWARD_CODES else "catch"
 
-                record: dict[str, object] = {
+                record = {
                     "subject": subject,
                     "subject_label": _subpd_id(subject),
                     "subject_number": _subject_number(subject),
@@ -573,7 +565,7 @@ def build_trial_table(
     return trials
 
 
-def build_trial_flow(trials: pd.DataFrame) -> pd.DataFrame:
+def build_trial_flow(trials):
     rows = []
     for key, group in trials.groupby(["subject", "session", "medication", "run"], sort=True):
         subject, session, medication, run = key
@@ -602,7 +594,7 @@ def build_trial_flow(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_measure_long(trials: pd.DataFrame) -> pd.DataFrame:
+def build_measure_long(trials):
     pieces = []
     base_cols = [
         "subject",
@@ -635,7 +627,7 @@ def build_measure_long(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(pieces, ignore_index=True)
 
 
-def _successive_pairs(group: pd.DataFrame, value_col: str) -> np.ndarray:
+def _successive_pairs(group, value_col):
     group = group.sort_values("trial_in_run")
     values = group[value_col].to_numpy(dtype=float)
     trial_idx = group["trial_in_run"].to_numpy(dtype=int)
@@ -646,7 +638,7 @@ def _successive_pairs(group: pd.DataFrame, value_col: str) -> np.ndarray:
     return following[keep] - previous[keep]
 
 
-def _rmssd_from_diffs(diffs: np.ndarray) -> tuple[float, float, int]:
+def _rmssd_from_diffs(diffs):
     diffs = np.asarray(diffs, dtype=float)
     diffs = diffs[np.isfinite(diffs)]
     if diffs.size == 0:
@@ -655,7 +647,7 @@ def _rmssd_from_diffs(diffs: np.ndarray) -> tuple[float, float, int]:
     return float(np.sqrt(mssd)), mssd, int(diffs.size)
 
 
-def _lag_autocorr_from_block(group: pd.DataFrame, value_col: str, lag: int) -> float:
+def _lag_autocorr_from_block(group, value_col, lag):
     group = group.sort_values("trial_in_run")
     values = group[value_col].to_numpy(dtype=float)
     trial_idx = group["trial_in_run"].to_numpy(dtype=int)
@@ -670,7 +662,7 @@ def _lag_autocorr_from_block(group: pd.DataFrame, value_col: str, lag: int) -> f
     return float(np.corrcoef(x[keep], y[keep])[0, 1])
 
 
-def build_rt_block_metrics(trials: pd.DataFrame) -> pd.DataFrame:
+def build_rt_block_metrics(trials):
     rows = []
     group_cols = [
         "subject",
@@ -717,7 +709,7 @@ def build_rt_block_metrics(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
-def _measure_block_rmssd(trials: pd.DataFrame, measure: Measure) -> pd.DataFrame:
+def _measure_block_rmssd(trials, measure):
     rows = []
     group_cols = ["subject", "session", "medication", "run", "stim_id", "block_position", "excluded_session"]
     for key, group in trials.groupby(group_cols, sort=True):
@@ -736,7 +728,7 @@ def _measure_block_rmssd(trials: pd.DataFrame, measure: Measure) -> pd.DataFrame
     return pd.DataFrame(rows)
 
 
-def build_feature_summary(trials: pd.DataFrame, measure_long: pd.DataFrame) -> pd.DataFrame:
+def build_feature_summary(trials, measure_long):
     rows = []
     included = measure_long.loc[~measure_long["excluded_session"] & measure_long["go_trial"]].copy()
     for measure in MEASURES:
@@ -810,7 +802,7 @@ def build_feature_summary(trials: pd.DataFrame, measure_long: pd.DataFrame) -> p
     return pd.DataFrame(rows)
 
 
-def _fit_model(formula: str, data: pd.DataFrame, group_col: str, model_name: str) -> pd.DataFrame:
+def _fit_model(formula, data, group_col, model_name):
     if smf is None:
         return pd.DataFrame([{"model": model_name, "status": "skipped", "reason": "statsmodels unavailable"}])
     model_data = data.replace([np.inf, -np.inf], np.nan).dropna(subset=[formula.split("~")[0].strip(), group_col])
@@ -868,7 +860,7 @@ def _fit_model(formula: str, data: pd.DataFrame, group_col: str, model_name: str
     return pd.DataFrame(rows)
 
 
-def build_model_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def build_model_tables(trials, block_metrics):
     rt_df = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     rt_df = rt_df.loc[rt_df["reward_level"].isin(["low", "high"])].copy()
     rt_df["medication_on"] = (rt_df["medication"] == "ON").astype(int)
@@ -903,7 +895,7 @@ def build_model_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> dic
     }
 
 
-def build_medication_deltas(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> pd.DataFrame:
+def build_medication_deltas(trials, block_metrics):
     rt = (
         trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]]
         .groupby(["subject", "medication"], as_index=False)["RT_ms"]
@@ -939,7 +931,7 @@ def build_medication_deltas(trials: pd.DataFrame, block_metrics: pd.DataFrame) -
     return pd.DataFrame(rows)
 
 
-def build_reward_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def build_reward_tables(trials, block_metrics):
     summary_rows = []
     for measure in [MEASURES[1], MEASURES[4], MEASURES[5]]:
         valid_col = f"valid_{measure.name.replace('+', '_plus_')}"
@@ -974,7 +966,7 @@ def build_reward_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> di
     }
 
 
-def build_gvs_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame, gvs_params: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def build_gvs_tables(trials, block_metrics, gvs_params):
     session_condition = (
         trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]]
         .groupby(["subject", "session", "medication", "stim_id", "gvs_condition", "gvs_label"], as_index=False)["RT_ms"]
@@ -1033,7 +1025,7 @@ def build_gvs_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame, gvs_para
     }
 
 
-def build_temporal_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def build_temporal_tables(trials, block_metrics):
     included = block_metrics.loc[~block_metrics["excluded_session"]].copy()
     rows = []
     for label, group in [("overall", included)] + [(med, g) for med, g in included.groupby("medication", sort=True)]:
@@ -1075,11 +1067,7 @@ def build_temporal_tables(trials: pd.DataFrame, block_metrics: pd.DataFrame) -> 
     return {"temporal_structure_summary": temporal_summary, "rt_acf_by_lag": acf_table}
 
 
-def build_neural_residual_sensitivity(
-    trials: pd.DataFrame,
-    neural_mean_path: Path,
-    neural_variability_path: Path,
-) -> dict[str, pd.DataFrame]:
+def build_neural_residual_sensitivity(trials, neural_mean_path, neural_variability_path):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     valid = valid.loc[valid["reward_level"].isin(["low", "high"])].copy()
     if smf is None or valid.empty:
@@ -1210,13 +1198,7 @@ def build_neural_residual_sensitivity(
     }
 
 
-def build_subject_summary(
-    trials: pd.DataFrame,
-    block_metrics: pd.DataFrame,
-    reward_tables: dict[str, pd.DataFrame],
-    gvs_tables: dict[str, pd.DataFrame],
-    hand_table: pd.DataFrame,
-) -> pd.DataFrame:
+def build_subject_summary(trials, block_metrics, reward_tables, gvs_tables, hand_table):
     med = build_medication_deltas(trials, block_metrics)
     reward = reward_tables["reward_subject_session_summary"]
     reward_rt = reward.loc[reward["measure"].eq("RT")].groupby("subject", as_index=False)["high_minus_low"].mean()
@@ -1248,10 +1230,10 @@ def build_subject_summary(
     return summary
 
 
-def build_distribution_summary(trials: pd.DataFrame) -> pd.DataFrame:
+def build_distribution_summary(trials):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     rows = []
-    groups: list[tuple[str, list[str]]] = [
+    groups = [
         ("overall", []),
         ("medication", ["medication"]),
         ("run", ["run"]),
@@ -1285,7 +1267,7 @@ def build_distribution_summary(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def plot_measure_distributions(measure_long: pd.DataFrame, out_dir: Path) -> None:
+def plot_measure_distributions(measure_long, out_dir):
     valid = measure_long.loc[~measure_long["excluded_session"] & measure_long["valid_measure"]].copy()
     with plt.rc_context(PAPER_STYLE):
         fig, axes = plt.subplots(2, 3, figsize=(11.0, 6.4))
@@ -1303,7 +1285,7 @@ def plot_measure_distributions(measure_long: pd.DataFrame, out_dir: Path) -> Non
         _save_figure(fig, out_dir / "measure_distribution_all_features")
 
 
-def plot_rt_medication_distribution(trials: pd.DataFrame, out_dir: Path) -> None:
+def plot_rt_medication_distribution(trials, out_dir):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     colors = {"OFF": "#4C78A8", "ON": "#D55E00"}
     with plt.rc_context(BOLD_PAPER_STYLE):
@@ -1327,7 +1309,7 @@ def plot_rt_medication_distribution(trials: pd.DataFrame, out_dir: Path) -> None
         _save_figure(fig, out_dir / "supp_fig_behaviour_1_rt_distribution_medication")
 
 
-def plot_rt_paired_medication(subject_summary: pd.DataFrame, out_dir: Path) -> None:
+def plot_rt_paired_medication(subject_summary, out_dir):
     with plt.rc_context(BOLD_PAPER_STYLE):
         fig, ax = plt.subplots(figsize=(4.25, 5.15))
         x = np.array([0.0, 0.55])
@@ -1356,7 +1338,7 @@ def plot_rt_paired_medication(subject_summary: pd.DataFrame, out_dir: Path) -> N
         _save_figure(fig, out_dir / "supp_fig_behaviour_2_subject_paired_rt_off_on")
 
 
-def plot_rt_run_block_trial(trials: pd.DataFrame, out_dir: Path) -> None:
+def plot_rt_run_block_trial(trials, out_dir):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     with plt.rc_context(BOLD_PAPER_STYLE):
         fig, axes = plt.subplots(
@@ -1386,7 +1368,7 @@ def plot_rt_run_block_trial(trials: pd.DataFrame, out_dir: Path) -> None:
         _save_figure(fig, out_dir / "supp_fig_behaviour_3_rt_by_run_block_trial")
 
 
-def plot_trial_flow_qc_stacked_bar(trial_flow: pd.DataFrame, out_dir: Path) -> None:
+def plot_trial_flow_qc_stacked_bar(trial_flow, out_dir):
     df = trial_flow.copy()
     df["subject_number"] = df["Subject"].astype(str).str.extract(r"(\d+)").astype(int)
     subject_order = df.sort_values("subject_number")[["Subject", "subject_number"]].drop_duplicates("Subject")
@@ -1457,7 +1439,7 @@ def plot_trial_flow_qc_stacked_bar(trial_flow: pd.DataFrame, out_dir: Path) -> N
         _save_figure(fig, out_dir / "supp_fig_behaviour_4_trial_flow_qc_stacked_bar")
 
 
-def plot_medication_delta(subject_summary: pd.DataFrame, out_dir: Path) -> None:
+def plot_medication_delta(subject_summary, out_dir):
     with plt.rc_context(PAPER_STYLE):
         fig, axes = plt.subplots(1, 2, figsize=(8.8, 4.2))
         specs = [
@@ -1479,7 +1461,7 @@ def plot_medication_delta(subject_summary: pd.DataFrame, out_dir: Path) -> None:
         _save_figure(fig, out_dir / "medication_delta_rt_and_variability_subjects")
 
 
-def plot_reward(reward_tables: dict[str, pd.DataFrame], block_metrics: pd.DataFrame, out_dir: Path) -> None:
+def plot_reward(reward_tables, block_metrics, out_dir):
     reward = reward_tables["reward_subject_session_summary"]
     with plt.rc_context(PAPER_STYLE):
         fig, axes = plt.subplots(2, 2, figsize=(10.4, 7.0))
@@ -1530,7 +1512,7 @@ def plot_reward(reward_tables: dict[str, pd.DataFrame], block_metrics: pd.DataFr
         _save_figure(fig, out_dir / "reward_manipulation_check")
 
 
-def plot_gvs(gvs_tables: dict[str, pd.DataFrame], block_metrics: pd.DataFrame, out_dir: Path) -> None:
+def plot_gvs(gvs_tables, block_metrics, out_dir):
     deltas = gvs_tables["gvs_rt_session_deltas"]
     var_deltas = gvs_tables["gvs_rt_variability_session_deltas"]
     with plt.rc_context(PAPER_STYLE):
@@ -1605,7 +1587,7 @@ def plot_gvs(gvs_tables: dict[str, pd.DataFrame], block_metrics: pd.DataFrame, o
         _save_figure(fig, out_dir / "gvs_rt_variability_sham_referenced")
 
 
-def plot_temporal(temporal_tables: dict[str, pd.DataFrame], trials: pd.DataFrame, out_dir: Path) -> None:
+def plot_temporal(temporal_tables, trials, out_dir):
     acf = temporal_tables["rt_acf_by_lag"]
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     drift = valid.groupby("run_trial_index")["RT_ms"].agg(["mean", "sem"]).reset_index()
@@ -1624,7 +1606,7 @@ def plot_temporal(temporal_tables: dict[str, pd.DataFrame], trials: pd.DataFrame
         _save_figure(fig, out_dir / "temporal_structure_rt_acf_and_drift")
 
 
-def plot_subject_summary(subject_summary: pd.DataFrame, out_dir: Path) -> None:
+def plot_subject_summary(subject_summary, out_dir):
     df = subject_summary.copy()
     df["subject_short"] = df["subject"].str.replace("PSPD", "P", regex=False)
     y = np.arange(len(df))
@@ -1674,7 +1656,7 @@ def plot_subject_summary(subject_summary: pd.DataFrame, out_dir: Path) -> None:
         _save_figure(fig, out_dir / "subject_level_behaviour_summary")
 
 
-def write_definitions(out_dir: Path, args: argparse.Namespace, unresolved_hand: bool) -> None:
+def write_definitions(out_dir, args, unresolved_hand):
     text = [
         "# Behaviour Supplement Assumptions and Definitions",
         "",
@@ -1720,16 +1702,7 @@ def write_definitions(out_dir: Path, args: argparse.Namespace, unresolved_hand: 
     (out_dir / "assumptions_and_definitions.md").write_text("\n".join(text) + "\n", encoding="utf-8")
 
 
-def write_methods_results(
-    out_dir: Path,
-    trials: pd.DataFrame,
-    trial_flow: pd.DataFrame,
-    feature_summary: pd.DataFrame,
-    med_deltas: pd.DataFrame,
-    gvs_summary: pd.DataFrame,
-    temporal_summary: pd.DataFrame,
-    neural_sensitivity: pd.DataFrame,
-) -> None:
+def write_methods_results(out_dir, trials, trial_flow, feature_summary, med_deltas, gvs_summary, temporal_summary, neural_sensitivity):
     included_valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]]
     n_subjects = included_valid["subject"].nunique()
     n_sessions = included_valid.groupby(["subject", "session"]).ngroups
@@ -1835,7 +1808,7 @@ def write_methods_results(
     (out_dir / "supplementary_methods_results_behaviour.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def copy_reused_manifest(args: argparse.Namespace, out_dir: Path) -> pd.DataFrame:
+def copy_reused_manifest(args, out_dir):
     rows = []
     for label, path in [
         ("prior_gvs_behaviour", args.prior_gvs_dir),
@@ -1855,7 +1828,7 @@ def copy_reused_manifest(args: argparse.Namespace, out_dir: Path) -> pd.DataFram
     return manifest
 
 
-def main() -> None:
+def main():
     args = _parse_args()
     out_dir = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)

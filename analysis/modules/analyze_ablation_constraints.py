@@ -6,7 +6,6 @@ fold-level metric tables, spatial-overlap summaries, ROI summaries, and
 publication-oriented figures under ``figures/ablation``.
 """
 
-from __future__ import annotations
 
 import argparse
 import base64
@@ -14,7 +13,6 @@ import json
 import math
 import re
 from io import BytesIO
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -100,34 +98,34 @@ COLORS = {
 }
 
 
-@dataclass(frozen=True)
 class Candidate:
-    task: float
-    bold: float
-    beta: float
-    smooth: float
-    gamma: float
+    def __init__(self, task, bold, beta, smooth, gamma):
+        self.task = task
+        self.bold = bold
+        self.beta = beta
+        self.smooth = smooth
+        self.gamma = gamma
 
     @property
-    def key(self) -> tuple[float, float, float, float, float]:
+    def key(self):
         return (self.task, self.bold, self.beta, self.smooth, self.gamma)
 
 
-@dataclass
 class MapSpec:
-    map_id: str
-    label: str
-    path: Path | None
-    candidate: Candidate | None
-    source: str
-    threshold_percentile: float | None = None
+    def __init__(self, map_id, label, path, candidate, source, threshold_percentile=None):
+        self.map_id = map_id
+        self.label = label
+        self.path = path
+        self.candidate = candidate
+        self.source = source
+        self.threshold_percentile = threshold_percentile
 
 
-def _fmt_float(value: float) -> str:
+def _fmt_float(value):
     return f"{value:g}"
 
 
-def _candidate_id(candidate: Candidate) -> str:
+def _candidate_id(candidate):
     return (
         f"task{_fmt_float(candidate.task)}_bold{_fmt_float(candidate.bold)}_"
         f"beta{_fmt_float(candidate.beta)}_smooth{_fmt_float(candidate.smooth)}_"
@@ -135,11 +133,11 @@ def _candidate_id(candidate: Candidate) -> str:
     )
 
 
-def _candidate_from_match(match: re.Match[str]) -> Candidate:
+def _candidate_from_match(match):
     return Candidate(*(float(match.group(name)) for name in ("task", "bold", "beta", "smooth", "gamma")))
 
 
-def _candidate_label(candidate: Candidate, group: str | None = None) -> str:
+def _candidate_label(candidate, group=None):
     t, b, be, s, _ = candidate.key
     if group == "final_0p6":
         if (t, b, be, s) == (1.0, 0.6, 0.6, 1.25):
@@ -165,7 +163,7 @@ def _candidate_label(candidate: Candidate, group: str | None = None) -> str:
     return f"task={t:g}, bold={b:g}, beta={be:g}, smooth={s:g}"
 
 
-def _analysis_group(candidate: Candidate, source_log: str) -> str:
+def _analysis_group(candidate, source_log):
     if source_log == "slurm-11460024.out":
         return "final_0p6"
     if candidate.bold in {0.0, 0.6} and candidate.beta in {0.0, 0.6} and candidate.smooth in {0.0, 1.25}:
@@ -173,7 +171,7 @@ def _analysis_group(candidate: Candidate, source_log: str) -> str:
     return "other"
 
 
-def parse_slurm_logs(log_paths: tuple[Path, ...] | list[Path]) -> pd.DataFrame:
+def parse_slurm_logs(log_paths):
     start_re = re.compile(
         r"^Fold (?P<fold>\d+): optimization with task=(?P<task>-?\d+(?:\.\d+)?), "
         r"bold=(?P<bold>-?\d+(?:\.\d+)?), beta=(?P<beta>-?\d+(?:\.\d+)?), "
@@ -190,10 +188,10 @@ def parse_slurm_logs(log_paths: tuple[Path, ...] | list[Path]) -> pd.DataFrame:
     train_corr_re = re.compile(r"Train metrics -> corr: (?P<value>[-+0-9.eE]+)")
     test_corr_re = re.compile(r"Test metrics\s+-> corr: (?P<value>[-+0-9.eE]+)")
 
-    rows: list[dict[str, object]] = []
-    current: dict[str, object] | None = None
+    rows = []
+    current = None
 
-    def flush() -> None:
+    def flush():
         nonlocal current
         if current is None:
             return
@@ -274,7 +272,7 @@ def parse_slurm_logs(log_paths: tuple[Path, ...] | list[Path]) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(["analysis_group", "candidate_id", "fold"]).reset_index(drop=True)
 
 
-def add_balanced_scores(metrics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def add_balanced_scores(metrics):
     if metrics.empty:
         return metrics, pd.DataFrame()
     metrics = metrics.copy()
@@ -287,7 +285,7 @@ def add_balanced_scores(metrics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFra
         means = group_df.groupby("candidate_id", as_index=False)[
             ["score_corr_term", "score_corr_gap_term", "score_loss_gap_term"]
         ].mean()
-        weights: dict[str, float] = {}
+        weights = {}
         for term in ("score_corr_term", "score_corr_gap_term", "score_loss_gap_term"):
             value_range = float(means[term].max() - means[term].min())
             weights[term] = 1.0 / value_range if np.isfinite(value_range) and value_range > 0 else 1.0
@@ -309,7 +307,7 @@ def add_balanced_scores(metrics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFra
     return metrics, pd.DataFrame(weight_rows)
 
 
-def summarize_metrics(metrics: pd.DataFrame) -> pd.DataFrame:
+def summarize_metrics(metrics):
     if metrics.empty:
         return pd.DataFrame()
     rows = []
@@ -342,7 +340,7 @@ def summarize_metrics(metrics: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def compare_scores_to_full(metrics: pd.DataFrame) -> pd.DataFrame:
+def compare_scores_to_full(metrics):
     rows = []
     if metrics.empty or "balanced_score" not in metrics:
         return pd.DataFrame()
@@ -390,12 +388,12 @@ def compare_scores_to_full(metrics: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _load_data(path: Path) -> tuple[nib.Nifti1Image, np.ndarray]:
+def _load_data(path):
     img = nib.load(str(path))
     return img, np.asarray(img.get_fdata(), dtype=float)
 
 
-def _mask_from_map(data: np.ndarray, threshold_percentile: float | None = None) -> tuple[np.ndarray, float | None]:
+def _mask_from_map(data, threshold_percentile=None):
     finite_nonzero = np.isfinite(data) & (data != 0)
     if threshold_percentile is None:
         return finite_nonzero, None
@@ -406,7 +404,7 @@ def _mask_from_map(data: np.ndarray, threshold_percentile: float | None = None) 
     return finite_nonzero & (data >= threshold), threshold
 
 
-def _weighted_center(mask: np.ndarray, values: np.ndarray, affine: np.ndarray) -> np.ndarray:
+def _weighted_center(mask, values, affine):
     coords = np.column_stack(np.nonzero(mask))
     if coords.size == 0:
         return np.array([np.nan, np.nan, np.nan], dtype=float)
@@ -417,7 +415,7 @@ def _weighted_center(mask: np.ndarray, values: np.ndarray, affine: np.ndarray) -
     return np.asarray(nib.affines.apply_affine(affine, center_vox), dtype=float)
 
 
-def _component_stats(mask: np.ndarray) -> tuple[int, int, float]:
+def _component_stats(mask):
     labels, n_components = ndimage.label(mask)
     sizes = np.bincount(labels.ravel())
     largest = int(sizes[1:].max()) if sizes.size > 1 else 0
@@ -425,7 +423,7 @@ def _component_stats(mask: np.ndarray) -> tuple[int, int, float]:
     return int(n_components), largest, float(largest / total) if total else np.nan
 
 
-def _discover_map_specs(main_map: Path, ablation_dir: Path) -> list[MapSpec]:
+def _discover_map_specs(main_map, ablation_dir):
     specs = [
         MapSpec(
             map_id="main_result_p90",
@@ -466,11 +464,11 @@ def _discover_map_specs(main_map: Path, ablation_dir: Path) -> list[MapSpec]:
     return specs
 
 
-def summarize_maps(map_specs: list[MapSpec], out_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, object]]:
-    loaded: dict[str, dict[str, object]] = {}
-    reference_img: nib.Nifti1Image | None = None
-    reference_mask: np.ndarray | None = None
-    reference_values: np.ndarray | None = None
+def summarize_maps(map_specs, out_dir):
+    loaded = {}
+    reference_img = None
+    reference_mask = None
+    reference_values = None
 
     for spec in map_specs:
         if spec.path is None or not spec.path.exists():
@@ -479,7 +477,7 @@ def summarize_maps(map_specs: list[MapSpec], out_dir: Path) -> tuple[pd.DataFram
         if reference_img is None:
             reference_img = img
         if img.shape[:3] != reference_img.shape[:3] or not np.allclose(img.affine, reference_img.affine):
-            raise RuntimeError(f"{spec.path} is not on the same grid as {map_specs[0].path}.")
+            raise ValueError(f"{spec.path} is not on the same grid as {map_specs[0].path}.")
         mask, threshold = _mask_from_map(data, spec.threshold_percentile)
         loaded[spec.map_id] = {
             "spec": spec,
@@ -496,16 +494,16 @@ def summarize_maps(map_specs: list[MapSpec], out_dir: Path) -> tuple[pd.DataFram
             nib.save(mask_img, str(out_dir / "main_result_p90_mask.nii.gz"))
 
     if reference_img is None or reference_mask is None or reference_values is None:
-        raise RuntimeError("Main result map is required for spatial comparison.")
+        raise ValueError("Main result map is required for spatial comparison.")
     reference_center = loaded["main_result_p90"]["center_mm"]
 
     map_rows = []
     overlap_rows = []
     for map_id, payload in loaded.items():
-        spec: MapSpec = payload["spec"]  # type: ignore[assignment]
-        data = payload["data"]  # type: ignore[assignment]
-        mask = payload["mask"]  # type: ignore[assignment]
-        center = payload["center_mm"]  # type: ignore[assignment]
+        spec = payload["spec"]
+        data = payload["data"]
+        mask = payload["mask"]
+        center = payload["center_mm"]
         n_components, largest_component, largest_fraction = _component_stats(mask)
         values = data[mask]
         row = {
@@ -574,13 +572,13 @@ def summarize_maps(map_specs: list[MapSpec], out_dir: Path) -> tuple[pd.DataFram
     region_rows = []
     analysis_mask = np.zeros(reference_img.shape[:3], dtype=bool)
     for payload in loaded.values():
-        analysis_mask |= payload["mask"]  # type: ignore[operator]
+        analysis_mask |= payload["mask"]
     region_sizes = {group.name: int(np.count_nonzero(group.mask & analysis_mask)) for group in groups}
 
     for map_id, payload in loaded.items():
-        spec: MapSpec = payload["spec"]  # type: ignore[assignment]
-        data = payload["data"]  # type: ignore[assignment]
-        mask = payload["mask"]  # type: ignore[assignment]
+        spec = payload["spec"]
+        data = payload["data"]
+        mask = payload["mask"]
         selected = np.column_stack(np.nonzero(mask)).astype(np.int32, copy=False)
         if selected.size == 0:
             continue
@@ -626,7 +624,7 @@ def summarize_maps(map_specs: list[MapSpec], out_dir: Path) -> tuple[pd.DataFram
     return pd.DataFrame(map_rows), pd.DataFrame(overlap_rows), pd.DataFrame(region_rows), metadata
 
 
-def _ordered_candidates(summary: pd.DataFrame, group: str, primary_only: bool = False) -> list[str]:
+def _ordered_candidates(summary, group, primary_only=False):
     rows = summary[summary["analysis_group"].eq(group)].copy()
     preferred = [
         "Full model",
@@ -650,12 +648,12 @@ def _ordered_candidates(summary: pd.DataFrame, group: str, primary_only: bool = 
     return labels
 
 
-def _sem(values: np.ndarray) -> float:
+def _sem(values):
     values = np.asarray(values, dtype=float)
     return float(np.std(values, ddof=1) / math.sqrt(values.size)) if values.size > 1 else np.nan
 
 
-def plot_balanced_score(metrics: pd.DataFrame, group: str, out_base: Path) -> None:
+def plot_balanced_score(metrics, group, out_base):
     labels = _ordered_candidates(summarize_metrics(metrics), group)
     if not labels:
         return
@@ -689,7 +687,7 @@ def plot_balanced_score(metrics: pd.DataFrame, group: str, out_base: Path) -> No
     plt.close(fig)
 
 
-def plot_tradeoff(summary: pd.DataFrame, group: str, out_base: Path, title: str) -> None:
+def plot_tradeoff(summary, group, out_base, title):
     sub = summary[summary["analysis_group"].eq(group)].copy()
     if sub.empty:
         return
@@ -729,7 +727,7 @@ def plot_tradeoff(summary: pd.DataFrame, group: str, out_base: Path, title: str)
     plt.close(fig)
 
 
-def plot_spatial_similarity(map_specs: list[MapSpec], out_base: Path) -> None:
+def plot_spatial_similarity(map_specs, out_base):
     keep = [
         "Full ablation map",
         "No task",
@@ -747,16 +745,16 @@ def plot_spatial_similarity(map_specs: list[MapSpec], out_base: Path) -> None:
     if not specs or not reference_specs:
         return
     reference_spec = reference_specs[0]
-    reference_img, reference_data = _load_data(reference_spec.path)  # type: ignore[arg-type]
+    reference_img, reference_data = _load_data(reference_spec.path)
     reference_mask, _ = _mask_from_map(reference_data, reference_spec.threshold_percentile)
     reference_center = _weighted_center(reference_mask, reference_data, reference_img.affine)
     n_ref = int(np.count_nonzero(reference_mask))
 
     rows = []
     for spec in specs:
-        img, data = _load_data(spec.path)  # type: ignore[arg-type]
+        img, data = _load_data(spec.path)
         if img.shape[:3] != reference_img.shape[:3] or not np.allclose(img.affine, reference_img.affine):
-            raise RuntimeError(f"{spec.path} is not on the same grid as {reference_spec.path}.")
+            raise ValueError(f"{spec.path} is not on the same grid as {reference_spec.path}.")
         mask, _ = _mask_from_map(data, spec.threshold_percentile)
         center = _weighted_center(mask, data, img.affine)
         intersection = int(np.count_nonzero(reference_mask & mask))
@@ -789,10 +787,7 @@ def plot_spatial_similarity(map_specs: list[MapSpec], out_base: Path) -> None:
         "No objective penalties": "Corr with Behaviour-only",
     }
 
-    def metric_color_scale(
-        values: pd.Series,
-        cmap_name: str,
-    ) -> tuple[list[tuple[float, float, float, float]], matplotlib.cm.ScalarMappable]:
+    def metric_color_scale(values, cmap_name):
         finite_values = pd.to_numeric(values, errors="coerce").to_numpy(dtype=float)
         finite_mask = np.isfinite(finite_values)
         if finite_mask.any():
@@ -857,7 +852,7 @@ def plot_spatial_similarity(map_specs: list[MapSpec], out_base: Path) -> None:
     plt.close(fig)
 
 
-def _roi_matrix(region_df: pd.DataFrame, labels: list[str], value_col: str = "percent_of_map") -> pd.DataFrame:
+def _roi_matrix(region_df, labels, value_col="percent_of_map"):
     rows = region_df[region_df["label"].isin(labels) & ~region_df["roi_name"].eq(UNASSIGNED_ROI)].copy()
     if rows.empty:
         return pd.DataFrame()
@@ -865,7 +860,7 @@ def _roi_matrix(region_df: pd.DataFrame, labels: list[str], value_col: str = "pe
     return wide.reindex(columns=[label for label in labels if label in wide.columns])
 
 
-def plot_roi_heatmaps(region_df: pd.DataFrame, out_base: Path) -> None:
+def plot_roi_heatmaps(region_df, out_base):
     labels = ["Full model", "Full ablation map", "No task", "No BOLD stability", "No beta stability", "Task-only reference"]
     wide = _roi_matrix(region_df, labels)
     if wide.empty:
@@ -917,7 +912,7 @@ def plot_roi_heatmaps(region_df: pd.DataFrame, out_base: Path) -> None:
             plt.close(fig)
 
 
-def plot_publication_summary(metrics: pd.DataFrame, summary: pd.DataFrame, overlap_df: pd.DataFrame, region_df: pd.DataFrame, out_base: Path) -> None:
+def plot_publication_summary(metrics, summary, overlap_df, region_df, out_base):
     group = "final_0p6"
     # Primary leave-one-out conditions + task-only floor reference
     primary_labels = ["Full model", "No task", "No BOLD stability", "No beta stability"]
@@ -944,7 +939,7 @@ def plot_publication_summary(metrics: pd.DataFrame, summary: pd.DataFrame, overl
     # draw separator between leave-one-out and reference baseline
     sep_x = len(primary_labels) - 0.5
 
-    def _draw_panels(ax: plt.Axes, mean_col: str, sem_col: str, fold_col: str, ylabel: str, title: str) -> None:
+    def _draw_panels(ax, mean_col, sem_col, fold_col, ylabel, title):
         bars = ax.bar(x, sub[mean_col], yerr=sub[sem_col], capsize=3, color=colors, alpha=0.82)
         for bar, hatch in zip(bars, hatches):
             bar.set_hatch(hatch)
@@ -1004,27 +999,27 @@ def plot_publication_summary(metrics: pd.DataFrame, summary: pd.DataFrame, overl
     plt.close(fig)
 
 
-def _html_sprite_volumes(html_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _html_sprite_volumes(html_path):
     try:
         from PIL import Image
     except ImportError as exc:
-        raise RuntimeError("Pillow is required to read embedded PNG overlays from HTML maps.") from exc
+        raise ValueError("Pillow is required to read embedded PNG overlays from HTML maps.") from exc
 
     html = html_path.read_text(encoding="utf-8", errors="replace")
     encoded_images = re.findall(r'src="data:image/png;base64,([^"]+)"', html)
     if len(encoded_images) < 3:
-        raise RuntimeError(f"Could not find the overlay PNG in {html_path}.")
+        raise ValueError(f"Could not find the overlay PNG in {html_path}.")
     cfg_match = re.search(r"brainsprite\((\{.*?\})\);", html, flags=re.S)
     if cfg_match is None:
-        raise RuntimeError(f"Could not find the brainsprite config in {html_path}.")
+        raise ValueError(f"Could not find the brainsprite config in {html_path}.")
 
     cfg = json.loads(cfg_match.group(1))
     nx, ny, nz = [int(cfg["nbSlice"][axis]) for axis in "XYZ"]
 
-    def sprite_to_volume(sprite: np.ndarray) -> np.ndarray:
+    def sprite_to_volume(sprite):
         tiles_per_row = sprite.shape[1] // ny
         if tiles_per_row <= 0:
-            raise RuntimeError(f"Unexpected sprite dimensions in {html_path}.")
+            raise ValueError(f"Unexpected sprite dimensions in {html_path}.")
         volume = np.zeros((nx, ny, nz, sprite.shape[2]), dtype=sprite.dtype)
         for x_idx in range(nx):
             tile_col = x_idx % tiles_per_row
@@ -1040,10 +1035,10 @@ def _html_sprite_volumes(html_path: Path) -> tuple[np.ndarray, np.ndarray, np.nd
     return background, mask, np.asarray(cfg["affine"], dtype=float)
 
 
-def _html_overlay_mask(html_path: Path, reference_img: nib.Nifti1Image) -> np.ndarray:
+def _html_overlay_mask(html_path, reference_img):
     _, mask, html_affine = _html_sprite_volumes(html_path)
     if mask.shape != reference_img.shape[:3]:
-        raise RuntimeError(
+        raise ValueError(
             f"{html_path} overlay shape {mask.shape} does not match reference shape {reference_img.shape[:3]}."
         )
     for axis in range(3):
@@ -1054,11 +1049,7 @@ def _html_overlay_mask(html_path: Path, reference_img: nib.Nifti1Image) -> np.nd
     return mask
 
 
-def _resampled_label_mask(
-    label_img: nib.Nifti1Image,
-    label_values: list[int],
-    reference_img: nib.Nifti1Image,
-) -> np.ndarray:
+def _resampled_label_mask(label_img, label_values, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         data = np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     else:
@@ -1073,7 +1064,7 @@ def _resampled_label_mask(
     return np.isin(data, label_values)
 
 
-def _atlas_roi_mask(reference_img: nib.Nifti1Image, roi_names: tuple[str, ...]) -> np.ndarray:
+def _atlas_roi_mask(reference_img, roi_names):
     groups, _ = _build_roi_groups(reference_img, DEFAULT_AAL_VERSION, DEFAULT_ATLAS_CACHE_DIR)
     mask = np.zeros(reference_img.shape[:3], dtype=bool)
     requested = set(roi_names)
@@ -1083,7 +1074,7 @@ def _atlas_roi_mask(reference_img: nib.Nifti1Image, roi_names: tuple[str, ...]) 
     return mask
 
 
-def _mni_box_mask(reference_img: nib.Nifti1Image, bounds: dict[str, float]) -> np.ndarray:
+def _mni_box_mask(reference_img, bounds):
     coords_ijk = np.column_stack(np.nonzero(np.ones(reference_img.shape[:3], dtype=bool)))
     coords_mm = nib.affines.apply_affine(reference_img.affine, coords_ijk)
     in_box = (
@@ -1098,7 +1089,7 @@ def _mni_box_mask(reference_img: nib.Nifti1Image, bounds: dict[str, float]) -> n
     return mask
 
 
-def _brainstem_mask(reference_img: nib.Nifti1Image) -> np.ndarray:
+def _brainstem_mask(reference_img):
     atlas = datasets.fetch_atlas_harvard_oxford(
         HARVARD_OXFORD_SUBCORTICAL_ATLAS,
         data_dir=str(DEFAULT_ATLAS_CACHE_DIR),
@@ -1112,9 +1103,9 @@ def _brainstem_mask(reference_img: nib.Nifti1Image) -> np.ndarray:
     return mask
 
 
-def _cut_indices_for_mask(mask: np.ndarray, axis: int, n_cuts: int = 6, min_gap: int = 5) -> list[int]:
+def _cut_indices_for_mask(mask, axis, n_cuts=6, min_gap=5):
     counts = mask.sum(axis=tuple(dim for dim in range(3) if dim != axis))
-    selected: list[int] = []
+    selected = []
     for idx in np.argsort(counts)[::-1]:
         if counts[idx] <= 0:
             break
@@ -1133,7 +1124,7 @@ def _cut_indices_for_mask(mask: np.ndarray, axis: int, n_cuts: int = 6, min_gap:
     return sorted(selected)
 
 
-def _plane_slice(volume: np.ndarray, axis: int, index: int) -> np.ndarray:
+def _plane_slice(volume, axis, index):
     if axis == 0:
         return volume[index].T[::-1]
     if axis == 1:
@@ -1141,11 +1132,11 @@ def _plane_slice(volume: np.ndarray, axis: int, index: int) -> np.ndarray:
     return volume[:, :, index].T[::-1]
 
 
-def _pad_slice(values: np.ndarray, pad_y: int = 3, pad_x: int = 2) -> np.ndarray:
+def _pad_slice(values, pad_y=3, pad_x=2):
     return np.pad(values, ((pad_y, pad_y), (pad_x, pad_x)), mode="constant")
 
 
-def _crop_slices(background: np.ndarray, masks: list[np.ndarray]) -> tuple[np.ndarray, list[np.ndarray]]:
+def _crop_slices(background, masks):
     crop_mask = ndimage.binary_fill_holes(background > 0)
     for mask in masks:
         crop_mask |= mask
@@ -1160,27 +1151,18 @@ def _crop_slices(background: np.ndarray, masks: list[np.ndarray]) -> tuple[np.nd
     )
 
 
-def _anatomy_rgba(background: np.ndarray, vmax: float) -> np.ndarray:
+def _anatomy_rgba(background, vmax):
     brain = ndimage.binary_fill_holes(background > 0)
     rgba = plt.cm.gray(np.clip(background / vmax, 0, 1))
     rgba[~brain, 3] = 0
     return rgba
 
 
-def _coord_mm(affine: np.ndarray, axis: int, index: int) -> float:
+def _coord_mm(affine, axis, index):
     return float(affine[axis, axis] * (index + 1) + affine[axis, 3])
 
 
-def _add_mask_overlay(
-    ax: plt.Axes,
-    mask: np.ndarray,
-    color: str,
-    linewidth: float,
-    fill_alpha: float,
-    edge_color: str | None = None,
-    halo_color: str | None = None,
-    halo_linewidth: float = 0.0,
-) -> None:
+def _add_mask_overlay(ax, mask, color, linewidth, fill_alpha, edge_color=None, halo_color=None, halo_linewidth=0.0):
     if np.any(mask):
         values = mask.astype(float)
         if fill_alpha > 0:
@@ -1190,13 +1172,7 @@ def _add_mask_overlay(
         ax.contour(values, levels=[0.5], colors=edge_color or color, linewidths=linewidth)
 
 
-def plot_full_vs_task_only_anatomy(
-    reference_map: Path,
-    full_html: Path,
-    task_only_map: Path,
-    out_base: Path,
-    task_z_threshold: float = DEFAULT_TASK_ONLY_Z_THRESHOLD,
-) -> pd.DataFrame:
+def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_base, task_z_threshold=DEFAULT_TASK_ONLY_Z_THRESHOLD):
     if not full_html.exists() or not task_only_map.exists():
         return pd.DataFrame()
 
@@ -1204,11 +1180,11 @@ def plot_full_vs_task_only_anatomy(
     full_bg, full_mask, html_affine = _html_sprite_volumes(full_html)
     task_img, task_data = _load_data(task_only_map)
     if full_mask.shape != reference_img.shape[:3]:
-        raise RuntimeError(
+        raise ValueError(
             f"{full_html} overlay shape {full_mask.shape} does not match reference shape {reference_img.shape[:3]}."
         )
     if task_img.shape[:3] != full_mask.shape:
-        raise RuntimeError(f"{task_only_map} shape {task_img.shape[:3]} differs from {full_html}.")
+        raise ValueError(f"{task_only_map} shape {task_img.shape[:3]} differs from {full_html}.")
 
     task_mask = np.isfinite(task_data) & (task_data >= task_z_threshold)
     for axis in range(3):
@@ -1429,7 +1405,7 @@ def plot_full_vs_task_only_anatomy(
     return summary
 
 
-def plot_map_montage(map_specs: list[MapSpec], out_base: Path) -> None:
+def plot_map_montage(map_specs, out_base):
     labels = ["Full model", "Full ablation map", "No task", "No BOLD stability", "No beta stability", "Task-only reference"]
     specs = [spec for spec in map_specs if spec.label in labels and spec.path and spec.path.exists()]
     seen = set()
@@ -1443,7 +1419,7 @@ def plot_map_montage(map_specs: list[MapSpec], out_base: Path) -> None:
     if not unique_specs:
         return
 
-    reference_img, _ = _load_data(unique_specs[0].path)  # type: ignore[arg-type]
+    reference_img, _ = _load_data(unique_specs[0].path)
     template = datasets.load_mni152_template(resolution=2)
     bg_img = image.resample_to_img(template, reference_img, interpolation="continuous", force_resample=True, copy_header=True)
     bg = np.asarray(bg_img.get_fdata(), dtype=float)
@@ -1458,10 +1434,10 @@ def plot_map_montage(map_specs: list[MapSpec], out_base: Path) -> None:
 
     affine = reference_img.affine
     for row, spec in enumerate(unique_specs):
-        img, data = _load_data(spec.path)  # type: ignore[arg-type]
+        img, data = _load_data(spec.path)
         mask, _ = _mask_from_map(data, spec.threshold_percentile)
         if img.shape[:3] != reference_img.shape[:3] or not np.allclose(img.affine, affine):
-            raise RuntimeError(f"{spec.path} differs from montage reference grid.")
+            raise ValueError(f"{spec.path} differs from montage reference grid.")
         for col, z_mm in enumerate(cuts):
             ax = axes[row, col]
             k = int(round((z_mm - affine[2, 3]) / affine[2, 2]))
@@ -1490,7 +1466,7 @@ def plot_map_montage(map_specs: list[MapSpec], out_base: Path) -> None:
     plt.close(fig)
 
 
-def expected_missing_maps(ablation_dir: Path) -> pd.DataFrame:
+def expected_missing_maps(ablation_dir):
     expected = [
         ("final_0p6", "No smoothness", Candidate(1.0, 0.6, 0.6, 0.0, 1.5)),
     ]
@@ -1513,13 +1489,7 @@ def expected_missing_maps(ablation_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def write_report(
-    out_dir: Path,
-    metric_summary: pd.DataFrame,
-    overlap_df: pd.DataFrame,
-    missing_maps: pd.DataFrame,
-    balanced_weights: pd.DataFrame,
-) -> None:
+def write_report(out_dir, metric_summary, overlap_df, missing_maps, balanced_weights):
     lines = [
         "# Ablation Study Analysis",
         "",
@@ -1575,7 +1545,7 @@ def write_report(
     (out_dir / "ablation_analysis_report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--main-map", type=Path, default=DEFAULT_MAIN_MAP)
     parser.add_argument("--ablation-dir", type=Path, default=DEFAULT_ABLATION_DIR)
@@ -1584,7 +1554,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main():
     args = build_parser().parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     for stale_name in STALE_UNRELATED_OUTPUTS:

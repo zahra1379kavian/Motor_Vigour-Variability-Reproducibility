@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Compare adjacent-trial variability in weighted projection and behaviour RT."""
 
-from __future__ import annotations
 
 import argparse
 import re
@@ -59,7 +58,7 @@ ACTIVE_BOLD_RE = re.compile(
 BEHAVIOUR_RE = re.compile(r"PSPD(?P<digits>\d+)_ses_(?P<ses>\d+)_run_(?P<run>\d+)\.npy$")
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Project BOLD or beta data through a voxel-weight map, then compare "
@@ -96,19 +95,19 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _subject_digits(sub_tag: str) -> str:
+def _subject_digits(sub_tag):
     match = re.search(r"(\d+)$", sub_tag)
     if not match:
         raise ValueError(f"Could not parse subject digits from {sub_tag!r}")
     return match.group(1)
 
 
-def _category_sort_key(value: str) -> tuple[int, int | str]:
+def _category_sort_key(value):
     digits = _subject_digits(str(value))
     return (0, int(digits)) if digits.isdigit() else (1, str(value))
 
 
-def _load_weights(weight_map: Path) -> np.ndarray:
+def _load_weights(weight_map):
     weights = nib.load(str(weight_map)).get_fdata(dtype=np.float32)
     mask = np.isfinite(weights) & (weights != 0)
     if not np.any(mask):
@@ -116,7 +115,7 @@ def _load_weights(weight_map: Path) -> np.ndarray:
     return weights
 
 
-def _load_behaviour_rt(path: Path, column: int) -> np.ndarray:
+def _load_behaviour_rt(path, column):
     behaviour = np.asarray(np.load(path, allow_pickle=False), dtype=np.float64)
     if behaviour.ndim == 1:
         return behaviour
@@ -127,7 +126,7 @@ def _load_behaviour_rt(path: Path, column: int) -> np.ndarray:
     return behaviour[:, column]
 
 
-def _align_trials(projected_signal: np.ndarray, behaviour_rt: np.ndarray, label: str) -> tuple[np.ndarray, np.ndarray]:
+def _align_trials(projected_signal, behaviour_rt, label):
     n_projection = projected_signal.shape[0]
     n_behaviour = behaviour_rt.shape[0]
     if n_projection == n_behaviour:
@@ -142,7 +141,7 @@ def _align_trials(projected_signal: np.ndarray, behaviour_rt: np.ndarray, label:
     return projected_signal[:n_keep], behaviour_rt[:n_keep]
 
 
-def _adjacent_diff_ratio_sum(values: np.ndarray) -> tuple[float, int]:
+def _adjacent_diff_ratio_sum(values):
     values = np.asarray(values, dtype=np.float64)
     if values.size < 2:
         return np.nan, 0
@@ -161,7 +160,7 @@ def _adjacent_diff_ratio_sum(values: np.ndarray) -> tuple[float, int]:
     return float(score), int(np.count_nonzero(keep))
 
 
-def _project_beta(beta_path: Path, weights: np.ndarray) -> np.ndarray:
+def _project_beta(beta_path, weights):
     beta = np.load(beta_path, mmap_mode="r")
     if beta.ndim != 4:
         raise ValueError(f"Expected 4D beta volume in {beta_path}, got shape {beta.shape}")
@@ -184,11 +183,11 @@ def _project_beta(beta_path: Path, weights: np.ndarray) -> np.ndarray:
     return projected_signal
 
 
-def _active_flat_indices_path(data_dir: Path, sub: str, ses: int, run: int) -> Path:
+def _active_flat_indices_path(data_dir, sub, ses, run):
     return data_dir / sub / f"active_flat_indices__{sub}_ses-{ses}_run-{run}.npy"
 
 
-def _reduce_bold_trials(projected_timepoints: np.ndarray, reducer: str) -> np.ndarray:
+def _reduce_bold_trials(projected_timepoints, reducer):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         if reducer == "median":
@@ -198,7 +197,7 @@ def _reduce_bold_trials(projected_timepoints: np.ndarray, reducer: str) -> np.nd
     raise ValueError(f"Unknown BOLD trial reducer: {reducer}")
 
 
-def _project_bold(active_bold_path: Path, active_flat_indices_path: Path, weights: np.ndarray, reducer: str) -> np.ndarray:
+def _project_bold(active_bold_path, active_flat_indices_path, weights, reducer):
     active_bold = np.load(active_bold_path, mmap_mode="r")
     if active_bold.ndim != 3:
         raise ValueError(f"Expected 3D active BOLD array in {active_bold_path}, got shape {active_bold.shape}")
@@ -238,7 +237,7 @@ def _project_bold(active_bold_path: Path, active_flat_indices_path: Path, weight
     return _reduce_bold_trials(projected_trials, reducer)
 
 
-def _discover_beta_runs(data_dir: Path) -> list[dict[str, object]]:
+def _discover_beta_runs(data_dir):
     runs = []
     for path in sorted(data_dir.glob("sub-*/cleaned_beta_volume_sub-pd*_ses-*_run-*.npy")):
         match = BETA_RE.match(path.name)
@@ -247,7 +246,7 @@ def _discover_beta_runs(data_dir: Path) -> list[dict[str, object]]:
     return runs
 
 
-def _discover_bold_runs(data_dir: Path) -> list[dict[str, object]]:
+def _discover_bold_runs(data_dir):
     runs = []
     for path in sorted(data_dir.glob("sub-*/active_bold_sub-pd*_ses-*_run-*.npy.npy")):
         match = ACTIVE_BOLD_RE.match(path.name)
@@ -256,7 +255,7 @@ def _discover_bold_runs(data_dir: Path) -> list[dict[str, object]]:
     return runs
 
 
-def _discover_runs(data_dir: Path, projection_source: str) -> list[dict[str, object]]:
+def _discover_runs(data_dir, projection_source):
     if projection_source == "bold":
         runs = _discover_bold_runs(data_dir)
         label = "active BOLD"
@@ -270,11 +269,11 @@ def _discover_runs(data_dir: Path, projection_source: str) -> list[dict[str, obj
     return runs
 
 
-def _behaviour_path(behaviour_dir: Path, sub: str, ses: int, run: int) -> Path:
+def _behaviour_path(behaviour_dir, sub, ses, run):
     return behaviour_dir / f"PSPD{_subject_digits(sub)}_ses_{ses}_run_{run}.npy"
 
 
-def _warn_unmatched_behaviour_runs(behaviour_dir: Path, projection_runs: list[dict[str, object]]) -> None:
+def _warn_unmatched_behaviour_runs(behaviour_dir, projection_runs):
     projection_keys = {
         (_subject_digits(str(item["sub"])), int(item["ses"]), int(item["run"]))
         for item in projection_runs
@@ -294,14 +293,7 @@ def _warn_unmatched_behaviour_runs(behaviour_dir: Path, projection_runs: list[di
             print(f"- {name}")
 
 
-def _build_run_metric_table(
-    data_dir: Path,
-    behaviour_dir: Path,
-    weights: np.ndarray,
-    projection_source: str,
-    behaviour_column: int,
-    bold_trial_reducer: str,
-) -> pd.DataFrame:
+def _build_run_metric_table(data_dir, behaviour_dir, weights, projection_source, behaviour_column, bold_trial_reducer):
     runs = _discover_runs(data_dir, projection_source)
     _warn_unmatched_behaviour_runs(behaviour_dir, runs)
 
@@ -365,7 +357,7 @@ def _build_run_metric_table(
     return pd.DataFrame(rows).sort_values(["sub_tag", "ses", "run"]).reset_index(drop=True)
 
 
-def _mixedlm_projection_effect(paired_df: pd.DataFrame) -> dict[str, float]:
+def _mixedlm_projection_effect(paired_df):
     row = {
         "lme_coef_projection_minus_behavior": np.nan,
         "lme_z_projection_minus_behavior": np.nan,
@@ -403,7 +395,7 @@ def _mixedlm_projection_effect(paired_df: pd.DataFrame) -> dict[str, float]:
     return row
 
 
-def _expanded_limits(values: np.ndarray, pad_fraction: float = 0.08, force_zero: bool = False) -> tuple[float, float]:
+def _expanded_limits(values, pad_fraction=0.08, force_zero=False):
     finite_values = np.asarray(values, dtype=np.float64)
     finite_values = finite_values[np.isfinite(finite_values)]
     if finite_values.size == 0:
@@ -422,7 +414,7 @@ def _expanded_limits(values: np.ndarray, pad_fraction: float = 0.08, force_zero:
     return low - pad, high + pad
 
 
-def _mean_ci(values: np.ndarray, confidence: float = 0.95) -> tuple[float, float, float]:
+def _mean_ci(values, confidence=0.95):
     finite_values = np.asarray(values, dtype=np.float64)
     finite_values = finite_values[np.isfinite(finite_values)]
     if finite_values.size == 0:
@@ -439,7 +431,7 @@ def _mean_ci(values: np.ndarray, confidence: float = 0.95) -> tuple[float, float
     return mean, mean - half_width, mean + half_width
 
 
-def _format_p_value(p_value: float) -> str:
+def _format_p_value(p_value):
     if not np.isfinite(p_value):
         return "p = n/a"
     if p_value < 0.001:
@@ -447,7 +439,7 @@ def _format_p_value(p_value: float) -> str:
     return f"p = {p_value:.3f}"
 
 
-def _p_value_stars(p_value: float) -> str:
+def _p_value_stars(p_value):
     if not np.isfinite(p_value):
         return "n.s."
     if p_value < 0.001:
@@ -459,11 +451,11 @@ def _p_value_stars(p_value: float) -> str:
     return "n.s."
 
 
-def _significance_label(p_value: float) -> str:
+def _significance_label(p_value):
     return f"{_p_value_stars(p_value)} ({_format_p_value(p_value)})"
 
 
-def _draw_mean_ci(ax: plt.Axes, x: float, values: np.ndarray, color: str, markersize: float = 5.2) -> tuple[float, float, float]:
+def _draw_mean_ci(ax, x, values, color, markersize=5.2):
     mean, ci_low, ci_high = _mean_ci(values)
     yerr = None
     if np.isfinite(ci_low) and np.isfinite(ci_high):
@@ -486,7 +478,7 @@ def _draw_mean_ci(ax: plt.Axes, x: float, values: np.ndarray, color: str, marker
     return mean, ci_low, ci_high
 
 
-def _draw_boxplot(ax: plt.Axes, values: list[np.ndarray], positions: list[float], colors: list[str], width: float) -> None:
+def _draw_boxplot(ax, values, positions, colors, width):
     finite_values = [np.asarray(value, dtype=np.float64)[np.isfinite(value)] for value in values]
     box = ax.boxplot(
         finite_values,
@@ -507,7 +499,7 @@ def _draw_boxplot(ax: plt.Axes, values: list[np.ndarray], positions: list[float]
         cap.set(color="0.30", linewidth=0.9)
 
 
-def _subject_level_pairs(paired_df: pd.DataFrame) -> pd.DataFrame:
+def _subject_level_pairs(paired_df):
     subject_df = (
         paired_df.groupby("sub_tag", as_index=False)
         .agg(
@@ -523,11 +515,7 @@ def _subject_level_pairs(paired_df: pd.DataFrame) -> pd.DataFrame:
     return subject_df
 
 
-def _plot_paired_estimation(
-    ax: plt.Axes,
-    subject_df: pd.DataFrame,
-    y_limits: tuple[float, float],
-) -> None:
+def _plot_paired_estimation(ax, subject_df, y_limits):
     plot_df = subject_df.sort_values("behaviour_minus_projection").reset_index(drop=True)
     behavior_values = plot_df["behavior_raw"].to_numpy(dtype=np.float64)
     projection_values = plot_df["projection_raw"].to_numpy(dtype=np.float64)
@@ -579,7 +567,7 @@ def _plot_paired_estimation(
     ax.spines["bottom"].set_color("0.25")
 
 
-def _plot_behaviour_minus_projection(ax: plt.Axes, subject_df: pd.DataFrame) -> None:
+def _plot_behaviour_minus_projection(ax, subject_df):
     reductions = subject_df["behaviour_minus_projection"].to_numpy(dtype=np.float64)
     rng = np.random.default_rng(141)
     x = rng.uniform(-0.055, 0.055, size=reductions.size)
@@ -611,13 +599,13 @@ def _plot_behaviour_minus_projection(ax: plt.Axes, subject_df: pd.DataFrame) -> 
     ax.spines["bottom"].set_color("0.25")
 
 
-def _bold_figure_text(fig: plt.Figure) -> None:
+def _bold_figure_text(fig):
     fig.canvas.draw()
     for text in fig.findobj(match=Text):
         text.set_fontweight("bold")
 
 
-def _save_pdf_and_png(fig: plt.Figure, pdf_path: Path, dpi: int) -> tuple[Path, Path]:
+def _save_pdf_and_png(fig, pdf_path, dpi):
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
     png_path = pdf_path.with_suffix(".png")
     fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
@@ -625,7 +613,7 @@ def _save_pdf_and_png(fig: plt.Figure, pdf_path: Path, dpi: int) -> tuple[Path, 
     return pdf_path, png_path
 
 
-def _subject_pairs_and_y_limits(metric_df: pd.DataFrame) -> tuple[pd.DataFrame, tuple[float, float]]:
+def _subject_pairs_and_y_limits(metric_df):
     projection_col = "adjacent_diff_ratio_sum_projection"
     behavior_col = "adjacent_diff_ratio_sum_behavior_col2"
     paired_df = metric_df.loc[np.isfinite(metric_df[projection_col]) & np.isfinite(metric_df[behavior_col])].copy()
@@ -642,11 +630,7 @@ def _subject_pairs_and_y_limits(metric_df: pd.DataFrame) -> tuple[pd.DataFrame, 
     return subject_df, y_limits
 
 
-def _save_behavior_projection_figure(
-    metric_df: pd.DataFrame,
-    out_dir: Path,
-    figure_stem: str = DEFAULT_FIGURE_STEM,
-) -> tuple[Path, Path]:
+def _save_behavior_projection_figure(metric_df, out_dir, figure_stem=DEFAULT_FIGURE_STEM):
     subject_df, y_limits = _subject_pairs_and_y_limits(metric_df)
     with plt.rc_context(
         {
@@ -679,7 +663,7 @@ def _save_behavior_projection_figure(
         return paths
 
 
-def _save_session_first_subplot_comparison(metric_df: pd.DataFrame, out_dir: Path) -> tuple[Path, Path]:
+def _save_session_first_subplot_comparison(metric_df, out_dir):
     session_specs = [
         (2, "medication_on", "Medication on"),
         (1, "medication_off", "Medication off"),
@@ -703,7 +687,7 @@ def _save_session_first_subplot_comparison(metric_df: pd.DataFrame, out_dir: Pat
         }
     ):
         fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.25))
-        session_panels: list[tuple[pd.DataFrame, str]] = []
+        session_panels = []
         shared_values = []
         for session, _, title in session_specs:
             session_df = metric_df.loc[metric_df["ses"] == session].copy()
@@ -731,7 +715,7 @@ def _save_session_first_subplot_comparison(metric_df: pd.DataFrame, out_dir: Pat
         return paths
 
 
-def main() -> None:
+def main():
     args = _parse_args()
     weights = _load_weights(args.weight_map)
     metric_df = _build_run_metric_table(

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Count all FDR-significant edges between broad anatomical groups."""
 
-from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -59,23 +57,23 @@ PLOT_LABELS = {
 DIRECTIONS = ("increase", "decrease")
 
 
-@dataclass(frozen=True)
 class LollipopSpec:
-    metric_slug: str
-    scope_slug: str
-    top_n: int
-    png_path: Path
+    def __init__(self, metric_slug, scope_slug, top_n, png_path):
+        self.metric_slug = metric_slug
+        self.scope_slug = scope_slug
+        self.top_n = top_n
+        self.png_path = png_path
 
 
-def ordered_pair(group_i: str, group_j: str) -> tuple[str, str]:
+def ordered_pair(group_i, group_j):
     order = {group: idx for idx, group in enumerate(GROUP_ORDER)}
     if order[group_i] <= order[group_j]:
         return group_i, group_j
     return group_j, group_i
 
 
-def parse_lollipop_specs(report_dir: Path) -> list[LollipopSpec]:
-    specs: list[LollipopSpec] = []
+def parse_lollipop_specs(report_dir):
+    specs = []
     for png_path in sorted(report_dir.glob("*__top*_lollipop.png")):
         stem = png_path.stem
         if not stem.endswith("_lollipop"):
@@ -91,7 +89,7 @@ def parse_lollipop_specs(report_dir: Path) -> list[LollipopSpec]:
     return specs
 
 
-def load_significant_edges(path: Path) -> pd.DataFrame:
+def load_significant_edges(path):
     df = pd.read_csv(path, low_memory=False)
     if "sig_fdr" in df.columns:
         df = df.loc[df["sig_fdr"].astype(bool)].copy()
@@ -105,19 +103,19 @@ def load_significant_edges(path: Path) -> pd.DataFrame:
     return df
 
 
-def select_lollipop_edges(sig: pd.DataFrame, spec: LollipopSpec) -> pd.DataFrame:
+def select_lollipop_edges(sig, spec):
     matched = sig.loc[(sig["metric_slug"] == spec.metric_slug) & (sig["scope_slug"] == spec.scope_slug)].copy()
     if matched.empty:
         raise ValueError(f"No significant edges matched {spec.png_path.name}")
     return matched.sort_values(["abs_mean", "q_fdr", "p_signflip"], ascending=[False, True, True]).copy()
 
 
-def empty_matrix() -> pd.DataFrame:
+def empty_matrix():
     labels = [GROUP_LABELS[group] for group in GROUP_ORDER]
     return pd.DataFrame(0, index=labels, columns=labels, dtype=int)
 
 
-def pair_count_table(edges: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def pair_count_table(edges):
     rows = []
     for row in edges.itertuples(index=False):
         group_i, group_j = ordered_pair(roi_group(row.roi_i), roi_group(row.roi_j))
@@ -159,7 +157,7 @@ def pair_count_table(edges: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return pairs, matrix
 
 
-def direction_edges(edges: pd.DataFrame, direction: str) -> pd.DataFrame:
+def direction_edges(edges, direction):
     if direction == "increase":
         return edges.loc[edges["mean"] > 0].copy()
     if direction == "decrease":
@@ -167,7 +165,7 @@ def direction_edges(edges: pd.DataFrame, direction: str) -> pd.DataFrame:
     raise ValueError(f"Unknown edge direction: {direction}")
 
 
-def plot_heatmaps(matrices: list[pd.DataFrame], path_base: Path) -> None:
+def plot_heatmaps(matrices, path_base):
     if not matrices:
         return
     vmax = max(int(matrix.to_numpy().max()) for matrix in matrices)
@@ -213,7 +211,7 @@ def plot_heatmaps(matrices: list[pd.DataFrame], path_base: Path) -> None:
     plt.close(fig)
 
 
-def process_report(label: str, source_csv: Path, report_dir: Path) -> pd.DataFrame:
+def process_report(label, source_csv, report_dir):
     if not source_csv.exists():
         raise FileNotFoundError(f"Missing source CSV: {source_csv}")
     if not report_dir.exists():
@@ -283,7 +281,7 @@ def process_report(label: str, source_csv: Path, report_dir: Path) -> pd.DataFra
     return output_df
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--report",
@@ -295,7 +293,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     reports = args.report or DEFAULT_REPORTS
     outputs = []

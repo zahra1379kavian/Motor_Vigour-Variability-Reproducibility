@@ -6,7 +6,6 @@ figures/med_effects/med_fc_change_consistency and redraws only the
 vigour-weighted Pearson and mutual-information panels.
 """
 
-from __future__ import annotations
 
 import argparse
 from pathlib import Path
@@ -28,28 +27,21 @@ FC_METRICS = ("pearson_r", "mutual_info_quantile")
 X_POS = np.array([0.0, 0.58])
 
 
-def _load_inputs(input_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _load_inputs(input_dir):
     noise_path = input_dir / "change_vs_noise_subject.csv"
     summary_path = input_dir / "change_consistency_summary.csv"
     if not noise_path.exists() or not summary_path.exists():
-        raise RuntimeError(f"Missing consistency CSVs under {input_dir}")
+        raise FileNotFoundError(f"Missing consistency CSVs under {input_dir}")
     return pd.read_csv(noise_path), pd.read_csv(summary_path)
 
 
-def _draw_metric_axis(
-    ax: plt.Axes,
-    noise: pd.DataFrame,
-    summary: pd.DataFrame,
-    fc_metric: str,
-    *,
-    show_ylabel: bool,
-) -> list:
+def _draw_metric_axis(ax, noise, summary, fc_metric, *, show_ylabel):
     d = noise.loc[noise["fc_metric"] == fc_metric]
     if d.empty:
-        raise RuntimeError(f"No subject rows found for {fc_metric}")
+        raise ValueError(f"No subject rows found for {fc_metric}")
     rows = summary.loc[summary["fc_metric"] == fc_metric]
     if rows.empty:
-        raise RuntimeError(f"No summary row found for {fc_metric}")
+        raise ValueError(f"No summary row found for {fc_metric}")
     g = rows.iloc[0]
 
     within = d["within_state_dist"].to_numpy()
@@ -91,11 +83,11 @@ def _draw_metric_axis(
     return [within_points, between_points]
 
 
-def make_figure(input_dir: Path, output_stem: Path) -> None:
+def make_figure(input_dir, output_stem):
     noise, summary = _load_inputs(input_dir)
     missing = [metric for metric in FC_METRICS if metric not in set(summary["fc_metric"])]
     if missing:
-        raise RuntimeError(f"Missing requested metrics in summary CSV: {', '.join(missing)}")
+        raise ValueError(f"Missing requested metrics in summary CSV: {', '.join(missing)}")
 
     fig, axes = plt.subplots(1, len(FC_METRICS), figsize=(8.2, 4.2), squeeze=False)
     for idx, fc_metric in enumerate(FC_METRICS):
@@ -116,7 +108,7 @@ def make_figure(input_dir: Path, output_stem: Path) -> None:
     plt.close(fig)
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
     parser.add_argument("--output-stem", type=Path, default=DEFAULT_OUTPUT_STEM)

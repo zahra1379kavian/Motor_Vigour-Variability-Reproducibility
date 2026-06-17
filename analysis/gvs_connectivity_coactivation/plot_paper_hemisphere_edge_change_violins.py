@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot an 8-column violin summary of significant hemisphere edge changes."""
 
-from __future__ import annotations
 
 import argparse
 from pathlib import Path
@@ -69,7 +68,7 @@ plt.rcParams.update(
 )
 
 
-def load_edge_changes(label: str, path: Path) -> pd.DataFrame:
+def load_edge_changes(label, path):
     if not path.exists():
         raise FileNotFoundError(f"Missing edge-change CSV: {path}")
     df = pd.read_csv(path)
@@ -86,8 +85,8 @@ def load_edge_changes(label: str, path: Path) -> pd.DataFrame:
     return df
 
 
-def build_groups(data: pd.DataFrame, result_labels: tuple[str, str]) -> list[dict[str, object]]:
-    groups: list[dict[str, object]] = []
+def build_groups(data, result_labels):
+    groups = []
     for result_index, result_label in enumerate(result_labels):
         base_position = result_index * 4.85
         for direction_index, (direction_key, direction_label) in enumerate(DIRECTION_ORDER):
@@ -118,11 +117,11 @@ def build_groups(data: pd.DataFrame, result_labels: tuple[str, str]) -> list[dic
     return groups
 
 
-def group_color(group: dict[str, object]) -> str:
+def group_color(group):
     return INCREMENT_COLOR if group["direction_key"] == "Improved" else DECREMENT_COLOR
 
 
-def write_group_summary(groups: list[dict[str, object]], output_base: Path) -> Path:
+def write_group_summary(groups, output_base):
     rows = []
     for group in groups:
         values = np.asarray(group["values"], dtype=np.float64)
@@ -146,7 +145,7 @@ def write_group_summary(groups: list[dict[str, object]], output_base: Path) -> P
     return path
 
 
-def fdr_bh(p_values: list[float]) -> list[float]:
+def fdr_bh(p_values):
     p_array = np.asarray(p_values, dtype=np.float64)
     q_values = np.full(p_array.shape, np.nan, dtype=np.float64)
     valid = np.isfinite(p_array)
@@ -169,7 +168,7 @@ def fdr_bh(p_values: list[float]) -> list[float]:
     return q_values.tolist()
 
 
-def inter_intra_tests(groups: list[dict[str, object]]) -> list[dict[str, object]]:
+def inter_intra_tests(groups):
     rows = []
     for left, right in zip(groups[0::2], groups[1::2], strict=True):
         left_values = np.asarray(left["values"], dtype=np.float64)
@@ -200,7 +199,7 @@ def inter_intra_tests(groups: list[dict[str, object]]) -> list[dict[str, object]
     return rows
 
 
-def write_test_summary(test_rows: list[dict[str, object]], output_base: Path) -> Path:
+def write_test_summary(test_rows, output_base):
     export_rows = []
     for row in test_rows:
         export_row = {
@@ -214,7 +213,7 @@ def write_test_summary(test_rows: list[dict[str, object]], output_base: Path) ->
     return path
 
 
-def significance_label(p_value: float) -> str:
+def significance_label(p_value):
     if not np.isfinite(p_value):
         return ""
     if p_value < 0.001:
@@ -226,7 +225,7 @@ def significance_label(p_value: float) -> str:
     return ""
 
 
-def add_test_annotation(ax: plt.Axes, row: dict[str, object], y_limit: float) -> None:
+def add_test_annotation(ax, row, y_limit):
     x_left = float(row["left_position"])
     x_right = float(row["right_position"])
     label = significance_label(float(row["p_value_two_sided"]))
@@ -253,9 +252,7 @@ def add_test_annotation(ax: plt.Axes, row: dict[str, object], y_limit: float) ->
     )
 
 
-def plot_violin_summary(
-    groups: list[dict[str, object]], test_rows: list[dict[str, object]], output_base: Path
-) -> tuple[Path, Path]:
+def plot_violin_summary(groups, test_rows, output_base):
     positions = [float(group["position"]) for group in groups]
     values = [np.asarray(group["values"], dtype=np.float64) for group in groups]
     colors = [group_color(group) for group in groups]
@@ -344,7 +341,7 @@ def plot_violin_summary(
     return png_path, pdf_path
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-base",
@@ -362,7 +359,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     inputs = tuple((label, Path(path)) for label, path in args.input) if args.input else DEFAULT_INPUTS
     if len(inputs) != 2:

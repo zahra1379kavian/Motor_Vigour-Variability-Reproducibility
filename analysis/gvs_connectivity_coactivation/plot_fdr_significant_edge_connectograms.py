@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot FDR-significant edge-level FC results as circular connectograms."""
 
-from __future__ import annotations
 
 import re
 from pathlib import Path
@@ -95,13 +94,13 @@ ROI_LABELS = {
 }
 
 
-def clean_slug(text: str) -> str:
+def clean_slug(text):
     text = str(text)
     text = re.sub(r"[^A-Za-z0-9]+", "_", text)
     return text.strip("_").lower()
 
 
-def roi_group(roi: str) -> str:
+def roi_group(roi):
     base = str(roi).rsplit("_", 1)[0]
     if base in {"Occipital", "Fusiform"}:
         return "Visual"
@@ -116,11 +115,11 @@ def roi_group(roi: str) -> str:
     return "Cingulate-Temporal"
 
 
-def roi_base(roi: str) -> str:
+def roi_base(roi):
     return str(roi).rsplit("_", 1)[0]
 
 
-def roi_side(roi: str) -> str:
+def roi_side(roi):
     if str(roi).endswith("_L"):
         return "L"
     if str(roi).endswith("_R"):
@@ -128,22 +127,16 @@ def roi_side(roi: str) -> str:
     return ""
 
 
-def roi_display_label(roi: str) -> str:
+def roi_display_label(roi):
     base = roi_base(roi)
     return ROI_LABELS.get(base, base.replace("_", " "))
 
 
-def roi_sort_key(roi: str) -> tuple[int, str, str]:
+def roi_sort_key(roi):
     return GROUP_ORDER.index(roi_group(roi)), roi_base(roi), str(roi)
 
 
-def add_side_layout(
-    side_rois: list[str],
-    start_deg: float,
-    end_deg: float,
-    angles: dict[str, float],
-    sectors: list[tuple[str, float, float]],
-) -> None:
+def add_side_layout(side_rois, start_deg, end_deg, angles, sectors):
     if not side_rois:
         return
 
@@ -167,25 +160,25 @@ def add_side_layout(
         start_idx = stop_idx
 
 
-def circular_layout(rois: list[str]) -> tuple[list[str], dict[str, float], list[tuple[str, float, float]]]:
+def circular_layout(rois):
     left_rois = sorted([roi for roi in rois if roi_side(roi) == "L"], key=roi_sort_key)
     right_rois = sorted([roi for roi in rois if roi_side(roi) == "R"], key=roi_sort_key)
     midline_rois = sorted([roi for roi in rois if roi_side(roi) not in {"L", "R"}], key=roi_sort_key)
     ordered = left_rois + right_rois + midline_rois
 
-    angles: dict[str, float] = {}
-    sectors: list[tuple[str, float, float]] = []
+    angles = {}
+    sectors = []
     add_side_layout(left_rois, 112.0, 248.0, angles, sectors)
     add_side_layout(right_rois, 68.0, -68.0, angles, sectors)
     add_side_layout(midline_rois, 268.0, 272.0, angles, sectors)
     return ordered, angles, sectors
 
 
-def pol2cart(theta: float, radius: float = 1.0) -> np.ndarray:
+def pol2cart(theta, radius=1.0):
     return np.array([radius * np.cos(theta), radius * np.sin(theta)])
 
 
-def draw_chord(ax: plt.Axes, theta1: float, theta2: float, color: str, width: float, alpha: float) -> None:
+def draw_chord(ax, theta1, theta2, color, width, alpha):
     p1 = pol2cart(theta1, 0.93)
     p2 = pol2cart(theta2, 0.93)
     c1 = p1 * 0.18
@@ -195,7 +188,7 @@ def draw_chord(ax: plt.Axes, theta1: float, theta2: float, color: str, width: fl
     ax.add_patch(patch)
 
 
-def label_rotation(theta: float) -> tuple[float, str]:
+def label_rotation(theta):
     deg = np.rad2deg(theta)
     rot = deg + 180 if np.cos(theta) < 0 else deg
     rot = ((rot + 180) % 360) - 180
@@ -207,7 +200,7 @@ def label_rotation(theta: float) -> tuple[float, str]:
     return rot, ha
 
 
-def sector_label_rotation(theta: float) -> tuple[float, str]:
+def sector_label_rotation(theta):
     x_direction = np.cos(theta)
     if abs(x_direction) < 0.25:
         ha = "center"
@@ -216,7 +209,7 @@ def sector_label_rotation(theta: float) -> tuple[float, str]:
     return 0.0, ha
 
 
-def draw_group_legend(fig: plt.Figure) -> None:
+def draw_group_legend(fig):
     handles = [
         Line2D(
             [0],
@@ -243,18 +236,7 @@ def draw_group_legend(fig: plt.Figure) -> None:
     )
 
 
-def draw_connectogram_panel(
-    ax: plt.Axes,
-    df: pd.DataFrame,
-    ordered_rois: list[str],
-    angles: dict[str, float],
-    sectors: list[tuple[str, float, float]],
-    cmap: matplotlib.colors.Colormap,
-    norm: Normalize,
-    max_abs: float,
-    sparse_edges: bool,
-    show_sector_labels: bool = True,
-) -> None:
+def draw_connectogram_panel(ax, df, ordered_rois, angles, sectors, cmap, norm, max_abs, sparse_edges, show_sector_labels=True):
     ax.set_aspect("equal")
     ax.axis("off")
     ax.add_patch(Circle((0, 0), 0.91, facecolor="white", edgecolor="#D0D0D0", linewidth=1.0, zorder=0))
@@ -327,7 +309,7 @@ def draw_connectogram_panel(
     ax.set_ylim(-1.30, 1.30)
 
 
-def panel_abs_limits(df: pd.DataFrame) -> tuple[float, float]:
+def panel_abs_limits(df):
     values = pd.to_numeric(df["mean"], errors="coerce").abs().to_numpy(dtype=float)
     finite_values = values[np.isfinite(values)]
     if finite_values.size == 0:
@@ -343,7 +325,7 @@ def panel_abs_limits(df: pd.DataFrame) -> tuple[float, float]:
     return vmin, vmax
 
 
-def plot_connectogram(df: pd.DataFrame, roi_order: list[str], path_base: Path, save_pdf: bool = True) -> None:
+def plot_connectogram(df, roi_order, path_base, save_pdf=True):
     ordered_rois, angles, sectors = circular_layout(roi_order)
 
     sparse_edges = len(df) <= 30
@@ -402,7 +384,7 @@ def plot_connectogram(df: pd.DataFrame, roi_order: list[str], path_base: Path, s
     plt.close(fig)
 
 
-def node_involvement(df: pd.DataFrame) -> pd.DataFrame:
+def node_involvement(df):
     rows = []
     for row in df.itertuples(index=False):
         for roi in [row.roi_i, row.roi_j]:
@@ -436,7 +418,7 @@ def node_involvement(df: pd.DataFrame) -> pd.DataFrame:
     return out.sort_values(["total_abs_delta", "n_sig_edges", "mean_abs_delta"], ascending=False)
 
 
-def plot_node_involvement(node_df: pd.DataFrame, path_base: Path, title: str, subtitle: str) -> None:
+def plot_node_involvement(node_df, path_base, title, subtitle):
     plot_df = node_df.head(TOP_NODES).iloc[::-1].copy()
     fig, ax = plt.subplots(figsize=(8.6, 6.0))
     colors = [GROUP_COLORS.get(group, "#808080") for group in plot_df["group"]]
@@ -471,7 +453,7 @@ def plot_node_involvement(node_df: pd.DataFrame, path_base: Path, title: str, su
     plt.close(fig)
 
 
-def main() -> None:
+def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     sig = pd.read_csv(SIG_CSV, low_memory=False)
     sig = sig.loc[sig["sig_fdr"].astype(bool)].copy()

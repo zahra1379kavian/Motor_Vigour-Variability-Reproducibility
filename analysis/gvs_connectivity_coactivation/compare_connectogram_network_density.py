@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Density-normalized comparison of two FDR-significant connectogram networks."""
 
-from __future__ import annotations
 
 import argparse
 import itertools
 import math
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -35,29 +33,29 @@ NETWORK_ORDER = ("task_activation_z3p1", "main_result")
 DIRECTIONS = ("any", "improved", "decreased")
 
 
-@dataclass(frozen=True)
 class NetworkSpec:
-    name: str
-    sig_csv: Path
-    stats_csv: Path
-    roi_csv: Path
+    def __init__(self, name, sig_csv, stats_csv, roi_csv):
+        self.name = name
+        self.sig_csv = sig_csv
+        self.stats_csv = stats_csv
+        self.roi_csv = roi_csv
 
 
-@dataclass
 class NetworkData:
-    spec: NetworkSpec
-    rois: list[str]
-    sig: pd.DataFrame
-    stats: pd.DataFrame
+    def __init__(self, spec, rois, sig, stats):
+        self.spec = spec
+        self.rois = rois
+        self.sig = sig
+        self.stats = stats
 
 
-def as_bool(series: pd.Series) -> pd.Series:
+def as_bool(series):
     if series.dtype == bool:
         return series
     return series.astype(str).str.lower().isin({"true", "1", "yes"})
 
 
-def roi_hemi(roi: str) -> str:
+def roi_hemi(roi):
     text = str(roi)
     if text.endswith("_L"):
         return "L"
@@ -66,7 +64,7 @@ def roi_hemi(roi: str) -> str:
     return "NA"
 
 
-def roi_base(roi: str) -> str:
+def roi_base(roi):
     text = str(roi)
     hemi = roi_hemi(text)
     if hemi in {"L", "R"}:
@@ -74,11 +72,11 @@ def roi_base(roi: str) -> str:
     return text
 
 
-def display_group(group: str) -> str:
+def display_group(group):
     return GROUP_LABELS.get(group, group)
 
 
-def ordered_group_pair(group_i: str, group_j: str) -> tuple[str, str]:
+def ordered_group_pair(group_i, group_j):
     group_index = {group: idx for idx, group in enumerate(GROUP_ORDER)}
     key_i = group_index.get(group_i, len(group_index))
     key_j = group_index.get(group_j, len(group_index))
@@ -87,12 +85,12 @@ def ordered_group_pair(group_i: str, group_j: str) -> tuple[str, str]:
     return group_j, group_i
 
 
-def canonical_edge(roi_i: str, roi_j: str) -> str:
+def canonical_edge(roi_i, roi_j):
     left, right = sorted([str(roi_i), str(roi_j)])
     return f"{left}--{right}"
 
 
-def filter_scope(df: pd.DataFrame, metric: str, analysis_view: str, fdr_scope: str) -> pd.DataFrame:
+def filter_scope(df, metric, analysis_view, fdr_scope):
     out = df.loc[
         df["metric"].astype(str).eq(metric)
         & df["analysis_view"].astype(str).eq(analysis_view)
@@ -105,7 +103,7 @@ def filter_scope(df: pd.DataFrame, metric: str, analysis_view: str, fdr_scope: s
     return out
 
 
-def load_network(spec: NetworkSpec, metric: str, analysis_view: str, fdr_scope: str) -> NetworkData:
+def load_network(spec, metric, analysis_view, fdr_scope):
     rois = pd.read_csv(spec.roi_csv)["roi_label"].astype(str).tolist()
     sig = filter_scope(pd.read_csv(spec.sig_csv, low_memory=False), metric, analysis_view, fdr_scope)
     if "sig_fdr" in sig.columns:
@@ -114,7 +112,7 @@ def load_network(spec: NetworkSpec, metric: str, analysis_view: str, fdr_scope: 
     return NetworkData(spec=spec, rois=rois, sig=sig, stats=stats)
 
 
-def build_possible_edges(rois: list[str]) -> pd.DataFrame:
+def build_possible_edges(rois):
     rows = []
     for roi_i, roi_j in itertools.combinations(rois, 2):
         hemi_i = roi_hemi(roi_i)
@@ -147,7 +145,7 @@ def build_possible_edges(rois: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def profile_network(data: NetworkData, rois: list[str], roi_set: str) -> dict[str, object]:
+def profile_network(data, rois, roi_set):
     roi_set_values = set(rois)
     possible = build_possible_edges(rois)
     sig = data.sig.loc[data.sig["roi_i"].isin(roi_set_values) & data.sig["roi_j"].isin(roi_set_values)].copy()
@@ -157,7 +155,7 @@ def profile_network(data: NetworkData, rois: list[str], roi_set: str) -> dict[st
     stats = stats.merge(possible.drop(columns=["roi_i", "roi_j"]), on="edge", how="left", validate="one_to_one")
     if sig["hemisphere_class"].isna().any():
         bad = ", ".join(sig.loc[sig["hemisphere_class"].isna(), "edge"].head(5))
-        raise RuntimeError(f"{data.spec.name}: significant edges missing from possible edge set: {bad}")
+        raise ValueError(f"{data.spec.name}: significant edges missing from possible edge set: {bad}")
 
     return {
         "network": data.spec.name,
@@ -169,13 +167,13 @@ def profile_network(data: NetworkData, rois: list[str], roi_set: str) -> dict[st
     }
 
 
-def direction_sig(sig: pd.DataFrame, direction: str) -> pd.DataFrame:
+def direction_sig(sig, direction):
     if direction == "any":
         return sig
     return sig.loc[sig["direction"].eq(direction)].copy()
 
 
-def summarize_effects(sig: pd.DataFrame) -> dict[str, float]:
+def summarize_effects(sig):
     if sig.empty:
         return {
             "mean_signed_effect": np.nan,
@@ -191,7 +189,7 @@ def summarize_effects(sig: pd.DataFrame) -> dict[str, float]:
     }
 
 
-def density_row(profile: dict[str, object], feature_family: str, feature: str, possible: pd.DataFrame, sig: pd.DataFrame, direction: str) -> dict[str, object]:
+def density_row(profile, feature_family, feature, possible, sig, direction):
     n_possible = int(possible.shape[0])
     n_sig = int(sig.shape[0])
     row = {
@@ -210,7 +208,7 @@ def density_row(profile: dict[str, object], feature_family: str, feature: str, p
     return row
 
 
-def network_summary_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def network_summary_rows(profiles):
     rows = []
     for profile in profiles:
         rois = list(profile["rois"])
@@ -224,7 +222,7 @@ def network_summary_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def hemisphere_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def hemisphere_density_rows(profiles):
     selectors = {
         "within_hemisphere": lambda df: df["hemisphere_class"].eq("within_hemisphere"),
         "within_l_hemisphere": lambda df: df["hemisphere_subclass"].eq("within_l_hemisphere"),
@@ -246,7 +244,7 @@ def hemisphere_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def anatomical_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def anatomical_density_rows(profiles):
     rows = []
     for profile in profiles:
         possible = profile["possible"]
@@ -267,7 +265,7 @@ def anatomical_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def group_pair_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def group_pair_density_rows(profiles):
     rows = []
     for profile in profiles:
         possible = profile["possible"]
@@ -281,7 +279,7 @@ def group_pair_density_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def node_involvement_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def node_involvement_rows(profiles):
     rows = []
     for profile in profiles:
         rois = list(profile["rois"])
@@ -309,7 +307,7 @@ def node_involvement_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def odds_ratio_ci(a: int, b: int, c: int, d: int) -> tuple[float, float]:
+def odds_ratio_ci(a, b, c, d):
     cells = np.array([a, b, c, d], dtype=float)
     if np.any(cells == 0):
         cells += 0.5
@@ -319,7 +317,7 @@ def odds_ratio_ci(a: int, b: int, c: int, d: int) -> tuple[float, float]:
     return float(math.exp(log_or - 1.96 * se)), float(math.exp(log_or + 1.96 * se))
 
 
-def log_odds_ratio_and_se(a: int, b: int, c: int, d: int) -> tuple[float, float]:
+def log_odds_ratio_and_se(a, b, c, d):
     cells = np.array([a, b, c, d], dtype=float)
     if np.any(cells == 0):
         cells += 0.5
@@ -329,7 +327,7 @@ def log_odds_ratio_and_se(a: int, b: int, c: int, d: int) -> tuple[float, float]
     return float(log_or), float(se)
 
 
-def density_ratio(numerator_sig: int, numerator_possible: int, denominator_sig: int, denominator_possible: int) -> float:
+def density_ratio(numerator_sig, numerator_possible, denominator_sig, denominator_possible):
     numerator_density = numerator_sig / numerator_possible if numerator_possible else np.nan
     denominator_density = denominator_sig / denominator_possible if denominator_possible else np.nan
     if not np.isfinite(numerator_density) or not np.isfinite(denominator_density):
@@ -339,11 +337,11 @@ def density_ratio(numerator_sig: int, numerator_possible: int, denominator_sig: 
     return float(numerator_density / denominator_density)
 
 
-def fisher_compare(a_sig: int, a_possible: int, b_sig: int, b_possible: int) -> dict[str, float]:
+def fisher_compare(a_sig, a_possible, b_sig, b_possible):
     a_not = int(a_possible - a_sig)
     b_not = int(b_possible - b_sig)
     if min(a_sig, a_not, b_sig, b_not) < 0:
-        raise RuntimeError("Significant edge count cannot exceed possible edge count")
+        raise ValueError("Significant edge count cannot exceed possible edge count")
     if a_possible == 0 or b_possible == 0:
         return {
             "density_a": np.nan,
@@ -371,7 +369,7 @@ def fisher_compare(a_sig: int, a_possible: int, b_sig: int, b_possible: int) -> 
     }
 
 
-def bh_q_values(p_values: pd.Series) -> pd.Series:
+def bh_q_values(p_values):
     p = pd.to_numeric(p_values, errors="coerce").to_numpy(dtype=float)
     q = np.full_like(p, np.nan, dtype=float)
     finite = np.isfinite(p)
@@ -388,7 +386,7 @@ def bh_q_values(p_values: pd.Series) -> pd.Series:
     return pd.Series(q, index=p_values.index)
 
 
-def compare_density_table(density: pd.DataFrame, feature_family: str) -> pd.DataFrame:
+def compare_density_table(density, feature_family):
     rows = []
     table = density.loc[density["feature_family"].eq(feature_family)].copy()
     key_cols = ["roi_set", "feature", "direction"]
@@ -431,7 +429,7 @@ def compare_density_table(density: pd.DataFrame, feature_family: str) -> pd.Data
     return out
 
 
-def hemisphere_enrichment_rows(hemisphere_density: pd.DataFrame) -> pd.DataFrame:
+def hemisphere_enrichment_rows(hemisphere_density):
     return enrichment_rows(
         hemisphere_density,
         numerator_feature="between_hemisphere",
@@ -442,14 +440,7 @@ def hemisphere_enrichment_rows(hemisphere_density: pd.DataFrame) -> pd.DataFrame
     )
 
 
-def enrichment_rows(
-    density: pd.DataFrame,
-    numerator_feature: str,
-    denominator_feature: str,
-    contrast: str,
-    numerator_label: str,
-    denominator_label: str,
-) -> pd.DataFrame:
+def enrichment_rows(density, numerator_feature, denominator_feature, contrast, numerator_label, denominator_label):
     rows = []
     base = density.loc[density["feature"].isin([numerator_feature, denominator_feature])].copy()
     for key, group in base.groupby(["network", "roi_set", "direction"], sort=False, dropna=False):
@@ -493,12 +484,7 @@ def enrichment_rows(
     return out
 
 
-def enrichment_network_comparison(
-    density: pd.DataFrame,
-    numerator_feature: str,
-    denominator_feature: str,
-    contrast: str,
-) -> pd.DataFrame:
+def enrichment_network_comparison(density, numerator_feature, denominator_feature, contrast):
     rows = []
     base = density.loc[density["feature"].isin([numerator_feature, denominator_feature])].copy()
     for key, group in base.groupby(["roi_set", "direction"], sort=False, dropna=False):
@@ -573,7 +559,7 @@ def enrichment_network_comparison(
     return out
 
 
-def node_comparison_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def node_comparison_rows(profiles):
     rows = []
     common_profiles = [profile for profile in profiles if profile["roi_set"] == "common_roi_set"]
     profiles_by_network = {profile["network"]: profile for profile in common_profiles}
@@ -617,7 +603,7 @@ def node_comparison_rows(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return out
 
 
-def corr_or_nan(left: pd.Series, right: pd.Series, method: str = "pearson") -> float:
+def corr_or_nan(left, right, method="pearson"):
     values = pd.concat([left, right], axis=1).replace([np.inf, -np.inf], np.nan).dropna()
     if values.shape[0] < 2:
         return np.nan
@@ -626,7 +612,7 @@ def corr_or_nan(left: pd.Series, right: pd.Series, method: str = "pearson") -> f
     return float(values.iloc[:, 0].corr(values.iloc[:, 1], method=method))
 
 
-def cosine_or_nan(left: pd.Series, right: pd.Series) -> float:
+def cosine_or_nan(left, right):
     values = pd.concat([left, right], axis=1).replace([np.inf, -np.inf], np.nan).dropna()
     if values.empty:
         return np.nan
@@ -638,7 +624,7 @@ def cosine_or_nan(left: pd.Series, right: pd.Series) -> float:
     return float(np.dot(a, b) / denom)
 
 
-def edge_set_similarity(profiles: list[dict[str, object]]) -> pd.DataFrame:
+def edge_set_similarity(profiles):
     profiles_by_network = {profile["network"]: profile for profile in profiles if profile["roi_set"] == "common_roi_set"}
     task = profiles_by_network["task_activation_z3p1"]
     main = profiles_by_network["main_result"]
@@ -708,7 +694,7 @@ def edge_set_similarity(profiles: list[dict[str, object]]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def distribution_similarity(group_density: pd.DataFrame) -> pd.DataFrame:
+def distribution_similarity(group_density):
     rows = []
     table = group_density.loc[group_density["feature_family"].eq("group_pair")].copy()
     for key, group in table.groupby(["roi_set", "direction"], sort=False, dropna=False):
@@ -748,7 +734,7 @@ def distribution_similarity(group_density: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def significant_changes(*comparison_tables: tuple[str, pd.DataFrame]) -> pd.DataFrame:
+def significant_changes(*comparison_tables):
     rows = []
     for family, table in comparison_tables:
         if table.empty or "q_bh" not in table.columns:
@@ -811,7 +797,7 @@ def significant_changes(*comparison_tables: tuple[str, pd.DataFrame]) -> pd.Data
     )
 
 
-def nominal_changes(*comparison_tables: tuple[str, pd.DataFrame]) -> pd.DataFrame:
+def nominal_changes(*comparison_tables):
     rows = []
     for family, table in comparison_tables:
         if table.empty:
@@ -867,14 +853,14 @@ def nominal_changes(*comparison_tables: tuple[str, pd.DataFrame]) -> pd.DataFram
     )
 
 
-def write_report(out_dir: Path, tables: dict[str, pd.DataFrame], args: argparse.Namespace) -> None:
+def write_report(out_dir, tables, args):
     summary = tables["network_summary_density"]
     hemi_enrichment = tables["hemisphere_enrichment"]
     sig_changes = tables["significant_network_differences_q05"]
     nominal = tables["nominal_network_differences_p05"]
     similarity = tables["edge_set_similarity"]
 
-    def fmt_pct(value: float) -> str:
+    def fmt_pct(value):
         return "NA" if pd.isna(value) else f"{100 * value:.2f}%"
 
     any_full = summary.loc[summary["roi_set"].eq("full_network") & summary["direction"].eq("any")]
@@ -966,7 +952,7 @@ def write_report(out_dir: Path, tables: dict[str, pd.DataFrame], args: argparse.
     (out_dir / "NETWORK_DENSITY_COMPARISON_REPORT.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metric", default=DEFAULT_METRIC)
     parser.add_argument("--analysis-view", default=DEFAULT_ANALYSIS_VIEW)
@@ -981,7 +967,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
+def main():
     args = parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 

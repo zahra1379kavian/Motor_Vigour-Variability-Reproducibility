@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """Edge-wise FC sensitivity across linear and nonlinear connectivity metrics."""
 
-from __future__ import annotations
 
 import importlib.util
 import sys
 import warnings
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -22,7 +20,7 @@ OUT = ROOT / "results" / "main" / "figure_07a_gvs_vigour_connectogram" / "metric
 def load_base_module():
     spec = importlib.util.spec_from_file_location("gvs_network_analyses", BASE_SCRIPT)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not import {BASE_SCRIPT}")
+        raise ImportError(f"Could not import {BASE_SCRIPT}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -39,7 +37,7 @@ except Exception:
     HAS_LEDOIT_WOLF = False
 
 
-def prepare_complete_matrix(values: np.ndarray, min_obs: int = 4) -> tuple[np.ndarray, np.ndarray]:
+def prepare_complete_matrix(values, min_obs=4):
     arr = np.asarray(values, dtype=float)
     if arr.ndim != 2 or arr.shape[0] < min_obs:
         return np.empty((0, 0), dtype=float), np.array([], dtype=int)
@@ -53,13 +51,13 @@ def prepare_complete_matrix(values: np.ndarray, min_obs: int = 4) -> tuple[np.nd
     return work, np.flatnonzero(finite_cols)
 
 
-def fill_full_edges(corr: np.ndarray, valid_idx: np.ndarray, n_rois: int) -> np.ndarray:
+def fill_full_edges(corr, valid_idx, n_rois):
     full = np.full((n_rois, n_rois), np.nan, dtype=float)
     full[np.ix_(valid_idx, valid_idx)] = corr
     return full[np.triu_indices(n_rois, k=1)]
 
 
-def pearson_edges(values: np.ndarray) -> np.ndarray:
+def pearson_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -71,7 +69,7 @@ def pearson_edges(values: np.ndarray) -> np.ndarray:
     return fill_full_edges(corr, valid_idx, n_rois)
 
 
-def spearman_edges(values: np.ndarray) -> np.ndarray:
+def spearman_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -84,7 +82,7 @@ def spearman_edges(values: np.ndarray) -> np.ndarray:
     return fill_full_edges(corr, valid_idx, n_rois)
 
 
-def partial_corr_edges(values: np.ndarray) -> np.ndarray:
+def partial_corr_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -111,7 +109,7 @@ def partial_corr_edges(values: np.ndarray) -> np.ndarray:
     return fill_full_edges(partial, valid_idx, n_rois)
 
 
-def covariance_edges(values: np.ndarray) -> np.ndarray:
+def covariance_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -122,7 +120,7 @@ def covariance_edges(values: np.ndarray) -> np.ndarray:
     return fill_full_edges(cov, valid_idx, n_rois)
 
 
-def precision_edges(values: np.ndarray) -> np.ndarray:
+def precision_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -139,7 +137,7 @@ def precision_edges(values: np.ndarray) -> np.ndarray:
     return fill_full_edges(precision, valid_idx, n_rois)
 
 
-def quantile_codes(x: np.ndarray, n_bins: int = 3) -> np.ndarray:
+def quantile_codes(x, n_bins=3):
     x = np.asarray(x, dtype=float)
     if x.size == 0 or np.nanstd(x) == 0:
         return np.zeros(x.size, dtype=int)
@@ -150,7 +148,7 @@ def quantile_codes(x: np.ndarray, n_bins: int = 3) -> np.ndarray:
     return np.minimum(codes, bins - 1)
 
 
-def mutual_information_pair(x: np.ndarray, y: np.ndarray, *, normalized: bool = False) -> float:
+def mutual_information_pair(x, y, *, normalized=False):
     finite = np.isfinite(x) & np.isfinite(y)
     x = x[finite].astype(float)
     y = y[finite].astype(float)
@@ -176,7 +174,7 @@ def mutual_information_pair(x: np.ndarray, y: np.ndarray, *, normalized: bool = 
     return float(mi / norm) if norm > 0 else 0.0
 
 
-def mutual_information_edges(values: np.ndarray) -> np.ndarray:
+def mutual_information_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -188,7 +186,7 @@ def mutual_information_edges(values: np.ndarray) -> np.ndarray:
     return edges
 
 
-def normalized_mutual_information_edges(values: np.ndarray) -> np.ndarray:
+def normalized_mutual_information_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -200,7 +198,7 @@ def normalized_mutual_information_edges(values: np.ndarray) -> np.ndarray:
     return edges
 
 
-def rbf_kernel_1d(x: np.ndarray) -> np.ndarray:
+def rbf_kernel_1d(x):
     x = np.asarray(x, dtype=float)
     diffs = x[:, None] - x[None, :]
     d2 = diffs * diffs
@@ -211,11 +209,11 @@ def rbf_kernel_1d(x: np.ndarray) -> np.ndarray:
     return np.exp(-d2 / (2.0 * sigma2))
 
 
-def centered_kernel(kernel: np.ndarray) -> np.ndarray:
+def centered_kernel(kernel):
     return kernel - kernel.mean(axis=0, keepdims=True) - kernel.mean(axis=1, keepdims=True) + kernel.mean()
 
 
-def rbf_hsic_pair(x: np.ndarray, y: np.ndarray) -> float:
+def rbf_hsic_pair(x, y):
     finite = np.isfinite(x) & np.isfinite(y)
     x = x[finite].astype(float)
     y = y[finite].astype(float)
@@ -230,7 +228,7 @@ def rbf_hsic_pair(x: np.ndarray, y: np.ndarray) -> float:
     return float(hsic / norm) if norm > 0 else 0.0
 
 
-def rbf_hsic_edges(values: np.ndarray) -> np.ndarray:
+def rbf_hsic_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -242,7 +240,7 @@ def rbf_hsic_edges(values: np.ndarray) -> np.ndarray:
     return edges
 
 
-def distance_correlation_pair(x: np.ndarray, y: np.ndarray) -> float:
+def distance_correlation_pair(x, y):
     finite = np.isfinite(x) & np.isfinite(y)
     x = x[finite].astype(float)
     y = y[finite].astype(float)
@@ -261,7 +259,7 @@ def distance_correlation_pair(x: np.ndarray, y: np.ndarray) -> float:
     return float(np.sqrt(max(dcov2 / denom, 0.0)))
 
 
-def distance_corr_edges(values: np.ndarray) -> np.ndarray:
+def distance_corr_edges(values):
     arr = np.asarray(values, dtype=float)
     n_rois = arr.shape[1] if arr.ndim == 2 else 0
     edges = np.full(n_rois * (n_rois - 1) // 2, np.nan, dtype=float)
@@ -273,8 +271,7 @@ def distance_corr_edges(values: np.ndarray) -> np.ndarray:
     return edges
 
 
-MetricFn = Callable[[np.ndarray], np.ndarray]
-METRICS: list[tuple[str, str, MetricFn]] = [
+METRICS = [
     ("pearson_r", "linear_correlation", pearson_edges),
     ("covariance", "linear_covariance", covariance_edges),
     ("spearman_rho", "rank_monotonic", spearman_edges),
@@ -287,8 +284,8 @@ METRICS: list[tuple[str, str, MetricFn]] = [
 ]
 
 
-def block_edge_deltas(data, metric_name: str, metric_fn: MetricFn, edge_index: pd.DataFrame) -> pd.DataFrame:
-    edge_lookup: dict[tuple[object, ...], np.ndarray] = {}
+def block_edge_deltas(data, metric_name, metric_fn, edge_index):
+    edge_lookup = {}
     blocks = []
     group_cols = ["subject", "session", "medication", "run", "run_id", "condition_label", "condition_code"]
     for key, block_df in data.trial.groupby(group_cols, sort=False):
@@ -324,18 +321,7 @@ def block_edge_deltas(data, metric_name: str, metric_fn: MetricFn, edge_index: p
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
-def append_stats(
-    rows: list[pd.DataFrame],
-    matrix: pd.DataFrame,
-    *,
-    metric: str,
-    metric_family: str,
-    analysis_view: str,
-    label: str,
-    fdr_scope: str,
-    rng: np.random.Generator,
-    **metadata,
-) -> None:
+def append_stats(rows, matrix, *, metric, metric_family, analysis_view, label, fdr_scope, rng, **metadata):
     if matrix.empty:
         return
     stats_df = base.one_sample_matrix_summary(matrix, label=label, rng=rng)
@@ -348,8 +334,8 @@ def append_stats(
     rows.append(stats_df)
 
 
-def metric_stats(edge_delta: pd.DataFrame, metric: str, metric_family: str, rng: np.random.Generator) -> pd.DataFrame:
-    rows: list[pd.DataFrame] = []
+def metric_stats(edge_delta, metric, metric_family, rng):
+    rows = []
     edge_cols = ["edge_id", "roi_i", "roi_j", "edge_label"]
     if edge_delta.empty:
         return pd.DataFrame()
@@ -581,7 +567,7 @@ def metric_stats(edge_delta: pd.DataFrame, metric: str, metric_family: str, rng:
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
 
-def summarize_stats(stats_df: pd.DataFrame) -> pd.DataFrame:
+def summarize_stats(stats_df):
     rows = []
     group_cols = ["metric", "metric_family", "analysis_view", "fdr_scope"]
     for key, group in stats_df.groupby(group_cols, dropna=False, sort=False):
@@ -610,7 +596,7 @@ def summarize_stats(stats_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(["n_sig_fdr", "min_q_fdr", "metric", "analysis_view"], ascending=[False, True, True, True])
 
 
-def main() -> None:
+def main():
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     OUT.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(base.RNG_SEED)

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Threshold-robustness analysis for the final voxel-weight network."""
 
-from __future__ import annotations
 
 import argparse
 import json
 import re
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -94,24 +92,24 @@ COARSE_AAL_GROUPS = (
 )
 
 
-@dataclass(frozen=True)
 class ROIGroup:
-    name: str
-    source: str
-    mask: np.ndarray
-    matched_labels: tuple[str, ...]
+    def __init__(self, name, source, mask, matched_labels):
+        self.name = name
+        self.source = source
+        self.mask = mask
+        self.matched_labels = matched_labels
 
 
-def _pct_label(percentile: float) -> str:
+def _pct_label(percentile):
     return f"p{percentile:g}".replace(".", "p")
 
 
-def _bold_figure_text(fig: plt.Figure) -> None:
+def _bold_figure_text(fig):
     for text in fig.findobj(match=Text):
         text.set_fontweight("bold")
 
 
-def _coarse_aal_group_name(label_name: str) -> str:
+def _coarse_aal_group_name(label_name):
     name = re.sub(r"_(L|R)$", "", label_name)
     for group_name, prefixes, exact_names in COARSE_AAL_GROUPS:
         if name in exact_names or any(name.startswith(prefix) for prefix in prefixes):
@@ -119,7 +117,7 @@ def _coarse_aal_group_name(label_name: str) -> str:
     return name
 
 
-def _resample_label_img(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Image) -> np.ndarray:
+def _resample_label_img(label_img, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     resampled = image.resample_to_img(
@@ -132,11 +130,7 @@ def _resample_label_img(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Ima
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
-def _build_roi_groups(
-    reference_img: nib.Nifti1Image,
-    aal_version: str,
-    cache_dir: Path | None,
-) -> tuple[list[ROIGroup], dict[str, object]]:
+def _build_roi_groups(reference_img, aal_version, cache_dir):
     data_dir = str(cache_dir) if cache_dir is not None else None
     atlas = datasets.fetch_atlas_aal(version=aal_version, data_dir=data_dir, verbose=0)
     atlas_img = atlas.maps if isinstance(atlas.maps, nib.Nifti1Image) else nib.load(atlas.maps)
@@ -147,8 +141,8 @@ def _build_roi_groups(
         for label_value, label_name in zip(atlas.indices, atlas.labels)
         if int(label_value) != 0 and str(label_name).lower() != "background"
     ]
-    group_masks: dict[str, np.ndarray] = {}
-    group_labels: dict[str, list[str]] = {}
+    group_masks = {}
+    group_labels = {}
     for label_value, name in label_pairs:
         mask = atlas_data == label_value
         if not np.any(mask):
@@ -188,15 +182,7 @@ def _build_roi_groups(
     return groups, metadata
 
 
-def _assign_threshold_regions(
-    weights: np.ndarray,
-    affine: np.ndarray,
-    mask: np.ndarray,
-    groups: list[ROIGroup],
-    percentile: float,
-    threshold_value: float,
-    min_report_voxels: int,
-) -> pd.DataFrame:
+def _assign_threshold_regions(weights, affine, mask, groups, percentile, threshold_value, min_report_voxels):
     selected_ijk = np.column_stack(np.nonzero(mask)).astype(np.int32, copy=False)
     if selected_ijk.size == 0:
         return pd.DataFrame()
@@ -213,7 +199,7 @@ def _assign_threshold_regions(
 
     coords_mm = nib.affines.apply_affine(affine, selected_ijk)
     selected_weights = weights[x, y, z]
-    rows: list[dict[str, object]] = []
+    rows = []
     for group_id in np.unique(assigned):
         positions = np.flatnonzero(assigned == group_id)
         if positions.size == 0:
@@ -244,15 +230,7 @@ def _assign_threshold_regions(
     return pd.DataFrame(rows)
 
 
-def _summarize_threshold(
-    mask: np.ndarray,
-    threshold_masks: dict[float, np.ndarray],
-    region_df: pd.DataFrame,
-    percentile: float,
-    threshold_value: float,
-    min_report_voxels: int,
-    reference_regions: set[str],
-) -> dict[str, object]:
+def _summarize_threshold(mask, threshold_masks, region_df, percentile, threshold_value, min_report_voxels, reference_regions):
     labels, n_components = ndimage.label(mask)
     component_sizes = np.bincount(labels.ravel())
     largest_component = int(component_sizes[1:].max()) if component_sizes.size > 1 else 0
@@ -283,14 +261,14 @@ def _summarize_threshold(
     }
 
 
-def _make_group_label_data(groups: list[ROIGroup], shape: tuple[int, int, int]) -> np.ndarray:
+def _make_group_label_data(groups, shape):
     label_data = np.zeros(shape, dtype=np.int16)
     for label_id, group in enumerate(groups, start=1):
         label_data[group.mask] = label_id
     return label_data
 
 
-def _align_mask_to_affine(mask: np.ndarray, source_affine: np.ndarray, target_affine: np.ndarray) -> np.ndarray:
+def _align_mask_to_affine(mask, source_affine, target_affine):
     aligned = mask.copy()
     for axis in range(3):
         source_step = float(source_affine[axis, axis])
@@ -300,16 +278,13 @@ def _align_mask_to_affine(mask: np.ndarray, source_affine: np.ndarray, target_af
     return aligned
 
 
-def _reference_display_mask(
-    reference_html: Path,
-    reference_img: nib.Nifti1Image,
-) -> tuple[np.ndarray, dict[str, object]]:
+def _reference_display_mask(reference_html, reference_img):
     from analyze_ablation_constraints import _html_sprite_volumes
     from motor_overlap_overlay import motor_overlap_masks
 
     _, selected_mask, html_affine = _html_sprite_volumes(reference_html)
     if selected_mask.shape != reference_img.shape[:3]:
-        raise RuntimeError(
+        raise ValueError(
             f"{reference_html} overlay shape {selected_mask.shape} does not match "
             f"reference image shape {reference_img.shape[:3]}."
         )
@@ -331,7 +306,7 @@ def _reference_display_mask(
     return aligned_display_mask, metadata
 
 
-def _mode_projection(label_data: np.ndarray, axis: int) -> np.ndarray:
+def _mode_projection(label_data, axis):
     moved = np.moveaxis(label_data, axis, 0)
     projected = np.zeros(moved.shape[1:], dtype=np.int16)
     for idx in np.ndindex(projected.shape):
@@ -342,13 +317,13 @@ def _mode_projection(label_data: np.ndarray, axis: int) -> np.ndarray:
     return projected
 
 
-def _axis_values_mm(affine: np.ndarray, shape: tuple[int, int, int], axis: int) -> np.ndarray:
+def _axis_values_mm(affine, shape, axis):
     ijk = np.zeros((shape[axis], 3), dtype=float)
     ijk[:, axis] = np.arange(shape[axis])
     return nib.affines.apply_affine(affine, ijk)[:, axis]
 
 
-def _orient_panel(data: np.ndarray, x_values: np.ndarray, y_values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _orient_panel(data, x_values, y_values):
     out = data.copy()
     x = x_values.copy()
     y = y_values.copy()
@@ -361,16 +336,7 @@ def _orient_panel(data: np.ndarray, x_values: np.ndarray, y_values: np.ndarray) 
     return out, x, y
 
 
-def _plot_projection(
-    ax: plt.Axes,
-    data: np.ndarray,
-    x_values: np.ndarray,
-    y_values: np.ndarray,
-    title: str,
-    cmap: ListedColormap,
-    norm: BoundaryNorm,
-    square_span_mm: float | None = None,
-) -> None:
+def _plot_projection(ax, data, x_values, y_values, title, cmap, norm, square_span_mm=None):
     oriented, x, y = _orient_panel(data, x_values, y_values)
     ax.imshow(
         oriented.T,
@@ -396,11 +362,11 @@ def _plot_projection(
     ax.grid(color="white", linewidth=0.3, alpha=0.35)
 
 
-def _display_region_name(name: str) -> str:
+def _display_region_name(name):
     return name.replace("_", " ")
 
 
-def _reference_region_counts(region_df: pd.DataFrame, min_report_voxels: int) -> dict[str, int]:
+def _reference_region_counts(region_df, min_report_voxels):
     rows = region_df[
         np.isclose(region_df["percentile"], REFERENCE_THRESHOLD)
         & (region_df["n_voxels"] >= min_report_voxels)
@@ -409,25 +375,18 @@ def _reference_region_counts(region_df: pd.DataFrame, min_report_voxels: int) ->
     return {str(row.roi_name): int(row.n_voxels) for row in rows.itertuples(index=False)}
 
 
-def _atlas_region_label(name: str) -> str:
+def _atlas_region_label(name):
     return FULL_REGION_LABELS.get(name, _display_region_name(name))
 
 
-def _atlas_region_colors(groups: list[ROIGroup]) -> list[str]:
-    colors: list[str] = []
+def _atlas_region_colors(groups):
+    colors = []
     for idx, group in enumerate(groups):
         colors.append(HIGH_CONTRAST_REGION_COLORS.get(group.name, FALLBACK_REGION_COLORS[idx % len(FALLBACK_REGION_COLORS)]))
     return colors
 
 
-def _plot_atlas_regions(
-    groups: list[ROIGroup],
-    reference_img: nib.Nifti1Image,
-    metadata: dict[str, object],
-    out_base: Path,
-    region_df: pd.DataFrame,
-    min_report_voxels: int,
-) -> None:
+def _plot_atlas_regions(groups, reference_img, metadata, out_base, region_df, min_report_voxels):
     shape = reference_img.shape[:3]
     reference_counts = _reference_region_counts(region_df, min_report_voxels)
     selected_groups = [group for group in groups if group.name in reference_counts]
@@ -486,7 +445,7 @@ def _plot_atlas_regions(
     plt.close(fig)
 
 
-def _plot_robustness(summary_df: pd.DataFrame, region_df: pd.DataFrame, out_base: Path, min_report_voxels: int) -> None:
+def _plot_robustness(summary_df, region_df, out_base, min_report_voxels):
     assigned_regions = region_df.loc[~region_df["roi_name"].eq(UNASSIGNED_ROI)].copy()
     ever_reportable_nodes = set(assigned_regions.loc[assigned_regions["n_voxels"] >= min_report_voxels, "node_name"])
     assigned_regions = assigned_regions.loc[assigned_regions["node_name"].isin(ever_reportable_nodes)]
@@ -599,7 +558,7 @@ def _plot_robustness(summary_df: pd.DataFrame, region_df: pd.DataFrame, out_base
         plt.close(fig)
 
 
-def _node_set(region_df: pd.DataFrame, percentile: float, min_report_voxels: int) -> set[str]:
+def _node_set(region_df, percentile, min_report_voxels):
     rows = region_df[
         np.isclose(region_df["percentile"], percentile)
         & (region_df["n_voxels"] >= min_report_voxels)
@@ -608,7 +567,7 @@ def _node_set(region_df: pd.DataFrame, percentile: float, min_report_voxels: int
     return set(rows["node_name"].astype(str))
 
 
-def _format_node_list(nodes: list[str], max_items: int = 14) -> str:
+def _format_node_list(nodes, max_items=14):
     if not nodes:
         return "None"
     shown = nodes[:max_items]
@@ -616,14 +575,7 @@ def _format_node_list(nodes: list[str], max_items: int = 14) -> str:
     return ", ".join(shown) + suffix
 
 
-def _write_report(
-    out_base: Path,
-    map_path: Path,
-    summary_df: pd.DataFrame,
-    region_df: pd.DataFrame,
-    metadata: dict[str, object],
-    min_report_voxels: int,
-) -> None:
+def _write_report(out_base, map_path, summary_df, region_df, metadata, min_report_voxels):
     p85_nodes = _node_set(region_df, 85.0, min_report_voxels)
     p90_nodes = _node_set(region_df, 90.0, min_report_voxels)
     p95_nodes = _node_set(region_df, 95.0, min_report_voxels)
@@ -709,7 +661,7 @@ Then list the stable core and the threshold-sensitive nodes from the bullets abo
     Path(f"{out_base}.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description="Analyze threshold robustness of the final voxel-weight network.")
     parser.add_argument("--map", type=Path, default=DEFAULT_MAP, help="Input unthresholded voxel-weight NIfTI map.")
     parser.add_argument(
@@ -748,7 +700,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main():
     args = build_parser().parse_args()
     if REFERENCE_THRESHOLD not in set(float(p) for p in args.thresholds):
         raise ValueError("The threshold list must include p90 because p90 is the reference.")

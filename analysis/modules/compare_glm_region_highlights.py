@@ -40,15 +40,15 @@ MaskSpec = namedtuple('MaskSpec', ('method', 'mask_name', 'family', 'threshold_d
 
 def _load_img(path):
     if not path.exists():
-        raise RuntimeError(f'Missing input map: {path}')
+        raise FileNotFoundError(f'Missing input map: {path}')
     return nib.load(str(path))
 
 def _check_same_grid(reference, images):
     for (name, img) in images.items():
         if img.shape[:3] != reference.shape[:3]:
-            raise RuntimeError(f'{name} shape {img.shape[:3]} differs from reference {reference.shape[:3]}')
+            raise ValueError(f'{name} shape {img.shape[:3]} differs from reference {reference.shape[:3]}')
         if not np.allclose(img.affine, reference.affine):
-            raise RuntimeError(f'{name} affine differs from the reference image')
+            raise ValueError(f'{name} affine differs from the reference image')
 
 def _build_analysis_mask(map_data):
     support_names = ('GLMsingle Type A', 'GLMsingle Type D', 'Optimization weights')
@@ -316,7 +316,7 @@ def main():
     map_data = {name: np.asarray(img.get_fdata(), dtype=float) for (name, img) in images.items()}
     analysis_mask = _build_analysis_mask(map_data)
     if not np.any(analysis_mask):
-        raise RuntimeError('The analysis mask is empty.')
+        raise ValueError('The analysis mask is empty.')
     (groups, metadata) = _build_roi_groups(reference_img, args.aal_version, args.atlas_cache_dir)
     region_sizes = _region_denominators(groups, analysis_mask)
     z_thresholds = {'Standard GLM': float(args.standard_z_threshold), 'GLMsingle Type A': float(args.glmsingle_z_threshold), 'GLMsingle Type D': float(args.glmsingle_z_threshold)}

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot significant edge changes by within- vs between-hemisphere status."""
 
-from __future__ import annotations
 
 import argparse
 import re
@@ -71,13 +70,13 @@ plt.rcParams.update(
 )
 
 
-def clean_slug(text: str) -> str:
+def clean_slug(text):
     text = str(text)
     text = re.sub(r"[^A-Za-z0-9]+", "_", text)
     return text.strip("_").lower()
 
 
-def parse_report_slug(report_png: Path) -> tuple[str, str]:
+def parse_report_slug(report_png):
     if report_png.suffix.lower() != ".png":
         raise ValueError(f"Expected a PNG report path, got: {report_png}")
     if "__" not in report_png.stem:
@@ -86,7 +85,7 @@ def parse_report_slug(report_png: Path) -> tuple[str, str]:
     return metric_slug, scope_slug
 
 
-def roi_side(roi: str) -> str:
+def roi_side(roi):
     roi = str(roi)
     if roi.endswith("_L"):
         return "L"
@@ -95,7 +94,7 @@ def roi_side(roi: str) -> str:
     return ""
 
 
-def hemisphere_relation(roi_i: str, roi_j: str) -> str:
+def hemisphere_relation(roi_i, roi_j):
     side_i = roi_side(roi_i)
     side_j = roi_side(roi_j)
     if side_i and side_j and side_i == side_j:
@@ -105,7 +104,7 @@ def hemisphere_relation(roi_i: str, roi_j: str) -> str:
     return "Unclassified"
 
 
-def load_report_edges(source_csv: Path, report_png: Path) -> pd.DataFrame:
+def load_report_edges(source_csv, report_png):
     metric_slug, scope_slug = parse_report_slug(report_png)
     df = pd.read_csv(source_csv, low_memory=False)
     if "sig_fdr" in df.columns:
@@ -136,7 +135,7 @@ def load_report_edges(source_csv: Path, report_png: Path) -> pd.DataFrame:
     return matched.sort_values(["direction", "hemisphere_relation", "abs_mean"], ascending=[True, True, True]).copy()
 
 
-def load_possible_edge_denominators(source_csv: Path, report_png: Path) -> dict[str, int]:
+def load_possible_edge_denominators(source_csv, report_png):
     metric_slug, scope_slug = parse_report_slug(report_png)
     stats_csv = source_csv.with_name("edge_connectivity_metric_sensitivity_stats.csv")
     if not stats_csv.exists():
@@ -162,7 +161,7 @@ def load_possible_edge_denominators(source_csv: Path, report_png: Path) -> dict[
     return {relation: int((matched["hemisphere_relation"] == relation).sum()) for relation in ROW_ORDER}
 
 
-def add_panel(ax: plt.Axes, edges: pd.DataFrame, title: str, color: str, x_max: float, denominators: dict[str, int]) -> None:
+def add_panel(ax, edges, title, color, x_max, denominators):
     ax.axvline(0.0, color="#555555", linewidth=0.9, zorder=0)
     rng = np.random.default_rng(20260610)
 
@@ -204,7 +203,7 @@ def add_panel(ax: plt.Axes, edges: pd.DataFrame, title: str, color: str, x_max: 
     ax.tick_params(axis="x", labelsize=9.8)
 
 
-def plot_hemisphere_rows(edges: pd.DataFrame, denominators: dict[str, int], path_base: Path) -> None:
+def plot_hemisphere_rows(edges, denominators, path_base):
     positive = edges.loc[edges["mean"] > 0].copy()
     negative = edges.loc[edges["mean"] < 0].copy()
     if positive.empty or negative.empty:
@@ -224,11 +223,11 @@ def plot_hemisphere_rows(edges: pd.DataFrame, denominators: dict[str, int], path
     plt.close(fig)
 
 
-def output_base(report_png: Path) -> Path:
+def output_base(report_png):
     return report_png.with_name(f"{report_png.stem}__all_significant_hemisphere_edge_changes")
 
 
-def process_report(report_png: Path, source_csv: Path) -> Path:
+def process_report(report_png, source_csv):
     if not report_png.exists():
         raise FileNotFoundError(f"Missing report PNG: {report_png}")
     if not source_csv.exists():
@@ -258,7 +257,7 @@ def process_report(report_png: Path, source_csv: Path) -> Path:
     return path_base
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--report",
@@ -270,7 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     reports = args.report or DEFAULT_REPORTS
     for report_png, source_csv in reports:

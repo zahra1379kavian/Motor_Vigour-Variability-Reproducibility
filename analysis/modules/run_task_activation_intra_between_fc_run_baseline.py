@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Run-level intra-vs-between FC baseline for task-activation ROIs."""
 
-from __future__ import annotations
 
 import argparse
 import importlib.util
@@ -28,7 +27,7 @@ DEFAULT_OUT = ROOT / "results" / "supplementary" / "figure_12_run_baseline_fc" /
 def _load_run_baseline_helpers():
     spec = importlib.util.spec_from_file_location("vigour_run_baseline", RUN_BASELINE_SCRIPT)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not import {RUN_BASELINE_SCRIPT}")
+        raise ImportError(f"Could not import {RUN_BASELINE_SCRIPT}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -37,7 +36,7 @@ def _load_run_baseline_helpers():
 base = _load_run_baseline_helpers()
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task-activation-map", type=Path, default=task.DEFAULT_TASK_ACTIVATION_MAP)
     parser.add_argument("--task-z-threshold", type=float, default=task.DEFAULT_TASK_Z_THRESHOLD)
@@ -67,7 +66,7 @@ def _missing_inputs(args):
     return missing
 
 
-def _write_method(path: Path, args, n_subjects: int) -> None:
+def _write_method(path, args, n_subjects):
     text = f"""# Task-Activation Intra-ROI vs Between-ROI FC Run-Baseline Comparison
 
 This companion analysis uses the task-activation ROI masks from
@@ -94,7 +93,7 @@ Connectivity metric: `{M.INTRA_BETWEEN_FC_METRIC}`.
     path.write_text(text, encoding="utf-8")
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     M.INTRA_BETWEEN_FC_METRIC = args.intra_between_fc_metric
     base.M.INTRA_BETWEEN_FC_METRIC = args.intra_between_fc_metric
@@ -112,7 +111,7 @@ def main() -> int:
     run_deltas = base._complete_run_deltas(run_values)
     comparison_values = base._comparison_subject_values(run_values, run_deltas)
     if comparison_values.empty:
-        raise RuntimeError("No complete subjects had OFF/ON run1/run2 values")
+        raise ValueError("No complete subjects had OFF/ON run1/run2 values")
 
     source_stats = base._source_stats(comparison_values)
     paired_stats = base._paired_comparison_stats(comparison_values)

@@ -5,7 +5,6 @@ Default behavior writes one run-specific FSF per row in outputs/run_table.tsv
 and does not start FEAT. Add --run when the generated FSFs look correct.
 """
 
-from __future__ import annotations
 
 import argparse
 import csv
@@ -13,7 +12,6 @@ import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -25,20 +23,20 @@ DEFAULT_OUTPUT_DIR = ROOT / "outputs/feat/firstlevel"
 DEFAULT_LOG_DIR = ROOT / "outputs/logs/firstlevel"
 
 
-@dataclass(frozen=True)
 class Run:
-    sub: str
-    ses: str
-    run: str
-    bold: Path
-    ev: Path
+    def __init__(self, sub, ses, run, bold, ev):
+        self.sub = sub
+        self.ses = ses
+        self.run = run
+        self.bold = bold
+        self.ev = ev
 
     @property
-    def label(self) -> str:
+    def label(self):
         return f"{self.sub}_{self.ses}_{self.run}"
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate and optionally run first-level FEAT FSFs."
     )
@@ -82,11 +80,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def read_run_table(path: Path) -> list[Run]:
+def read_run_table(path):
     if not path.exists():
         raise FileNotFoundError(f"Run table not found: {path}")
 
-    runs: list[Run] = []
+    runs = []
     with path.open(newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
         required = {"sub", "ses", "run", "bold", "ev"}
@@ -107,7 +105,7 @@ def read_run_table(path: Path) -> list[Run]:
     return runs
 
 
-def filter_runs(runs: list[Run], args: argparse.Namespace) -> list[Run]:
+def filter_runs(runs, args):
     subjects = set(args.subject or [])
     sessions = set(args.session or [])
     run_ids = set(args.run_id or [])
@@ -121,7 +119,7 @@ def filter_runs(runs: list[Run], args: argparse.Namespace) -> list[Run]:
     ]
 
 
-def strip_nii_gz(path: Path) -> str:
+def strip_nii_gz(path):
     text = str(path)
     if text.endswith(".nii.gz"):
         return text[:-7]
@@ -130,7 +128,7 @@ def strip_nii_gz(path: Path) -> str:
     return text
 
 
-def fslnvols(path: Path) -> int:
+def fslnvols(path):
     result = subprocess.run(
         ["fslnvols", str(path)],
         check=True,
@@ -141,7 +139,7 @@ def fslnvols(path: Path) -> int:
     return int(result.stdout.strip())
 
 
-def replace_setting(text: str, key: str, value: str) -> str:
+def replace_setting(text, key, value):
     pattern = re.compile(rf'^(set {re.escape(key)}\s+).*$',
                          flags=re.MULTILINE)
     new_text, count = pattern.subn(lambda match: f"{match.group(1)}{value}", text)
@@ -150,7 +148,7 @@ def replace_setting(text: str, key: str, value: str) -> str:
     return new_text
 
 
-def resolve_template(path: Path) -> Path:
+def resolve_template(path):
     if path.exists():
         return path
     if path == DEFAULT_TEMPLATE:
@@ -160,7 +158,7 @@ def resolve_template(path: Path) -> Path:
     return path
 
 
-def make_fsf(template: str, run: Run, output_dir: Path, overwrite: bool) -> str:
+def make_fsf(template, run, output_dir, overwrite):
     npts = fslnvols(run.bold)
     out_base = output_dir / run.label
 
@@ -176,9 +174,9 @@ def make_fsf(template: str, run: Run, output_dir: Path, overwrite: bool) -> str:
     return fsf
 
 
-def validate_runs(runs: list[Run]) -> list[str]:
-    errors: list[str] = []
-    seen: set[str] = set()
+def validate_runs(runs):
+    errors = []
+    seen = set()
     for run in runs:
         if run.label in seen:
             errors.append(f"Duplicate run label: {run.label}")
@@ -190,7 +188,7 @@ def validate_runs(runs: list[Run]) -> list[str]:
     return errors
 
 
-def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> tuple[Path, int]:
+def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
         result = subprocess.run(
@@ -202,7 +200,7 @@ def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> tuple[Path, int]:
     return fsf, result.returncode
 
 
-def completed_output(output_dir: Path, run: Run) -> bool:
+def completed_output(output_dir, run):
     feat_dir = output_dir / f"{run.label}.feat"
     required = (
         feat_dir / "report.html",
@@ -212,7 +210,7 @@ def completed_output(output_dir: Path, run: Run) -> bool:
     return all(path.exists() for path in required)
 
 
-def main() -> int:
+def main():
     args = parse_args()
     if args.jobs < 1:
         raise ValueError("--jobs must be >= 1")
@@ -244,8 +242,8 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    fsfs: list[Path] = []
-    skipped_existing: list[Run] = []
+    fsfs = []
+    skipped_existing = []
     for run in runs:
         if completed_output(output_dir, run) and not args.overwrite:
             skipped_existing.append(run)
@@ -266,7 +264,7 @@ def main() -> int:
         return 0
 
     print(f"Starting FEAT jobs: {len(fsfs)} with --jobs {args.jobs}")
-    failures: list[tuple[Path, int]] = []
+    failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures = {
             pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf

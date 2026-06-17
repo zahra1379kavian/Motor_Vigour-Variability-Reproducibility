@@ -6,13 +6,11 @@ show lower normalized consecutive-trial beta variability than size-matched
 samples from non-selected motor-area voxels.
 """
 
-from __future__ import annotations
 
 import argparse
 import json
 import re
 import warnings
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -80,26 +78,26 @@ MOTOR_LABEL_PATTERNS = (
 )
 
 
-@dataclass(frozen=True)
 class SegmentNorm:
-    start: int
-    stop: int
-    mean: float
-    scale: float
+    def __init__(self, start, stop, mean, scale):
+        self.start = start
+        self.stop = stop
+        self.mean = mean
+        self.scale = scale
 
 
-@dataclass(frozen=True)
 class MetricUnit:
-    label: str
-    segment_indices: tuple[int, ...]
+    def __init__(self, label, segment_indices):
+        self.label = label
+        self.segment_indices = segment_indices
 
 
-@dataclass(frozen=True)
 class RunBetaFile:
-    subject: str
-    session: int
-    run: int
-    path: Path
+    def __init__(self, subject, session, run, path):
+        self.subject = subject
+        self.session = session
+        self.run = run
+        self.path = path
 
 
 def _json_ready(value):
@@ -116,7 +114,7 @@ def _json_ready(value):
     return value
 
 
-def _resolve_group_concat_dir(beta_root: Path, group_concat_dir: Path | None) -> Path:
+def _resolve_group_concat_dir(beta_root, group_concat_dir):
     candidates = []
     if group_concat_dir is not None:
         candidates.append(group_concat_dir)
@@ -134,7 +132,7 @@ def _resolve_group_concat_dir(beta_root: Path, group_concat_dir: Path | None) ->
     raise FileNotFoundError(f"Could not find group-concat beta files. Tried:\n{tried}")
 
 
-def _resample_label_img(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Image) -> np.ndarray:
+def _resample_label_img(label_img, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     with warnings.catch_warnings():
@@ -149,14 +147,7 @@ def _resample_label_img(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Ima
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
-def _add_harvard_oxford_labels(
-    mask: np.ndarray,
-    reference_img: nib.Nifti1Image,
-    atlas_name: str,
-    labels: tuple[str, ...],
-    region_names: list[str],
-    region_counts: list[int],
-) -> None:
+def _add_harvard_oxford_labels(mask, reference_img, atlas_name, labels, region_names, region_counts):
     atlas = datasets.fetch_atlas_harvard_oxford(atlas_name, verbose=0)
     atlas_img = atlas.maps if isinstance(atlas.maps, nib.Nifti1Image) else nib.load(atlas.maps)
     atlas_data = _resample_label_img(atlas_img, reference_img)
@@ -169,13 +160,13 @@ def _add_harvard_oxford_labels(
         region_counts.append(int(np.count_nonzero(region_mask)))
 
 
-def _build_motor_mask(reference_img: nib.Nifti1Image, cerebellum_atlas: Path) -> tuple[np.ndarray, dict[str, object]]:
+def _build_motor_mask(reference_img, cerebellum_atlas):
     if not cerebellum_atlas.exists():
         raise FileNotFoundError(f"Missing FSL cerebellum atlas: {cerebellum_atlas}")
 
     motor_mask = np.zeros(reference_img.shape[:3], dtype=bool)
-    region_names: list[str] = []
-    region_counts: list[int] = []
+    region_names = []
+    region_counts = []
 
     _add_harvard_oxford_labels(
         motor_mask,
@@ -211,11 +202,11 @@ def _build_motor_mask(reference_img: nib.Nifti1Image, cerebellum_atlas: Path) ->
     return motor_mask, metadata
 
 
-def _flat_indices_from_mask(mask: np.ndarray) -> np.ndarray:
+def _flat_indices_from_mask(mask):
     return np.flatnonzero(mask.ravel()).astype(np.int64, copy=False)
 
 
-def _load_selected_flat_indices(path: Path, shape: tuple[int, int, int]) -> np.ndarray:
+def _load_selected_flat_indices(path, shape):
     if path.suffix == ".npz":
         loaded = np.load(path, allow_pickle=True)
         for key in ("flat_indices", "selected_flat_indices", "indices"):
@@ -249,12 +240,7 @@ def _load_selected_flat_indices(path: Path, shape: tuple[int, int, int]) -> np.n
     raise ValueError(f"Unsupported selected-index array shape in {path}: {values.shape}")
 
 
-def _selected_from_weight_map(
-    weights: np.ndarray,
-    weight_map: Path,
-    percentile: float,
-    selected_indices: Path | None,
-) -> tuple[np.ndarray, dict[str, object]]:
+def _selected_from_weight_map(weights, weight_map, percentile, selected_indices):
     if selected_indices is not None:
         selected_flat = np.unique(_load_selected_flat_indices(selected_indices, weights.shape))
         metadata = {
@@ -283,7 +269,7 @@ def _selected_from_weight_map(
     return selected_flat, metadata
 
 
-def _load_group_concat(group_concat_dir: Path) -> tuple[np.ndarray, np.ndarray, pd.DataFrame, dict[str, Path]]:
+def _load_group_concat(group_concat_dir):
     beta_path = group_concat_dir / "cleaned_beta_volume_group.npy"
     active_flat_path = group_concat_dir / "active_flat_indices__group.npy"
     manifest_path = group_concat_dir / "concat_manifest_group.tsv"
@@ -305,7 +291,7 @@ def _load_group_concat(group_concat_dir: Path) -> tuple[np.ndarray, np.ndarray, 
     return beta, active_flat, manifest, paths
 
 
-def _map_flat_to_active_rows(target_flat: np.ndarray, active_flat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _map_flat_to_active_rows(target_flat, active_flat):
     target_flat = np.asarray(target_flat, dtype=np.int64).ravel()
     order = np.argsort(active_flat)
     sorted_active = active_flat[order]
@@ -316,18 +302,12 @@ def _map_flat_to_active_rows(target_flat: np.ndarray, active_flat: np.ndarray) -
     return valid, rows
 
 
-def _iter_slices(n_items: int, batch_size: int):
+def _iter_slices(n_items, batch_size):
     for start in range(0, n_items, batch_size):
         yield slice(start, min(start + batch_size, n_items))
 
 
-def _compute_segment_norms(
-    beta: np.ndarray,
-    row_indices: np.ndarray,
-    manifest: pd.DataFrame,
-    batch_size: int,
-    pre_normalize: bool,
-) -> list[SegmentNorm]:
+def _compute_segment_norms(beta, row_indices, manifest, batch_size, pre_normalize):
     segment_bounds = [
         (int(row.offset_start), int(row.offset_end))
         for row in manifest.itertuples(index=False)
@@ -349,7 +329,7 @@ def _compute_segment_norms(
         if segment_number % 10 == 0 or segment_number == len(segment_bounds):
             print(f"Computed normalization means for {segment_number}/{len(segment_bounds)} manifest segments.", flush=True)
 
-    norms: list[SegmentNorm] = []
+    norms = []
     for segment_number, ((start, stop), mean_value) in enumerate(zip(segment_bounds, means), start=1):
         max_abs = 0.0
         for rows_slice in _iter_slices(row_indices.size, batch_size):
@@ -364,8 +344,8 @@ def _compute_segment_norms(
     return norms
 
 
-def _build_metric_units(manifest: pd.DataFrame, unit: str) -> list[MetricUnit]:
-    units: list[MetricUnit] = []
+def _build_metric_units(manifest, unit):
+    units = []
     if unit == "run":
         for idx, row in enumerate(manifest.itertuples(index=False)):
             label = f"{row.sub_tag}_ses-{int(row.ses)}_run-{int(row.run)}"
@@ -381,15 +361,7 @@ def _build_metric_units(manifest: pd.DataFrame, unit: str) -> list[MetricUnit]:
     return units
 
 
-def _compute_voxel_norm_diff_scores(
-    beta: np.ndarray,
-    row_indices: np.ndarray,
-    manifest: pd.DataFrame,
-    batch_size: int,
-    metric_unit: str,
-    pre_normalize: bool,
-    min_abs_voxel_mean: float,
-) -> tuple[np.ndarray, np.ndarray, list[SegmentNorm], list[MetricUnit]]:
+def _compute_voxel_norm_diff_scores(beta, row_indices, manifest, batch_size, metric_unit, pre_normalize, min_abs_voxel_mean):
     n_voxels = row_indices.size
     segment_norms = _compute_segment_norms(beta, row_indices, manifest, batch_size, pre_normalize)
     units = _build_metric_units(manifest, metric_unit)
@@ -436,7 +408,7 @@ def _compute_voxel_norm_diff_scores(
     return scores, score_count, segment_norms, units
 
 
-def _resample_means(values: np.ndarray, sample_size: int, num_resamples: int, seed: int) -> tuple[np.ndarray, bool]:
+def _resample_means(values, sample_size, num_resamples, seed):
     rng = np.random.default_rng(seed)
     replace = values.size < sample_size
     means = np.empty(num_resamples, dtype=np.float64)
@@ -446,11 +418,7 @@ def _resample_means(values: np.ndarray, sample_size: int, num_resamples: int, se
     return means, replace
 
 
-def _prevalence_ratios(
-    selected: np.ndarray,
-    nonselected: np.ndarray,
-    percentiles: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+def _prevalence_ratios(selected, nonselected, percentiles):
     pooled = np.concatenate([selected, nonselected])
     thresholds = np.percentile(pooled, percentiles)
     ratios = np.full(thresholds.shape, np.nan, dtype=np.float64)
@@ -462,7 +430,7 @@ def _prevalence_ratios(
     return thresholds, ratios
 
 
-def _style_axis(ax) -> None:
+def _style_axis(ax):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.set_axisbelow(True)
@@ -470,19 +438,13 @@ def _style_axis(ax) -> None:
     ax.tick_params(labelsize=13)
 
 
-def _bold_figure_text(fig: plt.Figure) -> None:
+def _bold_figure_text(fig):
     fig.canvas.draw()
     for text in fig.findobj(match=Text):
         text.set_fontweight("bold")
 
 
-def _plot_norm_diff_figure(
-    output_png: Path,
-    percentiles: np.ndarray,
-    ratios: np.ndarray,
-    selected_scores: np.ndarray,
-    resampled_means: np.ndarray,
-) -> Path:
+def _plot_norm_diff_figure(output_png, percentiles, ratios, selected_scores, resampled_means):
     selected_color = "#d55e00"
     resample_color = "#56b4e9"
     reference_color = "#666666"
@@ -597,8 +559,8 @@ def _plot_norm_diff_figure(
     return output_pdf
 
 
-def _parse_session_states(value: str) -> dict[int, str]:
-    states: dict[int, str] = {}
+def _parse_session_states(value):
+    states = {}
     for item in value.split(","):
         item = item.strip()
         if not item:
@@ -615,8 +577,8 @@ def _parse_session_states(value: str) -> dict[int, str]:
     return states
 
 
-def _discover_run_beta_files(beta_root: Path) -> list[RunBetaFile]:
-    specs: list[RunBetaFile] = []
+def _discover_run_beta_files(beta_root):
+    specs = []
     pattern = "sub-*/cleaned_beta_volume_sub-*_ses-*_run-*.npy"
     for path in sorted(beta_root.glob(pattern)):
         match = BETA_FILE_RE.match(path.name)
@@ -635,7 +597,7 @@ def _discover_run_beta_files(beta_root: Path) -> list[RunBetaFile]:
     return specs
 
 
-def _new_metric_accumulator(n_voxels: int) -> dict[str, np.ndarray]:
+def _new_metric_accumulator(n_voxels):
     return {
         "value_sum": np.zeros(n_voxels, dtype=np.float64),
         "value_sumsq": np.zeros(n_voxels, dtype=np.float64),
@@ -645,7 +607,7 @@ def _new_metric_accumulator(n_voxels: int) -> dict[str, np.ndarray]:
     }
 
 
-def _run_normalization(flat_view: np.ndarray, flat_indices: np.ndarray, batch_size: int) -> tuple[float, float]:
+def _run_normalization(flat_view, flat_indices, batch_size):
     finite_sum = 0.0
     finite_count = 0
     for rows_slice in _iter_slices(flat_indices.size, batch_size):
@@ -665,14 +627,7 @@ def _run_normalization(flat_view: np.ndarray, flat_indices: np.ndarray, batch_si
     return mean_value, max_abs if max_abs > 0 else 1.0
 
 
-def _accumulate_run_beta_metrics(
-    accumulator: dict[str, np.ndarray],
-    flat_view: np.ndarray,
-    flat_indices: np.ndarray,
-    batch_size: int,
-    norm_mean: float,
-    norm_scale: float,
-) -> None:
+def _accumulate_run_beta_metrics(accumulator, flat_view, flat_indices, batch_size, norm_mean, norm_scale):
     for rows_slice in _iter_slices(flat_indices.size, batch_size):
         chunk = np.asarray(flat_view[flat_indices[rows_slice]], dtype=np.float64)
         chunk = (chunk - norm_mean) / norm_scale
@@ -691,10 +646,7 @@ def _accumulate_run_beta_metrics(
         accumulator["diff_count"][rows_slice] += np.count_nonzero(keep, axis=1)
 
 
-def _accumulator_metric_means(
-    accumulator: dict[str, np.ndarray],
-    min_abs_voxel_mean: float,
-) -> tuple[float, float, int, int]:
+def _accumulator_metric_means(accumulator, min_abs_voxel_mean):
     value_sum = accumulator["value_sum"]
     value_count = accumulator["value_count"]
     with np.errstate(invalid="ignore", divide="ignore"):
@@ -729,21 +681,13 @@ def _accumulator_metric_means(
     return cv_mean, norm_diff_mean, int(np.count_nonzero(cv_valid)), int(np.count_nonzero(norm_valid))
 
 
-def _compute_subject_session_selection_metrics(
-    run_specs: list[RunBetaFile],
-    selected_flat: np.ndarray,
-    control_flat: np.ndarray,
-    reference_shape: tuple[int, int, int],
-    batch_size: int,
-    pre_normalize: bool,
-    min_abs_voxel_mean: float,
-) -> pd.DataFrame:
-    specs_by_session: dict[tuple[str, int], list[RunBetaFile]] = {}
+def _compute_subject_session_selection_metrics(run_specs, selected_flat, control_flat, reference_shape, batch_size, pre_normalize, min_abs_voxel_mean):
+    specs_by_session = {}
     for spec in run_specs:
         specs_by_session.setdefault((spec.subject, spec.session), []).append(spec)
 
     target_flat = np.unique(np.concatenate([selected_flat, control_flat]))
-    rows: list[dict[str, object]] = []
+    rows = []
     total_sessions = len(specs_by_session)
     for session_number, ((subject, session), specs) in enumerate(sorted(specs_by_session.items()), start=1):
         specs = sorted(specs, key=lambda item: item.run)
@@ -795,28 +739,28 @@ def _compute_subject_session_selection_metrics(
     return pd.DataFrame(rows).sort_values(["subject", "session"]).reset_index(drop=True)
 
 
-def _sem(values: pd.Series) -> float:
+def _sem(values):
     arr = values.to_numpy(dtype=np.float64)
     arr = arr[np.isfinite(arr)]
     return 0.0 if arr.size <= 1 else float(arr.std(ddof=1) / np.sqrt(arr.size))
 
 
-def _safe_float(value) -> float | None:
+def _safe_float(value):
     if value is None:
         return None
     value = float(value)
     return value if np.isfinite(value) else None
 
 
-def _fmt_signed(value: float | None, digits: int = 3) -> str:
+def _fmt_signed(value, digits=3):
     return "nan" if value is None or not np.isfinite(float(value)) else f"{float(value):+.{digits}f}"
 
 
-def _fmt_float(value: float | None, digits: int = 3) -> str:
+def _fmt_float(value, digits=3):
     return "nan" if value is None or not np.isfinite(float(value)) else f"{float(value):.{digits}f}"
 
 
-def _paired_difference_stats(differences: np.ndarray) -> dict[str, float]:
+def _paired_difference_stats(differences):
     differences = np.asarray(differences, dtype=np.float64)
     differences = differences[np.isfinite(differences)]
     if differences.size < 2:
@@ -847,7 +791,7 @@ def _paired_difference_stats(differences: np.ndarray) -> dict[str, float]:
     }
 
 
-def _paired_delta_summary(session_df: pd.DataFrame, metric: str, metric_label: str) -> dict[str, object]:
+def _paired_delta_summary(session_df, metric, metric_label):
     selected_col = f"selected_{metric}"
     control_col = f"control_{metric}"
     needed = ["subject", "state", selected_col, control_col]
@@ -910,11 +854,7 @@ def _paired_delta_summary(session_df: pd.DataFrame, metric: str, metric_label: s
     }
 
 
-def _plot_state_selection_stability_figure(
-    output_png: Path,
-    session_df: pd.DataFrame,
-    paired_df: pd.DataFrame,
-) -> Path:
+def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
     paired_summary = paired_df.loc[paired_df["metric"].eq("norm_diff_mean")].iloc[0].to_dict()
     long_df = pd.concat(
         [
@@ -1021,7 +961,7 @@ def _plot_state_selection_stability_figure(
     return output_pdf
 
 
-def _run_state_selection_stability(args: argparse.Namespace) -> dict[str, object]:
+def _run_state_selection_stability(args):
     weight_img = nib.load(str(args.weight_map))
     weights = np.asarray(weight_img.get_fdata(dtype=np.float32))
     selected_flat, selected_metadata = _selected_from_weight_map(
@@ -1129,7 +1069,7 @@ def _run_state_selection_stability(args: argparse.Namespace) -> dict[str, object
     return summary
 
 
-def _run_analysis(args: argparse.Namespace) -> dict[str, object]:
+def _run_analysis(args):
     weight_img = nib.load(str(args.weight_map))
     weights = np.asarray(weight_img.get_fdata(dtype=np.float32))
     selected_flat, selected_metadata = _selected_from_weight_map(
@@ -1151,7 +1091,7 @@ def _run_analysis(args: argparse.Namespace) -> dict[str, object]:
     valid_target_flat = target_flat[active_valid]
     valid_active_rows = active_rows[active_valid]
     if valid_target_flat.size == 0:
-        raise RuntimeError("None of the selected or motor-pool voxels are present in the group beta matrix.")
+        raise ValueError("None of the selected or motor-pool voxels are present in the group beta matrix.")
 
     print(f"Selected voxels total: {selected_flat.size:,}", flush=True)
     print(f"Motor-area pool total: {motor_flat.size:,}", flush=True)
@@ -1178,7 +1118,7 @@ def _run_analysis(args: argparse.Namespace) -> dict[str, object]:
     nonselected_valid_flat = valid_target_flat[nonselected_valid_mask]
 
     if selected_scores.size == 0 or nonselected_scores.size == 0:
-        raise RuntimeError("Need at least one valid selected voxel and one valid non-selected motor voxel.")
+        raise ValueError("Need at least one valid selected voxel and one valid non-selected motor voxel.")
 
     percentiles = np.arange(10.0, 100.0, 10.0)
     thresholds, ratios = _prevalence_ratios(selected_scores, nonselected_scores, percentiles)
@@ -1286,7 +1226,7 @@ def _run_analysis(args: argparse.Namespace) -> dict[str, object]:
     return summary
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(
         description="Run selected-voxel stability checks against motor-area reference voxels."
     )
@@ -1317,7 +1257,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main():
     args = build_parser().parse_args()
     if args.analysis in ("trial_variability", "both"):
         _run_analysis(args)

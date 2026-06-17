@@ -6,13 +6,11 @@ data/go_times_second. The skipped-trial MATLAB files use 0 for kept trials and
 1 for rejected trials, despite the variable name `rej_trials`.
 """
 
-from __future__ import annotations
 
 import argparse
 import csv
 import re
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -38,44 +36,44 @@ BOLD_RE = re.compile(
 )
 
 
-@dataclass(frozen=True)
 class BoldRun:
-    sub: str
-    ses: int
-    run: int
-    path: Path
+    def __init__(self, sub, ses, run, path):
+        self.sub = sub
+        self.ses = ses
+        self.run = run
+        self.path = path
 
     @property
-    def bids_sub(self) -> str:
+    def bids_sub(self):
         return f"sub-pd{self.sub}"
 
     @property
-    def bids_ses(self) -> str:
+    def bids_ses(self):
         return f"ses-{self.ses}"
 
     @property
-    def bids_run(self) -> str:
+    def bids_run(self):
         return f"run-{self.run}"
 
     @property
-    def pspd(self) -> str:
+    def pspd(self):
         return f"PSPD{self.sub}"
 
     @property
-    def label(self) -> str:
+    def label(self):
         return f"{self.bids_sub}_{self.bids_ses}_{self.bids_run}"
 
 
-@dataclass(frozen=True)
 class SessionSelection:
-    state: str
-    trial_file: Path
-    kept_by_run: tuple[int, int]
-    ambiguous: bool
-    matched_counts: bool
+    def __init__(self, state, trial_file, kept_by_run, ambiguous, matched_counts):
+        self.state = state
+        self.trial_file = trial_file
+        self.kept_by_run = kept_by_run
+        self.ambiguous = ambiguous
+        self.matched_counts = matched_counts
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate first-level EV files and outputs/run_table.tsv."
     )
@@ -88,8 +86,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def discover_bold_runs(bold_dir: Path) -> list[BoldRun]:
-    runs: list[BoldRun] = []
+def discover_bold_runs(bold_dir):
+    runs = []
     for bold in sorted(bold_dir.rglob("*_task-mv_bold_corrected_smoothed_mnireg-2mm*.nii.gz")):
         match = BOLD_RE.match(bold.name)
         if not match:
@@ -105,15 +103,15 @@ def discover_bold_runs(bold_dir: Path) -> list[BoldRun]:
     return runs
 
 
-def onset_path(onset_dir: Path, run: BoldRun) -> Path:
+def onset_path(onset_dir, run):
     return onset_dir / f"{run.pspd}-ses-{run.ses}-run-{run.run}-go-times.txt"
 
 
-def trial_path(trial_dir: Path, sub: str, state: str) -> Path:
+def trial_path(trial_dir, sub, state):
     return trial_dir / f"PSPD{sub}_{state}_rejtrials.mat"
 
 
-def load_trials(path: Path) -> np.ndarray:
+def load_trials(path):
     data = loadmat(path)
     if "rej_trials" not in data:
         raise ValueError(f"{path} does not contain variable 'rej_trials'")
@@ -123,8 +121,8 @@ def load_trials(path: Path) -> np.ndarray:
     return trials[:, :2]
 
 
-def read_ev_rows(path: Path) -> list[list[str]]:
-    rows: list[list[str]] = []
+def read_ev_rows(path):
+    rows = []
     with path.open() as f:
         for line_number, line in enumerate(f, start=1):
             if not line.strip():
@@ -140,28 +138,23 @@ def read_ev_rows(path: Path) -> list[list[str]]:
     return rows
 
 
-def clean_number(text: str) -> str:
+def clean_number(text):
     value = float(text)
     if value.is_integer():
         return str(int(value))
     return text
 
 
-def session_onset_counts(onset_dir: Path, sub: str, ses: int) -> tuple[int | None, int | None]:
-    counts: list[int | None] = []
+def session_onset_counts(onset_dir, sub, ses):
+    counts = []
     for run in (1, 2):
         path = onset_dir / f"PSPD{sub}-ses-{ses}-run-{run}-go-times.txt"
         counts.append(len(read_ev_rows(path)) if path.exists() else None)
     return counts[0], counts[1]
 
 
-def choose_session_selection(
-    trial_dir: Path,
-    onset_dir: Path,
-    sub: str,
-    ses: int,
-) -> SessionSelection:
-    states: dict[str, tuple[Path, np.ndarray]] = {}
+def choose_session_selection(trial_dir, onset_dir, sub, ses):
+    states = {}
     for state in ("OFF", "ON"):
         path = trial_path(trial_dir, sub, state)
         if not path.exists():
@@ -169,8 +162,8 @@ def choose_session_selection(
         states[state] = (path, load_trials(path))
 
     onset_counts = session_onset_counts(onset_dir, sub, ses)
-    matches: list[str] = []
-    kept_counts_by_state: dict[str, tuple[int, int]] = {}
+    matches = []
+    kept_counts_by_state = {}
     for state, (_, trials) in states.items():
         kept_counts = tuple(int((trials[:, run_index] == KEEP_VALUE).sum()) for run_index in (0, 1))
         kept_counts_by_state[state] = kept_counts
@@ -195,7 +188,7 @@ def choose_session_selection(
     )
 
 
-def kept_ev_rows(source_rows: list[list[str]], trials: np.ndarray, run: int, source: Path) -> tuple[list[list[str]], str]:
+def kept_ev_rows(source_rows, trials, run, source):
     keep_mask = trials[:, run - 1] == KEEP_VALUE
     n_kept = int(keep_mask.sum())
 
@@ -210,14 +203,14 @@ def kept_ev_rows(source_rows: list[list[str]], trials: np.ndarray, run: int, sou
     )
 
 
-def write_ev(path: Path, rows: list[list[str]]) -> None:
+def write_ev(path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as f:
         for row in rows:
             f.write(f"{clean_number(row[0])}\t{EVENT_DURATION}\t{EVENT_AMPLITUDE}\n")
 
 
-def main() -> int:
+def main():
     args = parse_args()
     bold_dir = args.bold_dir.resolve()
     onset_dir = args.onset_dir.resolve()
@@ -227,13 +220,13 @@ def main() -> int:
     summary = args.summary.resolve()
 
     runs = discover_bold_runs(bold_dir)
-    errors: list[str] = []
+    errors = []
     if not runs:
         errors.append(f"No matching BOLD files found under {bold_dir}")
 
-    selection_cache: dict[tuple[str, int], SessionSelection] = {}
-    run_rows: list[dict[str, str]] = []
-    summary_rows: list[dict[str, str]] = []
+    selection_cache = {}
+    run_rows = []
+    summary_rows = []
 
     for run in runs:
         source_ev = onset_path(onset_dir, run)

@@ -7,7 +7,6 @@ edges are over-represented among the significant changes relative to the
 available edge pool; OR < 1 means within-hemisphere over-representation.
 """
 
-from __future__ import annotations
 
 import argparse
 from pathlib import Path
@@ -59,7 +58,7 @@ plt.rcParams.update(
 )
 
 
-def significance_label(p_value: float) -> str:
+def significance_label(p_value):
     if not np.isfinite(p_value):
         return ""
     if p_value < 0.001:
@@ -71,10 +70,10 @@ def significance_label(p_value: float) -> str:
     return ""
 
 
-def build_rows(df: pd.DataFrame, roi_set: str) -> list[dict[str, object]]:
+def build_rows(df, roi_set):
     """One row per (direction, network) entry, top-to-bottom plotting order."""
     subset = df.loc[df["roi_set"].eq(roi_set)].copy()
-    rows: list[dict[str, object]] = []
+    rows = []
     # y descends so the first listed entry sits at the top of the axis.
     y = 0.0
     for direction_key, direction_label, color in DIRECTIONS:
@@ -106,7 +105,7 @@ def build_rows(df: pd.DataFrame, roi_set: str) -> list[dict[str, object]]:
     return rows
 
 
-def plot_forest(rows: list[dict[str, object]], output_base: Path) -> tuple[Path, Path]:
+def plot_forest(rows, output_base):
     fig, ax = plt.subplots(figsize=(7.6, 4.0))
 
     ys = [row["y"] for row in rows]
@@ -158,7 +157,7 @@ def plot_forest(rows: list[dict[str, object]], output_base: Path) -> tuple[Path,
     ax.set_yticklabels([row["network_label"] for row in rows], fontsize=11.0)
 
     # direction headers to the far left of each block (outside the axes).
-    block_centers: dict[str, list[float]] = {}
+    block_centers = {}
     for row in rows:
         block_centers.setdefault(row["direction_label"], []).append(row["y"])
     for direction_label, block_ys in block_centers.items():
@@ -206,7 +205,7 @@ def plot_forest(rows: list[dict[str, object]], output_base: Path) -> tuple[Path,
     return png_path, pdf_path
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="hemisphere_enrichment.csv path.")
     parser.add_argument(
@@ -219,7 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     if not args.input.exists():
         raise FileNotFoundError(f"Missing enrichment CSV: {args.input}")

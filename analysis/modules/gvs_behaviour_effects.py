@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Behavioural RT summaries by GVS condition using true run block order."""
 
-from __future__ import annotations
 
 import argparse
 import json
@@ -39,7 +38,7 @@ SHAM_CODE = "gvs-01"
 BEHAVIOUR_RE = re.compile(r"^PSPD(?P<digits>\d+)_ses_(?P<session>\d+)_run_(?P<run>\d+)\.npy$")
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Extract behaviour RT by GVS/sham blocks from run_condition_inventory.csv "
@@ -66,29 +65,29 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _subject_digits(subject: str) -> str:
+def _subject_digits(subject):
     match = re.search(r"(\d+)$", str(subject))
     if match is None:
         raise ValueError(f"Could not parse subject digits from {subject!r}")
     return match.group(1).zfill(3)
 
 
-def _behaviour_path(behaviour_dir: Path, subject: str, session: int, run: int) -> Path:
+def _behaviour_path(behaviour_dir, subject, session, run):
     return behaviour_dir / f"PSPD{_subject_digits(subject)}_ses_{int(session)}_run_{int(run)}.npy"
 
 
-def _load_behaviour_metric(path: Path, column_index: int) -> tuple[np.ndarray, str]:
+def _load_behaviour_metric(path, column_index):
     values = np.asarray(np.load(path, allow_pickle=False), dtype=np.float64)
     if values.ndim == 1:
         return values, "rt_vector"
     if values.ndim == 2:
         if values.shape[1] <= column_index:
-            raise RuntimeError(f"{path} has {values.shape[1]} columns; cannot read column {column_index + 1}")
+            raise ValueError(f"{path} has {values.shape[1]} columns; cannot read column {column_index + 1}")
         return values[:, column_index], f"matrix_column_{column_index + 1}"
-    raise RuntimeError(f"{path} must be 1D or 2D, got shape {values.shape}")
+    raise ValueError(f"{path} must be 1D or 2D, got shape {values.shape}")
 
 
-def _rt_seconds(values: np.ndarray, input_is_inverse_rt: bool) -> np.ndarray:
+def _rt_seconds(values, input_is_inverse_rt):
     values = np.asarray(values, dtype=np.float64)
     out = np.full(values.shape, np.nan, dtype=np.float64)
     finite = np.isfinite(values)
@@ -100,7 +99,7 @@ def _rt_seconds(values: np.ndarray, input_is_inverse_rt: bool) -> np.ndarray:
     return out
 
 
-def _consecutive_rt_variability(values: np.ndarray) -> tuple[float, int]:
+def _consecutive_rt_variability(values):
     values = np.asarray(values, dtype=np.float64)
     if values.size < 2:
         return float("nan"), 0
@@ -114,11 +113,11 @@ def _consecutive_rt_variability(values: np.ndarray) -> tuple[float, int]:
     return float(score), int(np.count_nonzero(valid))
 
 
-def _rest_gap_count(block_position: int) -> int:
+def _rest_gap_count(block_position):
     return sum(1 for block in REST_AFTER_STIM_BLOCKS if int(block_position) > int(block))
 
 
-def _add_rest_aware_timing(inventory: pd.DataFrame) -> pd.DataFrame:
+def _add_rest_aware_timing(inventory):
     out = inventory.copy()
     out["block_position"] = (out["trial_start"].astype(int) // 10) + 1
     out["rest_gap_count_before_block"] = out["block_position"].map(_rest_gap_count).astype(int)
@@ -129,7 +128,7 @@ def _add_rest_aware_timing(inventory: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _load_inventory(path: Path) -> pd.DataFrame:
+def _load_inventory(path):
     inventory = pd.read_csv(path)
     required = {
         "subject",
@@ -145,22 +144,15 @@ def _load_inventory(path: Path) -> pd.DataFrame:
     }
     missing = sorted(required - set(inventory.columns))
     if missing:
-        raise RuntimeError(f"{path} is missing required columns: {', '.join(missing)}")
+        raise ValueError(f"{path} is missing required columns: {', '.join(missing)}")
     inventory = _add_rest_aware_timing(inventory)
     return inventory.sort_values(["subject", "session", "run", "trial_start"]).reset_index(drop=True)
 
 
-def _build_trial_table(
-    inventory: pd.DataFrame,
-    behaviour_dir: Path,
-    behaviour_column_index: int,
-    input_is_inverse_rt: bool,
-    min_rt: float | None,
-    max_rt: float | None,
-) -> tuple[pd.DataFrame, list[str]]:
-    rows: list[dict[str, object]] = []
-    missing: list[str] = []
-    cache: dict[tuple[str, int, int], tuple[np.ndarray, str, Path]] = {}
+def _build_trial_table(inventory, behaviour_dir, behaviour_column_index, input_is_inverse_rt, min_rt, max_rt):
+    rows = []
+    missing = []
+    cache = {}
 
     for row in inventory.itertuples(index=False):
         subject = str(row.subject)
@@ -219,13 +211,13 @@ def _build_trial_table(
         missing_lines = "\n".join(f"- {item}" for item in missing)
         raise FileNotFoundError(f"Missing behaviour files:\n{missing_lines}")
     if not rows:
-        raise RuntimeError("No finite GVS behaviour trials were extracted.")
+        raise ValueError("No finite GVS behaviour trials were extracted.")
     return pd.DataFrame(rows).sort_values(
         ["subject", "session", "run", "task_trial_index_zero_based"]
     ).reset_index(drop=True), missing
 
 
-def _block_summary(trials: pd.DataFrame) -> pd.DataFrame:
+def _block_summary(trials):
     rows = []
     group_cols = [
         "subject",
@@ -259,7 +251,7 @@ def _block_summary(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
-def _aggregate_condition(blocks: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
+def _aggregate_condition(blocks, group_cols):
     return (
         blocks.groupby(group_cols, dropna=False, sort=True)
         .agg(
@@ -276,10 +268,10 @@ def _aggregate_condition(blocks: pd.DataFrame, group_cols: list[str]) -> pd.Data
     )
 
 
-def _one_sample_stats(values: np.ndarray, analysis: str, metric: str, unit: str, contrast: str) -> dict[str, object]:
+def _one_sample_stats(values, analysis, metric, unit, contrast):
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
-    row: dict[str, object] = {
+    row = {
         "analysis": analysis,
         "metric": metric,
         "unit": unit,
@@ -321,7 +313,7 @@ def _one_sample_stats(values: np.ndarray, analysis: str, metric: str, unit: str,
     return row
 
 
-def _active_minus_sham(summary: pd.DataFrame, index_cols: list[str], metric: str) -> pd.DataFrame:
+def _active_minus_sham(summary, index_cols, metric):
     sham = summary.loc[summary["condition_code"].eq(SHAM_CODE), index_cols + [metric]].rename(columns={metric: "sham"})
     active = summary.loc[~summary["condition_code"].eq(SHAM_CODE)].copy()
     merged = active.merge(sham, on=index_cols, how="inner")
@@ -329,11 +321,7 @@ def _active_minus_sham(summary: pd.DataFrame, index_cols: list[str], metric: str
     return merged
 
 
-def _paired_stats(
-    subject_condition: pd.DataFrame,
-    session_condition: pd.DataFrame,
-    block_condition: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _paired_stats(subject_condition, session_condition, block_condition):
     metrics = ["mean_rt_ms", "mean_inverse_rt", "rt_variability"]
     rows = []
     deltas = []
@@ -431,7 +419,7 @@ def _paired_stats(
     return stats_df, pd.concat(deltas, ignore_index=True, sort=False)
 
 
-def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
+def _bh_fdr(p_values):
     p_values = np.asarray(p_values, dtype=np.float64)
     adjusted = np.full(p_values.shape, np.nan, dtype=np.float64)
     finite = np.isfinite(p_values)
@@ -450,7 +438,7 @@ def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
     return adjusted
 
 
-def _add_condition_fdr(stats_df: pd.DataFrame) -> pd.DataFrame:
+def _add_condition_fdr(stats_df):
     out = stats_df.copy()
     out["p_ttest_fdr_bh_condition_family"] = np.nan
     out["p_wilcoxon_fdr_bh_condition_family"] = np.nan
@@ -466,7 +454,7 @@ def _add_condition_fdr(stats_df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _regression_tables(blocks: pd.DataFrame) -> pd.DataFrame:
+def _regression_tables(blocks):
     if smf is None:
         return pd.DataFrame([{"model": "block_fixed_effects", "status": "skipped", "reason": "statsmodels unavailable"}])
     rows = []
@@ -509,7 +497,7 @@ def _regression_tables(blocks: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _condition_rows(stats_df: pd.DataFrame, metric: str) -> pd.DataFrame:
+def _condition_rows(stats_df, metric):
     rows = stats_df.loc[
         stats_df["metric"].eq(metric) & stats_df["analysis"].astype(str).str.startswith("subject_GVS")
     ].copy()
@@ -520,7 +508,7 @@ def _condition_rows(stats_df: pd.DataFrame, metric: str) -> pd.DataFrame:
     return rows.sort_values(["_condition_number", "condition_label"]).drop(columns="_condition_number")
 
 
-def _metric_axis_label(metric: str) -> str:
+def _metric_axis_label(metric):
     if metric == "mean_rt_ms":
         return "Active GVS - sham\nMean RT difference (ms)"
     if metric == "rt_variability":
@@ -528,7 +516,7 @@ def _metric_axis_label(metric: str) -> str:
     return f"Active GVS - sham\n{metric}"
 
 
-def _metric_panel_title(metric: str) -> str:
+def _metric_panel_title(metric):
     if metric == "mean_rt_ms":
         return "Mean RT"
     if metric == "rt_variability":
@@ -536,7 +524,7 @@ def _metric_panel_title(metric: str) -> str:
     return metric
 
 
-def _metric_color(metric: str) -> str:
+def _metric_color(metric):
     if metric == "mean_rt_ms":
         return "#4C78A8"
     if metric == "rt_variability":
@@ -544,7 +532,7 @@ def _metric_color(metric: str) -> str:
     return "#4C78A8"
 
 
-def _min_condition_fdr_text(rows: pd.DataFrame) -> str:
+def _min_condition_fdr_text(rows):
     q_values = rows["p_ttest_fdr_bh_condition_family"].to_numpy(dtype=np.float64)
     q_values = q_values[np.isfinite(q_values)]
     if q_values.size == 0:
@@ -552,7 +540,7 @@ def _min_condition_fdr_text(rows: pd.DataFrame) -> str:
     return f"min FDR q = {float(np.min(q_values)):.3f}"
 
 
-def _draw_condition_delta_panel(ax: plt.Axes, rows: pd.DataFrame, metric: str, panel_label: str | None = None) -> None:
+def _draw_condition_delta_panel(ax, rows, metric, panel_label=None):
     x = np.arange(rows.shape[0])
     means = rows["mean_delta"].to_numpy(dtype=np.float64)
     color = _metric_color(metric)
@@ -597,7 +585,7 @@ def _draw_condition_delta_panel(ax: plt.Axes, rows: pd.DataFrame, metric: str, p
     ax.grid(axis="y", color="#E5E7EB", linewidth=0.8)
 
 
-def _save_delta_plot(stats_df: pd.DataFrame, metric: str, out_dir: Path) -> list[str]:
+def _save_delta_plot(stats_df, metric, out_dir):
     rows = _condition_rows(stats_df, metric)
     if rows.empty:
         return []
@@ -613,7 +601,7 @@ def _save_delta_plot(stats_df: pd.DataFrame, metric: str, out_dir: Path) -> list
     return [str(png), str(pdf)]
 
 
-def _save_combined_delta_plot(stats_df: pd.DataFrame, out_dir: Path) -> list[str]:
+def _save_combined_delta_plot(stats_df, out_dir):
     metric_rows = [("mean_rt_ms", _condition_rows(stats_df, "mean_rt_ms")), ("rt_variability", _condition_rows(stats_df, "rt_variability"))]
     if any(rows.empty for _, rows in metric_rows):
         return []
@@ -652,7 +640,7 @@ def _json_safe(value):
     return value
 
 
-def _write_report(out_dir: Path, summary: dict[str, object], stats_df: pd.DataFrame) -> None:
+def _write_report(out_dir, summary, stats_df):
     primary = stats_df.loc[
         stats_df["analysis"].eq("subject_any_active_vs_sham") & stats_df["metric"].eq("mean_rt_ms")
     ].iloc[0]
@@ -701,7 +689,7 @@ def _write_report(out_dir: Path, summary: dict[str, object], stats_df: pd.DataFr
     (out_dir / "gvs_behaviour_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
 
 
-def main() -> None:
+def main():
     args = _parse_args()
     if args.behaviour_column < 1:
         raise ValueError("--behaviour-column is one-based and must be >= 1")

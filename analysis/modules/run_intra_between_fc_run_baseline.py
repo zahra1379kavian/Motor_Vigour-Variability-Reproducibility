@@ -9,7 +9,6 @@ estimate the same intra-ROI voxel-pair FC and between-ROI FC separately for run
 baseline for comparison with the current ON - OFF result.
 """
 
-from __future__ import annotations
 
 import argparse
 import json
@@ -40,7 +39,7 @@ RUN_1 = "1"
 RUN_2 = "2"
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--weight-map", type=Path, default=M.DEFAULT_WEIGHT_MAP)
     parser.add_argument("--roi-definition-figure", type=Path, default=M.DEFAULT_ROI_FIGURE)
@@ -66,17 +65,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _run_from_beta_path(path: Path) -> str:
+def _run_from_beta_path(path):
     match = M.BETA_FILE_RE.match(path.name)
     if match is not None:
         return str(int(match.group("run")))
     match = RUN_RE.search(path.name)
     if match is not None:
         return str(int(match.group("run")))
-    raise RuntimeError(f"Could not parse run number from {path}")
+    raise ValueError(f"Could not parse run number from {path}")
 
 
-def _single_run_specs(specs: list[M.SessionSpec]) -> list[tuple[M.SessionSpec, str]]:
+def _single_run_specs(specs):
     run_specs = []
     missing = []
     for spec in specs:
@@ -97,7 +96,7 @@ def _single_run_specs(specs: list[M.SessionSpec]) -> list[tuple[M.SessionSpec, s
             )
             run_specs.append((run_spec, run))
     if missing:
-        raise RuntimeError(
+        raise ValueError(
             "Run-baseline analysis requires beta_path inputs; missing beta paths for: "
             + ", ".join(missing)
         )
@@ -109,7 +108,7 @@ def _prepare_rois(args):
         args.roi_region_table = M._default_region_table_for(args.roi_definition_figure)
     missing = M._missing_inputs(args)
     if missing:
-        raise RuntimeError("Missing required inputs:\n- " + "\n- ".join(missing))
+        raise ValueError("Missing required inputs:\n- " + "\n- ".join(missing))
 
     weight_img = nib.load(str(args.weight_map))
     weight_values = np.asarray(weight_img.get_fdata(), dtype=np.float64)
@@ -162,7 +161,7 @@ def _compute_run_level_values(args, weight_img, rois):
     return values, roi_values
 
 
-def _metric_columns(values: pd.DataFrame) -> dict[str, str]:
+def _metric_columns(values):
     if "within_roi_mean_mi" in values.columns or "within_roi_delta_mi_on_minus_off" in values.columns:
         return {
             "within": "within_roi_mean_mi",
@@ -190,7 +189,7 @@ def _metric_columns(values: pd.DataFrame) -> dict[str, str]:
     }
 
 
-def _complete_run_deltas(run_values: pd.DataFrame) -> pd.DataFrame:
+def _complete_run_deltas(run_values):
     cols = _metric_columns(run_values)
     rows = []
     for (subject, state), group in run_values.groupby(["subject", "state"], sort=True):
@@ -240,7 +239,7 @@ def _complete_run_deltas(run_values: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(["subject", "state"]).reset_index(drop=True)
 
 
-def _run_level_medication_effect(group: pd.DataFrame, cols: dict[str, str]) -> tuple[float, float, float] | None:
+def _run_level_medication_effect(group, cols):
     values = {}
     for state in ("off", "on"):
         state_values = group.loc[group["state"] == state]
@@ -258,7 +257,7 @@ def _run_level_medication_effect(group: pd.DataFrame, cols: dict[str, str]) -> t
     return (float(effect[0]), float(effect[1]), float(effect[2]))
 
 
-def _comparison_subject_values(run_values: pd.DataFrame, run_deltas: pd.DataFrame) -> pd.DataFrame:
+def _comparison_subject_values(run_values, run_deltas):
     cols = _metric_columns(run_values)
     rows = []
     for subject, group in run_deltas.groupby("subject", sort=True):
@@ -304,7 +303,7 @@ def _comparison_subject_values(run_values: pd.DataFrame, run_deltas: pd.DataFram
     return pd.DataFrame(rows)
 
 
-def _source_stats(comparison_values: pd.DataFrame) -> pd.DataFrame:
+def _source_stats(comparison_values):
     components = [
         ("within_roi_change", "Intra-ROI FC change"),
         ("between_roi_change", "Between-ROI FC change"),
@@ -328,7 +327,7 @@ def _source_stats(comparison_values: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _paired_comparison_stats(comparison_values: pd.DataFrame) -> pd.DataFrame:
+def _paired_comparison_stats(comparison_values):
     components = [
         ("within_roi_change", "Medication-effect magnitude minus baseline for intra-ROI FC"),
         ("between_roi_change", "Medication-effect magnitude minus baseline for between-ROI FC"),
@@ -359,7 +358,7 @@ def _paired_comparison_stats(comparison_values: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _format_p(value: float) -> str:
+def _format_p(value):
     if not np.isfinite(float(value)):
         return "n/a"
     if float(value) < 0.001:
@@ -367,7 +366,7 @@ def _format_p(value: float) -> str:
     return f"{float(value):.3f}"
 
 
-def _plot_comparison(comparison_values: pd.DataFrame, summary: pd.DataFrame, out_dir: Path, ylabel: str) -> Path:
+def _plot_comparison(comparison_values, summary, out_dir, ylabel):
     components = [
         ("within_roi_change", "Intra-ROI"),
         ("between_roi_change", "Between-ROI"),
@@ -487,7 +486,7 @@ def _plot_comparison(comparison_values: pd.DataFrame, summary: pd.DataFrame, out
     return png_path
 
 
-def _write_method(path: Path, args, n_subjects: int) -> None:
+def _write_method(path, args, n_subjects):
     text = f"""# Intra-ROI vs Between-ROI FC Run-Baseline Comparison
 
 This companion analysis uses the same ROI masks, voxel weights, and
@@ -513,7 +512,7 @@ Voxel selection: `{args.voxel_selection}`.
     path.write_text(text, encoding="utf-8")
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     M.INTRA_BETWEEN_FC_METRIC = args.intra_between_fc_metric
     weight_img, rois, weighted_rois, roi_threshold = _prepare_rois(args)
@@ -521,7 +520,7 @@ def main() -> int:
     run_deltas = _complete_run_deltas(run_values)
     comparison_values = _comparison_subject_values(run_values, run_deltas)
     if comparison_values.empty:
-        raise RuntimeError("No complete subjects had OFF/ON run1/run2 values")
+        raise ValueError("No complete subjects had OFF/ON run1/run2 values")
 
     source_stats = _source_stats(comparison_values)
     paired_stats = _paired_comparison_stats(comparison_values)

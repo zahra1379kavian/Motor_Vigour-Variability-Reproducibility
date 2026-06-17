@@ -94,15 +94,15 @@ def _default_region_table_for(roi_figure):
 
 def _read_manifest(path):
     if not path.exists():
-        raise RuntimeError(f'Missing session manifest: {path}. Expected columns: label, subject, session, state, and either bold_path or timeseries_path.')
+        raise FileNotFoundError(f'Missing session manifest: {path}. Expected columns: label, subject, session, state, and either bold_path or timeseries_path.')
     manifest = pd.read_csv(path)
     required = {'subject', 'session', 'state'}
     missing_columns = sorted(required - set(manifest.columns))
     if missing_columns:
-        raise RuntimeError(f"{path} is missing required columns: {', '.join(missing_columns)}")
+        raise ValueError(f"{path} is missing required columns: {', '.join(missing_columns)}")
     input_columns = {'bold_path', 'timeseries_path', 'beta_path', 'beta_paths'} & set(manifest.columns)
     if not input_columns:
-        raise RuntimeError(f'{path} must include one of: bold_path, timeseries_path, beta_path, beta_paths')
+        raise ValueError(f'{path} must include one of: bold_path, timeseries_path, beta_path, beta_paths')
     specs = []
     base_dir = path.parent.resolve()
     for (row_index, row) in manifest.iterrows():
@@ -110,7 +110,7 @@ def _read_manifest(path):
         session = str(row['session']).strip()
         state = str(row['state']).strip().lower()
         if not subject or not session or (not state):
-            raise RuntimeError(f'{path} row {row_index + 2} has an empty subject, session, or state')
+            raise ValueError(f'{path} row {row_index + 2} has an empty subject, session, or state')
         label = str(row.get('label', f'{subject}_ses-{session}')).strip()
         bold_path = _resolve_path(row.get('bold_path'), base_dir)
         timeseries_path = _resolve_path(row.get('timeseries_path'), base_dir)
@@ -125,13 +125,13 @@ def _read_manifest(path):
                 if beta_item is not None:
                     beta_paths.append(beta_item)
         if bold_path is None and timeseries_path is None and (not beta_paths):
-            raise RuntimeError(f'{path} row {row_index + 2} must provide bold_path, timeseries_path, or beta_path')
+            raise ValueError(f'{path} row {row_index + 2} must provide bold_path, timeseries_path, or beta_path')
         specs.append(SessionSpec(label=label, subject=subject, session=session, state=state, bold_path=bold_path, timeseries_path=timeseries_path, beta_paths=tuple(beta_paths)))
     return specs
 
 def _discover_beta_sessions(beta_root, session_states):
     if not beta_root.exists():
-        raise RuntimeError(f'Missing beta root: {beta_root}')
+        raise FileNotFoundError(f'Missing beta root: {beta_root}')
     grouped = {}
     for path in sorted(beta_root.glob('sub-pd*/cleaned_beta_volume_sub-pd*_ses-*_run-*.npy')):
         match = BETA_FILE_RE.match(path.name)
@@ -142,12 +142,12 @@ def _discover_beta_sessions(beta_root, session_states):
         run = int(match.group('run'))
         grouped.setdefault((subject, session), []).append((run, path))
     if not grouped:
-        raise RuntimeError(f'No cleaned_beta_volume files found under {beta_root}')
+        raise ValueError(f'No cleaned_beta_volume files found under {beta_root}')
     specs = []
     for ((subject, session), run_paths) in sorted(grouped.items()):
         state = session_states.get(str(session))
         if state is None:
-            raise RuntimeError(f'No medication state mapping was provided for session {session}')
+            raise ValueError(f'No medication state mapping was provided for session {session}')
         paths = tuple((path for (_, path) in sorted(run_paths)))
         specs.append(SessionSpec(label=f'{subject}_ses-{session}', subject=subject, session=str(session), state=state, bold_path=None, timeseries_path=None, beta_paths=paths))
     return specs
@@ -167,7 +167,7 @@ def _filter_session_specs(args, specs):
         complete_subjects = {subject for (subject, states) in states_by_subject.items() if {'off', 'on'}.issubset(states)}
         specs = [spec for spec in specs if spec.subject in complete_subjects]
     if not specs:
-        raise RuntimeError('No sessions remain after subject/session filtering')
+        raise ValueError('No sessions remain after subject/session filtering')
     return specs
 
 def _load_session_specs(args):
@@ -203,7 +203,7 @@ def _missing_inputs(args):
         missing.append(f'{args.roi_region_table} (machine-readable ROI table; the PNG alone is not a voxel mask)')
     try:
         specs = _load_session_specs(args)
-    except RuntimeError as exc:
+    except ValueError as exc:
         missing.append(str(exc))
         return missing
     for spec in specs:
@@ -221,12 +221,12 @@ def _load_roi_names(region_table, roi_percentile, min_report_voxels):
     required = {'percentile', 'roi_name', 'n_voxels'}
     missing = sorted(required - set(regions.columns))
     if missing:
-        raise RuntimeError(f"{region_table} is missing required columns: {', '.join(missing)}")
+        raise ValueError(f"{region_table} is missing required columns: {', '.join(missing)}")
     rows = regions[np.isclose(regions['percentile'].astype(float), float(roi_percentile)) & ~regions['roi_name'].eq(UNASSIGNED_ROI) & (regions['n_voxels'].astype(int) >= int(min_report_voxels))].copy()
     if 'present_for_report' in rows.columns:
         rows = rows[rows['present_for_report'].astype(bool)]
     if rows.empty:
-        raise RuntimeError(f'No reportable p{roi_percentile:g} ROI rows found in {region_table}; try lowering --min-report-voxels.')
+        raise ValueError(f'No reportable p{roi_percentile:g} ROI rows found in {region_table}; try lowering --min-report-voxels.')
     rows = rows.sort_values('n_voxels', ascending=False)
     return rows['roi_name'].astype(str).tolist()
 
@@ -266,7 +266,7 @@ def _build_lateralized_roi_groups(reference_img, aal_version, cache_dir, roi_nam
     ordered_names = [f'{name}_{hemisphere}' for name in roi_names for hemisphere in ('L', 'R')]
     missing = [name for name in ordered_names if name not in group_masks]
     if missing:
-        raise RuntimeError('Missing lateralized AAL ROI masks: ' + ', '.join(missing))
+        raise ValueError('Missing lateralized AAL ROI masks: ' + ', '.join(missing))
     groups = [ROIGroup(name=name, source=atlas_source, mask=group_masks[name], matched_labels=tuple(group_labels[name])) for name in ordered_names]
     metadata = {'roi_definition': 'aal3_left_right_coarse_anatomical_groups', 'priority_order': ordered_names + [UNASSIGNED_ROI], 'atlas_info': {'name': 'AAL3v2 (Automated Anatomical Labeling 3)' if aal_version == '3v2' else f'AAL {aal_version}', 'description': atlas_source, 'version': aal_version, 'map': str(atlas.maps), 'n_labels': len([label for label in atlas.indices if int(label) != 0]), 'n_regions': len(groups), 'grouping': 'Original AAL left/right labels merged into coarse anatomical groups within hemisphere; midline labels excluded.'}, 'roi_sources': {group.name: group.source for group in groups}, 'roi_matched_labels': {group.name: group.matched_labels for group in groups}}
     return (groups, metadata)
@@ -292,14 +292,14 @@ def _build_weighted_rois(weight_values, roi_names, groups, roi_percentile, min_r
         min_roi_voxels = min_report_voxels
     finite_nonzero = np.isfinite(weight_values) & (weight_values != 0)
     if not np.any(finite_nonzero):
-        raise RuntimeError('No finite nonzero voxels found in the weight map')
+        raise ValueError('No finite nonzero voxels found in the weight map')
     threshold = float(np.percentile(weight_values[finite_nonzero], roi_percentile))
     selected = finite_nonzero & (weight_values >= threshold)
     group_lookup = {group.name: group for group in groups}
     rois = []
     missing_groups = [name for name in roi_names if name not in group_lookup]
     if missing_groups:
-        raise RuntimeError('ROI table names were not found in the AAL grouping: ' + ', '.join(missing_groups))
+        raise ValueError('ROI table names were not found in the AAL grouping: ' + ', '.join(missing_groups))
     for name in roi_names:
         mask = selected & group_lookup[name].mask
         n_voxels = int(np.count_nonzero(mask))
@@ -311,7 +311,7 @@ def _build_weighted_rois(weight_values, roi_names, groups, roi_percentile, min_r
             roi_weights = np.ones(n_voxels, dtype=np.float64)
         rois.append(WeightedROI(name=name, mask=mask, weights=roi_weights, n_voxels=n_voxels))
     if len(rois) < 2:
-        raise RuntimeError('At least two weighted ROI masks are required for edge-network analysis')
+        raise ValueError('At least two weighted ROI masks are required for edge-network analysis')
     return (rois, threshold)
 
 def _unit_weight_rois(rois):
@@ -324,18 +324,18 @@ def _build_matched_nonvigour_rois(weight_values, weighted_rois, groups, roi_thre
     rois = []
     for source_roi in weighted_rois:
         if source_roi.name not in group_lookup:
-            raise RuntimeError(f'ROI {source_roi.name} was not found in the AAL grouping')
+            raise ValueError(f'ROI {source_roi.name} was not found in the AAL grouping')
         candidates = group_lookup[source_roi.name].mask & np.isfinite(weight_values) & ~selected
         candidate_ijk = np.column_stack(np.nonzero(candidates))
         if candidate_ijk.shape[0] < source_roi.n_voxels:
-            raise RuntimeError(f'ROI {source_roi.name} has only {candidate_ijk.shape[0]} non-vigour voxels available for {source_roi.n_voxels} matched vigour voxels')
+            raise ValueError(f'ROI {source_roi.name} has only {candidate_ijk.shape[0]} non-vigour voxels available for {source_roi.n_voxels} matched vigour voxels')
         sample_indices = rng.choice(candidate_ijk.shape[0], size=source_roi.n_voxels, replace=False)
         sample_ijk = candidate_ijk[sample_indices]
         mask = np.zeros(weight_values.shape, dtype=bool)
         mask[tuple(sample_ijk.T)] = True
         rois.append(WeightedROI(name=source_roi.name, mask=mask, weights=np.ones(source_roi.n_voxels, dtype=np.float64), n_voxels=source_roi.n_voxels))
     if len(rois) < 2:
-        raise RuntimeError('At least two matched non-vigour ROI masks are required for edge-network analysis')
+        raise ValueError('At least two matched non-vigour ROI masks are required for edge-network analysis')
     return rois
 
 def _build_analysis_rois(weight_values, roi_names, groups, roi_percentile, min_report_voxels, min_roi_voxels, voxel_selection, random_state):
@@ -346,13 +346,13 @@ def _build_analysis_rois(weight_values, roi_names, groups, roi_percentile, min_r
         return (_unit_weight_rois(weighted_rois), roi_threshold, weighted_rois)
     if voxel_selection == VOXEL_SELECTION_MATCHED_NONVIGOUR:
         return (_build_matched_nonvigour_rois(weight_values, weighted_rois, groups, roi_threshold, random_state), roi_threshold, weighted_rois)
-    raise RuntimeError(f'Unknown voxel-selection mode: {voxel_selection}')
+    raise ValueError(f'Unknown voxel-selection mode: {voxel_selection}')
 
 def _check_image_grid(reference, img, label):
     if img.shape[:3] != reference.shape[:3]:
-        raise RuntimeError(f'{label} shape {img.shape[:3]} differs from the weight-map grid {reference.shape[:3]}')
+        raise ValueError(f'{label} shape {img.shape[:3]} differs from the weight-map grid {reference.shape[:3]}')
     if not np.allclose(img.affine, reference.affine):
-        raise RuntimeError(f'{label} affine differs from the weight-map affine')
+        raise ValueError(f'{label} affine differs from the weight-map affine')
 
 def _weighted_mean_timeseries(data, roi):
     roi_data = np.asarray(data[roi.mask, :], dtype=np.float64)
@@ -369,7 +369,7 @@ def _extract_roi_timeseries(bold_path, reference_img, rois):
     img = nib.load(str(bold_path))
     _check_image_grid(reference_img, img, str(bold_path))
     if len(img.shape) != 4:
-        raise RuntimeError(f'{bold_path} must be a 4D BOLD NIfTI')
+        raise ValueError(f'{bold_path} must be a 4D BOLD NIfTI')
     data = img.get_fdata(dtype=np.float32)
     roi_series = {roi.name: _weighted_mean_timeseries(data, roi) for roi in rois}
     return pd.DataFrame(roi_series)
@@ -377,9 +377,9 @@ def _extract_roi_timeseries(bold_path, reference_img, rois):
 def _extract_roi_timeseries_from_beta(beta_path, reference_img, rois):
     data = np.load(beta_path, mmap_mode='r')
     if data.ndim != 4:
-        raise RuntimeError(f'{beta_path} must be a 4D cleaned beta volume with shape (x, y, z, trials)')
+        raise ValueError(f'{beta_path} must be a 4D cleaned beta volume with shape (x, y, z, trials)')
     if tuple(data.shape[:3]) != tuple(reference_img.shape[:3]):
-        raise RuntimeError(f'{beta_path} shape {data.shape[:3]} differs from the weight-map grid {reference_img.shape[:3]}')
+        raise ValueError(f'{beta_path} shape {data.shape[:3]} differs from the weight-map grid {reference_img.shape[:3]}')
     roi_series = {roi.name: _weighted_mean_timeseries(data, roi) for roi in rois}
     return pd.DataFrame(roi_series)
 
@@ -387,7 +387,7 @@ def _read_roi_timeseries(path, roi_names):
     df = pd.read_csv(path)
     missing = [name for name in roi_names if name not in df.columns]
     if missing:
-        raise RuntimeError(f"{path} is missing ROI time-series columns: {', '.join(missing)}")
+        raise ValueError(f"{path} is missing ROI time-series columns: {', '.join(missing)}")
     return df.loc[:, roi_names].apply(pd.to_numeric, errors='coerce')
 
 def _load_session_timeseries(spec, reference_img, rois):
@@ -398,14 +398,14 @@ def _load_session_timeseries(spec, reference_img, rois):
         frames = [_extract_roi_timeseries_from_beta(path, reference_img, rois) for path in spec.beta_paths]
         return pd.concat(frames, ignore_index=True)
     if spec.bold_path is None:
-        raise RuntimeError(f'{spec.label} has no bold_path, timeseries_path, or beta_path')
+        raise ValueError(f'{spec.label} has no bold_path, timeseries_path, or beta_path')
     return _extract_roi_timeseries(spec.bold_path, reference_img, rois)
 
 def _clean_timeseries(df):
     values = df.to_numpy(dtype=np.float64)
     values = values[np.all(np.isfinite(values), axis=1)]
     if values.shape[0] < 4:
-        raise RuntimeError('ROI time series has fewer than four complete time points')
+        raise ValueError('ROI time series has fewer than four complete time points')
     centered = values - np.mean(values, axis=0, keepdims=True)
     scale = np.std(centered, axis=0, ddof=1)
     valid = scale > 0
@@ -456,7 +456,7 @@ def _connectivity_matrix(timeseries, n_neighbors, random_state):
         return _mutual_information_matrix(timeseries, n_neighbors=n_neighbors, random_state=random_state)
     if CONNECTIVITY_METRIC == 'spearman_correlation':
         return _spearman_correlation_matrix(timeseries)
-    raise RuntimeError(f'Unknown connectivity metric: {CONNECTIVITY_METRIC}')
+    raise ValueError(f'Unknown connectivity metric: {CONNECTIVITY_METRIC}')
 
 def _connectivity_metric_label(metric=None):
     metric = CONNECTIVITY_METRIC if metric is None else metric
@@ -551,7 +551,7 @@ def _distance_lookup(pairwise):
 def _lookup_distance(lookup, left_label, right_label):
     key = tuple(sorted([str(left_label), str(right_label)]))
     if key not in lookup:
-        raise RuntimeError(f'Missing pairwise distance for {left_label} and {right_label}')
+        raise ValueError(f'Missing pairwise distance for {left_label} and {right_label}')
     return lookup[key]
 
 def _paired_assignment_group_means(assignments, lookup):
@@ -753,7 +753,7 @@ def _paired_similarity_tests(pairwise):
     metric_rows = _metric_pairwise_rows(pairwise)
     (complete_subjects, incomplete_subjects) = _complete_off_on_subjects(metric_rows)
     if len(complete_subjects) < 2:
-        raise RuntimeError('At least two complete OFF/ON subjects are required for paired medication similarity tests')
+        raise ValueError('At least two complete OFF/ON subjects are required for paired medication similarity tests')
     lookup = _distance_lookup(metric_rows)
     permutation = _exact_paired_permutation_test(complete_subjects, lookup)
     subject_values = _subject_level_similarity_values(complete_subjects, lookup)
@@ -951,7 +951,7 @@ def _plot_cross_subject_distribution(pairwise, out_dir, paired_stats=None):
     groups = [(name, idx * 1.15, subset.loc[subset['pair_label'] == key, 'raw_score'].to_numpy(dtype=np.float64)) for (idx, (name, key)) in enumerate(class_order)]
     groups = [(name, pos, values[np.isfinite(values)]) for (name, pos, values) in groups if np.isfinite(values).any()]
     if not groups:
-        raise RuntimeError('No finite cross-subject pairwise distances were available for plotting')
+        raise ValueError('No finite cross-subject pairwise distances were available for plotting')
     group_tests = _pairwise_group_tests(subset, class_order, groups)
     if not any(np.isfinite(float(test.get('p_value', np.nan))) for test in group_tests):
         group_tests = _paired_permutation_plot_tests(groups, paired_stats)
@@ -1029,7 +1029,7 @@ def _node_strength_values(specs, networks, roi_names, paired_stats):
             rows.append({'connectivity_metric': CONNECTIVITY_METRIC, 'analysis': 'node_strength_mi', 'label': spec.label, 'subject': spec.subject, 'session': spec.session, 'state': spec.state, 'roi': roi_name, 'node_strength': float(strength)})
     values = pd.DataFrame(rows)
     if values.empty:
-        raise RuntimeError('No node-strength values were available for complete OFF/ON subjects')
+        raise ValueError('No node-strength values were available for complete OFF/ON subjects')
     return values.sort_values(['roi', 'subject', 'state']).reset_index(drop=True)
 
 def _node_strength_summary(values):
@@ -1052,7 +1052,7 @@ def _node_strength_summary(values):
         rows.append({'roi': roi_name, 'mean_delta': float(np.mean(differences)), 'median_delta': float(np.median(differences)), 'wilcoxon_stat': wilcoxon_stat, 'p_value': p_value, 'mean_off': float(np.mean(pivot['off'])), 'mean_on': float(np.mean(pivot['on'])), 'n_subjects': int(pivot.shape[0])})
     summary = pd.DataFrame(rows)
     if summary.empty:
-        raise RuntimeError('No paired OFF/ON node-strength summaries could be computed')
+        raise ValueError('No paired OFF/ON node-strength summaries could be computed')
     summary['p_fdr'] = _benjamini_hochberg_pvalues(summary['p_value'].to_numpy(dtype=np.float64))
     summary['sig_fdr05'] = summary['p_fdr'] < 0.05
     columns = ['roi', 'mean_delta', 'median_delta', 'wilcoxon_stat', 'p_value', 'mean_off', 'mean_on', 'p_fdr', 'sig_fdr05', 'n_subjects']
@@ -1074,7 +1074,7 @@ def _format_p_value(p_value):
 def _plot_node_strength_boxplots(values, summary, out_dir, top_n=DEFAULT_NODE_STRENGTH_TOP_N):
     selected = summary.head(int(top_n))['roi'].astype(str).tolist()
     if not selected:
-        raise RuntimeError('No node-strength ROIs were available for plotting')
+        raise ValueError('No node-strength ROIs were available for plotting')
     stats_by_roi = summary.set_index('roi')
     n_cols = 4
     n_rows = int(np.ceil(len(selected) / n_cols))
@@ -1147,7 +1147,7 @@ def _roi_hemisphere(roi_name):
 def _hemisphere_edge_values(specs, networks, roi_names):
     hemispheres = [_roi_hemisphere(name) for name in roi_names]
     if any(hemisphere is None for hemisphere in hemispheres):
-        raise RuntimeError('Within-vs-between hemisphere analysis requires lateralized ROI names ending in _L or _R; rerun with --split-hemispheres.')
+        raise ValueError('Within-vs-between hemisphere analysis requires lateralized ROI names ending in _L or _R; rerun with --split-hemispheres.')
     rows = []
     for spec in specs:
         matrix = np.asarray(networks[spec.label], dtype=np.float64)
@@ -1173,7 +1173,7 @@ def _hemisphere_edge_values(specs, networks, roi_names):
             })
     values = pd.DataFrame(rows)
     if values.empty:
-        raise RuntimeError('No hemisphere-classified ROI edges were available')
+        raise ValueError('No hemisphere-classified ROI edges were available')
     return values
 
 def _mean_finite(series):
@@ -1271,7 +1271,7 @@ def _hemisphere_fc_test_rows(subject_deltas):
 
 def _plot_hemisphere_fc(subject_deltas, results, out_dir):
     if subject_deltas.empty:
-        raise RuntimeError('No complete OFF/ON subjects were available for hemisphere FC plotting')
+        raise ValueError('No complete OFF/ON subjects were available for hemisphere FC plotting')
     colors = {'off': '#4C78A8', 'on': '#D65F5F', 'delta': '#333333'}
     (fig, axes) = plt.subplots(1, 2, figsize=(8.0, 3.65))
     rng = np.random.default_rng(0)
@@ -1348,7 +1348,7 @@ def _save_hemisphere_fc_analysis(specs, networks, roi_names, out_dir):
     session_values = _hemisphere_fc_session_values(edge_values)
     subject_deltas = _complete_hemisphere_subject_deltas(session_values)
     if subject_deltas.empty:
-        raise RuntimeError('No complete OFF/ON subjects were available for hemisphere FC analysis')
+        raise ValueError('No complete OFF/ON subjects were available for hemisphere FC analysis')
     (results_table, results) = _hemisphere_fc_test_rows(subject_deltas)
     result_summary = {
         'connectivity_metric': CONNECTIVITY_METRIC,
@@ -1390,16 +1390,16 @@ def _extract_roi_voxel_timeseries(bold_path, reference_img, rois):
     img = nib.load(str(bold_path))
     _check_image_grid(reference_img, img, str(bold_path))
     if len(img.shape) != 4:
-        raise RuntimeError(f'{bold_path} must be a 4D BOLD NIfTI')
+        raise ValueError(f'{bold_path} must be a 4D BOLD NIfTI')
     data = img.get_fdata(dtype=np.float32)
     return {roi.name: np.asarray(data[roi.mask, :], dtype=np.float64).T for roi in rois}
 
 def _extract_roi_voxel_timeseries_from_beta(beta_path, reference_img, rois):
     data = np.load(beta_path, mmap_mode='r')
     if data.ndim != 4:
-        raise RuntimeError(f'{beta_path} must be a 4D cleaned beta volume with shape (x, y, z, trials)')
+        raise ValueError(f'{beta_path} must be a 4D cleaned beta volume with shape (x, y, z, trials)')
     if tuple(data.shape[:3]) != tuple(reference_img.shape[:3]):
-        raise RuntimeError(f'{beta_path} shape {data.shape[:3]} differs from the weight-map grid {reference_img.shape[:3]}')
+        raise ValueError(f'{beta_path} shape {data.shape[:3]} differs from the weight-map grid {reference_img.shape[:3]}')
     return {roi.name: np.asarray(data[roi.mask, :], dtype=np.float64).T for roi in rois}
 
 def _load_session_voxel_timeseries(spec, reference_img, rois):
@@ -1413,12 +1413,12 @@ def _load_session_voxel_timeseries(spec, reference_img, rois):
         return {name: np.concatenate(frames[name], axis=0) for name in roi_names}
     if spec.bold_path is not None:
         return _extract_roi_voxel_timeseries(spec.bold_path, reference_img, rois)
-    raise RuntimeError(f'{spec.label} has only ROI mean time series; voxel-level intra-ROI FC requires beta_path or bold_path input')
+    raise ValueError(f'{spec.label} has only ROI mean time series; voxel-level intra-ROI FC requires beta_path or bold_path input')
 
 def _clean_feature_timeseries(values):
     values = np.asarray(values, dtype=np.float64)
     if values.ndim != 2:
-        raise RuntimeError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
+        raise ValueError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
     finite_timepoints = np.all(np.isfinite(values), axis=1)
     values = values[finite_timepoints, :]
     if values.shape[0] < 4:
@@ -1472,7 +1472,7 @@ def _mean_pairwise_fisher_z(cleaned, weights=None):
 def _mean_pairwise_fisher_z_pairwise_complete(values, weights=None, min_overlap=4):
     values = np.asarray(values, dtype=np.float64)
     if values.ndim != 2:
-        raise RuntimeError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
+        raise ValueError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
     finite = np.isfinite(values)
     usable_features = np.sum(finite, axis=0) >= int(min_overlap)
     values = values[:, usable_features]
@@ -1545,7 +1545,7 @@ def _quantile_codes_1d(values, n_bins=DEFAULT_MI_QUANTILE_BINS):
 def _quantile_codes_matrix(values, n_bins=DEFAULT_MI_QUANTILE_BINS):
     values = np.asarray(values, dtype=np.float64)
     if values.ndim != 2:
-        raise RuntimeError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
+        raise ValueError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
     codes = np.zeros(values.shape, dtype=np.int16)
     for feature_index in range(values.shape[1]):
         finite = np.isfinite(values[:, feature_index])
@@ -1577,7 +1577,7 @@ def _mutual_information_quantile_pair(x, y, n_bins=DEFAULT_MI_QUANTILE_BINS):
 def _mean_pairwise_mutual_info_quantile(cleaned, weights=None, n_bins=DEFAULT_MI_QUANTILE_BINS, block_size=DEFAULT_MI_QUANTILE_BLOCK_SIZE):
     values = np.asarray(cleaned, dtype=np.float64)
     if values.ndim != 2:
-        raise RuntimeError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
+        raise ValueError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
     n_timepoints, _ = values.shape
     finite = np.isfinite(values)
     usable_features = np.sum(finite, axis=0) >= 4
@@ -1599,7 +1599,7 @@ def _mean_pairwise_mutual_info_quantile(cleaned, weights=None, n_bins=DEFAULT_MI
     bin_masks = [(finite & (codes == bin_index)).astype(np.float64) for bin_index in range(n_bins)]
     if weights is not None:
         if weights.size != n_features:
-            raise RuntimeError(f'Expected {n_features} feature weights, got {weights.size}')
+            raise ValueError(f'Expected {n_features} feature weights, got {weights.size}')
     feature_indices = np.arange(n_features)
     weighted_sum = 0.0
     total_weight = 0.0
@@ -1648,7 +1648,7 @@ def _mean_pairwise_mutual_info_quantile(cleaned, weights=None, n_bins=DEFAULT_MI
 def _mean_pairwise_mutual_info_quantile_pairwise_complete(values, weights=None, n_bins=DEFAULT_MI_QUANTILE_BINS, min_overlap=4):
     values = np.asarray(values, dtype=np.float64)
     if values.ndim != 2:
-        raise RuntimeError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
+        raise ValueError(f'Expected a 2D time-by-feature matrix, got shape {values.shape}')
     finite = np.isfinite(values)
     usable_features = np.sum(finite, axis=0) >= int(min_overlap)
     values = values[:, usable_features]
@@ -1868,7 +1868,7 @@ def _intra_between_fc_test_rows(subject_deltas):
 
 def _plot_intra_between_fc(subject_deltas, results, out_dir):
     if subject_deltas.empty:
-        raise RuntimeError('No complete OFF/ON subjects were available for intra-vs-between FC plotting')
+        raise ValueError('No complete OFF/ON subjects were available for intra-vs-between FC plotting')
     columns = _intra_between_fc_columns(subject_deltas)
     def _format_p(value):
         if not np.isfinite(float(value)):
@@ -2045,7 +2045,7 @@ def _save_intra_between_fc_analysis(session_rows, roi_rows, out_dir, voxel_selec
     session_values = pd.DataFrame(session_rows).sort_values(['subject', 'session']).reset_index(drop=True)
     subject_deltas = _complete_intra_between_subject_deltas(session_values)
     if subject_deltas.empty:
-        raise RuntimeError('No complete OFF/ON subjects were available for intra-vs-between FC analysis')
+        raise ValueError('No complete OFF/ON subjects were available for intra-vs-between FC analysis')
     (results_table, results) = _intra_between_fc_test_rows(subject_deltas)
     result_summary = {
         'connectivity_metric': INTRA_BETWEEN_FC_METRIC,
@@ -2210,7 +2210,7 @@ def main():
             session_fc_row.update(intra_session_summary)
             intra_between_roi_rows.extend(roi_fc_rows)
             intra_between_session_rows.append(session_fc_row)
-        except RuntimeError as exc:
+        except ValueError as exc:
             intra_between_fc_skipped.append({'label': spec.label, 'reason': str(exc)})
     _save_networks(networks, roi_names, out_dir)
     pairwise = _pairwise_network_distances(specs, networks)
@@ -2223,7 +2223,7 @@ def main():
     hemisphere_fc_skipped = None
     try:
         hemisphere_fc_paths = _save_hemisphere_fc_analysis(specs, networks, roi_names, out_dir)
-    except RuntimeError as exc:
+    except ValueError as exc:
         hemisphere_fc_skipped = str(exc)
         _remove_hemisphere_fc_outputs(out_dir)
         warnings.warn(f'Skipped within-vs-between hemisphere FC analysis: {exc}', RuntimeWarning)

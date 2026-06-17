@@ -56,11 +56,11 @@ def _task_activation_roi_setup(args, reference_img):
 def _build_task_activation_rois(task_values, roi_names, groups, z_threshold, min_roi_voxels):
     selected = np.isfinite(task_values) & (task_values >= float(z_threshold))
     if not np.any(selected):
-        raise RuntimeError(f'No finite task-activation voxels found at z >= {float(z_threshold):g}')
+        raise ValueError(f'No finite task-activation voxels found at z >= {float(z_threshold):g}')
     group_lookup = {group.name: group for group in groups}
     missing_groups = [name for name in roi_names if name not in group_lookup]
     if missing_groups:
-        raise RuntimeError('ROI names were not found in the AAL grouping: ' + ', '.join(missing_groups))
+        raise ValueError('ROI names were not found in the AAL grouping: ' + ', '.join(missing_groups))
     rois = []
     for name in roi_names:
         mask = selected & group_lookup[name].mask
@@ -75,7 +75,7 @@ def _build_task_activation_rois(task_values, roi_names, groups, z_threshold, min
         ))
     rois = sorted(rois, key=lambda roi: (-roi.n_voxels, roi.name))
     if len(rois) < 2:
-        raise RuntimeError('At least two task-activation ROI masks are required for edge-network analysis')
+        raise ValueError('At least two task-activation ROI masks are required for edge-network analysis')
     return rois
 
 
@@ -85,7 +85,7 @@ def _missing_inputs(args):
         missing.append(f'{args.task_activation_map} (standard-GLM z map)')
     try:
         specs = M._load_session_specs(args)
-    except RuntimeError as exc:
+    except ValueError as exc:
         missing.append(str(exc))
         return missing
     for spec in specs:
@@ -270,7 +270,7 @@ def main():
             session_fc_row.update(intra_session_summary)
             intra_between_roi_rows.extend(roi_fc_rows)
             intra_between_session_rows.append(session_fc_row)
-        except RuntimeError as exc:
+        except ValueError as exc:
             intra_between_fc_skipped.append({'label': spec.label, 'reason': str(exc)})
 
     M._save_networks(networks, roi_names, out_dir)
@@ -292,7 +292,7 @@ def main():
     hemisphere_fc_skipped = None
     try:
         hemisphere_fc_paths = M._save_hemisphere_fc_analysis(specs, networks, roi_names, out_dir)
-    except RuntimeError as exc:
+    except ValueError as exc:
         hemisphere_fc_skipped = str(exc)
         M._remove_hemisphere_fc_outputs(out_dir)
         warnings.warn(f'Skipped within-vs-between hemisphere FC analysis: {exc}', RuntimeWarning)

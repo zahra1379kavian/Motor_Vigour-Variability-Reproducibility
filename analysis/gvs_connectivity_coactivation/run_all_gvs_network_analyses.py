@@ -5,15 +5,12 @@ The goal is to compare active GVS conditions against sham while pooling across
 the weighted vigour-network ROIs.  Outputs are written beside this script.
 """
 
-from __future__ import annotations
 
 import argparse
 import json
 import math
 import warnings
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import matplotlib
 
@@ -72,37 +69,37 @@ N_PERMUTATIONS = 5000
 ALPHA = 0.05
 
 
-@dataclass
 class PreparedData:
-    trial: pd.DataFrame
-    block: pd.DataFrame
-    block_delta: pd.DataFrame
-    roi_block_delta: pd.DataFrame
-    subject_network_any: pd.DataFrame
-    subject_roi_any: pd.DataFrame
-    subject_roi_condition: pd.DataFrame
-    roi_cols: list[str]
-    roi_weights: pd.Series
+    def __init__(self, trial, block, block_delta, roi_block_delta, subject_network_any, subject_roi_any, subject_roi_condition, roi_cols, roi_weights):
+        self.trial = trial
+        self.block = block
+        self.block_delta = block_delta
+        self.roi_block_delta = roi_block_delta
+        self.subject_network_any = subject_network_any
+        self.subject_roi_any = subject_roi_any
+        self.subject_roi_condition = subject_roi_condition
+        self.roi_cols = roi_cols
+        self.roi_weights = roi_weights
 
 
-def ensure_dir(path: Path) -> Path:
+def ensure_dir(path):
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def save_fig(fig: plt.Figure, path: Path, dpi: int = 220) -> None:
+def save_fig(fig, path, dpi=220):
     ensure_dir(path.parent)
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
     fig.savefig(path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
-def write_json(path: Path, payload: dict[str, Any]) -> None:
+def write_json(path, payload):
     ensure_dir(path.parent)
     path.write_text(json.dumps(payload, indent=2, default=_json_default))
 
 
-def _json_default(value: Any) -> Any:
+def _json_default(value):
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (np.floating,)):
@@ -116,11 +113,11 @@ def _json_default(value: Any) -> Any:
     return str(value)
 
 
-def clean_label(value: str) -> str:
+def clean_label(value):
     return str(value).replace("\n", " ")
 
 
-def weighted_row_mean(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
+def weighted_row_mean(values, weights):
     finite = np.isfinite(values)
     numerator = np.where(finite, values, 0.0) @ weights
     denominator = finite.astype(float) @ weights
@@ -130,7 +127,7 @@ def weighted_row_mean(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
     return out
 
 
-def cohen_d(values: np.ndarray) -> float:
+def cohen_d(values):
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
     if values.size < 2:
@@ -139,13 +136,7 @@ def cohen_d(values: np.ndarray) -> float:
     return float(np.mean(values) / sd) if sd > 0 else float("nan")
 
 
-def sign_flip_pvalue(
-    values: np.ndarray,
-    *,
-    alternative: str = "two-sided",
-    n_permutations: int = N_PERMUTATIONS,
-    rng: np.random.Generator | None = None,
-) -> float:
+def sign_flip_pvalue(values, *, alternative="two-sided", n_permutations=N_PERMUTATIONS, rng=None):
     vals = np.asarray(values, dtype=float)
     vals = vals[np.isfinite(vals)]
     n = int(vals.size)
@@ -167,17 +158,11 @@ def sign_flip_pvalue(
     return float((1 + np.count_nonzero(np.abs(null) >= abs(observed))) / (null.size + 1))
 
 
-def one_sample_summary(
-    values: np.ndarray,
-    *,
-    label: str,
-    alternative: str = "two-sided",
-    rng: np.random.Generator | None = None,
-) -> dict[str, Any]:
+def one_sample_summary(values, *, label, alternative="two-sided", rng=None):
     vals = np.asarray(values, dtype=float)
     vals = vals[np.isfinite(vals)]
     n = int(vals.size)
-    out: dict[str, Any] = {
+    out = {
         "label": label,
         "n": n,
         "mean": float(np.mean(vals)) if n else float("nan"),
@@ -201,7 +186,7 @@ def one_sample_summary(
     return out
 
 
-def add_fdr(df: pd.DataFrame, p_col: str, q_col: str = "q_fdr") -> pd.DataFrame:
+def add_fdr(df, p_col, q_col="q_fdr"):
     out = df.copy()
     out[q_col] = np.nan
     out["sig_fdr"] = False
@@ -213,13 +198,7 @@ def add_fdr(df: pd.DataFrame, p_col: str, q_col: str = "q_fdr") -> pd.DataFrame:
     return out
 
 
-def add_groupwise_fdr(
-    df: pd.DataFrame,
-    p_col: str,
-    group_cols: list[str],
-    q_col: str = "q_fdr",
-    sig_col: str = "sig_fdr",
-) -> pd.DataFrame:
+def add_groupwise_fdr(df, p_col, group_cols, q_col="q_fdr", sig_col="sig_fdr"):
     out = df.copy()
     out[q_col] = np.nan
     out[sig_col] = False
@@ -236,15 +215,7 @@ def add_groupwise_fdr(
     return out
 
 
-def matrix_signflip_pvalues(
-    matrix: np.ndarray,
-    means: np.ndarray,
-    *,
-    alternative: str = "two-sided",
-    rng: np.random.Generator | None = None,
-    n_permutations: int = N_PERMUTATIONS,
-    chunk_size: int = 512,
-) -> np.ndarray:
+def matrix_signflip_pvalues(matrix, means, *, alternative="two-sided", rng=None, n_permutations=N_PERMUTATIONS, chunk_size=512):
     arr = np.asarray(matrix, dtype=float)
     pvals = np.full(arr.shape[1], np.nan, dtype=float)
     if arr.size == 0:
@@ -253,7 +224,7 @@ def matrix_signflip_pvalues(
         rng = np.random.default_rng(RNG_SEED)
 
     finite = np.isfinite(arr)
-    mask_groups: dict[tuple[bool, ...], list[int]] = {}
+    mask_groups = {}
     for col_idx in range(arr.shape[1]):
         mask = tuple(bool(x) for x in finite[:, col_idx])
         if any(mask):
@@ -284,13 +255,7 @@ def matrix_signflip_pvalues(
     return pvals
 
 
-def one_sample_matrix_summary(
-    matrix: pd.DataFrame,
-    *,
-    label: str,
-    alternative: str = "two-sided",
-    rng: np.random.Generator | None = None,
-) -> pd.DataFrame:
+def one_sample_matrix_summary(matrix, *, label, alternative="two-sided", rng=None):
     arr = matrix.to_numpy(dtype=float)
     n_cols = arr.shape[1]
     finite = np.isfinite(arr)
@@ -351,18 +316,18 @@ def one_sample_matrix_summary(
     return out.reset_index()
 
 
-def subject_sort_key(subject: str) -> tuple[int, str]:
+def subject_sort_key(subject):
     text = str(subject)
     digits = "".join(ch for ch in text if ch.isdigit())
     return (int(digits), text) if digits else (10**9, text)
 
 
-def load_and_prepare() -> PreparedData:
+def load_and_prepare():
     trial = pd.read_csv(TRIAL_TABLE)
     roi_def = pd.read_csv(ROI_DEF)
     roi_cols = [str(r) for r in roi_def["roi_label"].tolist() if str(r) in trial.columns]
     if not roi_cols:
-        raise RuntimeError(f"No ROI columns from {ROI_DEF} were found in {TRIAL_TABLE}.")
+        raise ValueError(f"No ROI columns from {ROI_DEF} were found in {TRIAL_TABLE}.")
 
     weight_lookup = roi_def.set_index("roi_label")["roi_weight_sum"].astype(float)
     roi_weights = weight_lookup.reindex(roi_cols).fillna(weight_lookup.mean())
@@ -482,7 +447,7 @@ def load_and_prepare() -> PreparedData:
     )
 
 
-def fit_mixedlm(formula: str, data: pd.DataFrame, group_col: str, vc_formula: dict[str, str] | None = None) -> pd.DataFrame:
+def fit_mixedlm(formula, data, group_col, vc_formula=None):
     if not HAS_STATSMODELS:
         return pd.DataFrame([{"status": "skipped", "reason": "statsmodels is not available"}])
     fit_data = data.copy()
@@ -520,7 +485,7 @@ def fit_mixedlm(formula: str, data: pd.DataFrame, group_col: str, vc_formula: di
     return pd.DataFrame(rows)
 
 
-def plot_subject_deltas(df: pd.DataFrame, value_col: str, title: str, path: Path) -> None:
+def plot_subject_deltas(df, value_col, title, path):
     meds = ["OFF", "ON"]
     fig, ax = plt.subplots(figsize=(6.0, 4.2))
     rng = np.random.default_rng(RNG_SEED)
@@ -542,7 +507,7 @@ def plot_subject_deltas(df: pd.DataFrame, value_col: str, title: str, path: Path
     save_fig(fig, path)
 
 
-def analysis_01_collapsed_projection(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_01_collapsed_projection(data, rng):
     out = ensure_dir(OUT_DIR / "01_collapsed_network_projection")
     model_df = fit_mixedlm(
         "network_score ~ active + med_on + active:med_on",
@@ -584,7 +549,7 @@ def analysis_01_collapsed_projection(data: PreparedData, rng: np.random.Generato
     }
 
 
-def analysis_02_block_mixedlm(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_02_block_mixedlm(data, rng):
     out = ensure_dir(OUT_DIR / "02_block_level_mixedlm")
     model_df = fit_mixedlm(
         "network_delta ~ med_on",
@@ -626,7 +591,7 @@ def analysis_02_block_mixedlm(data: PreparedData, rng: np.random.Generator) -> d
     }
 
 
-def analysis_03_subject_any_gvs(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_03_subject_any_gvs(data, rng):
     out = ensure_dir(OUT_DIR / "03_subject_any_gvs_vs_sham")
     rows = []
     for med, g in data.subject_network_any.groupby("medication", sort=False):
@@ -651,7 +616,7 @@ def analysis_03_subject_any_gvs(data: PreparedData, rng: np.random.Generator) ->
     }
 
 
-def vector_norm_permutation(matrix: np.ndarray, rng: np.random.Generator, n_permutations: int = N_PERMUTATIONS) -> dict[str, float]:
+def vector_norm_permutation(matrix, rng, n_permutations=N_PERMUTATIONS):
     arr = np.asarray(matrix, dtype=float)
     arr = arr[np.all(np.isfinite(arr), axis=1)]
     n, p = arr.shape if arr.ndim == 2 else (0, 0)
@@ -664,13 +629,13 @@ def vector_norm_permutation(matrix: np.ndarray, rng: np.random.Generator, n_perm
     return {"n_subjects": n, "n_features": p, "norm": observed, "p_value": p_value}
 
 
-def subject_roi_matrix(subject_roi: pd.DataFrame, med: str, roi_cols: list[str]) -> pd.DataFrame:
+def subject_roi_matrix(subject_roi, med, roi_cols):
     subset = subject_roi.loc[subject_roi["medication"].eq(med)].copy()
     pivot = subset.pivot(index="subject", columns="roi_label", values="roi_delta").reindex(columns=roi_cols)
     return pivot.sort_index(key=lambda idx: [subject_sort_key(x) for x in idx])
 
 
-def analysis_04_multivariate_network(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_04_multivariate_network(data, rng):
     out = ensure_dir(OUT_DIR / "04_multivariate_network_perturbation")
     rows = []
     top_rows = []
@@ -711,7 +676,7 @@ def analysis_04_multivariate_network(data: PreparedData, rng: np.random.Generato
     }
 
 
-def analysis_05_medication_interaction(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_05_medication_interaction(data, rng):
     out = ensure_dir(OUT_DIR / "05_medication_interaction")
     wide = data.subject_network_any.pivot(index="subject", columns="medication", values="network_delta")
     wide = wide.dropna(subset=["OFF", "ON"])
@@ -754,7 +719,7 @@ def analysis_05_medication_interaction(data: PreparedData, rng: np.random.Genera
     }
 
 
-def resample_row(row: np.ndarray, target_trials: int = 10) -> np.ndarray:
+def resample_row(row, target_trials=10):
     row = np.asarray(row, dtype=float)
     out = np.full(target_trials, np.nan, dtype=float)
     finite = np.isfinite(row)
@@ -770,7 +735,7 @@ def resample_row(row: np.ndarray, target_trials: int = 10) -> np.ndarray:
     return out
 
 
-def zscore_rows(matrix: np.ndarray) -> np.ndarray:
+def zscore_rows(matrix):
     arr = np.asarray(matrix, dtype=float)
     out = np.full_like(arr, np.nan)
     for idx, row in enumerate(arr):
@@ -783,7 +748,7 @@ def zscore_rows(matrix: np.ndarray) -> np.ndarray:
     return out
 
 
-def matrix_similarity_metrics(target_trials_by_roi: np.ndarray, sham_trials_by_roi: np.ndarray) -> dict[str, float]:
+def matrix_similarity_metrics(target_trials_by_roi, sham_trials_by_roi):
     target = np.asarray(target_trials_by_roi, dtype=float).T
     sham = np.asarray(sham_trials_by_roi, dtype=float).T
     target_r = np.vstack([resample_row(row) for row in target])
@@ -812,7 +777,7 @@ def matrix_similarity_metrics(target_trials_by_roi: np.ndarray, sham_trials_by_r
     }
 
 
-def analysis_06_similarity_to_sham(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_06_similarity_to_sham(data, rng):
     out = ensure_dir(OUT_DIR / "06_similarity_to_sham")
     rows = []
     for key, run_df in data.trial.groupby(["subject", "session", "medication", "run", "run_id"], sort=False):
@@ -869,7 +834,7 @@ def analysis_06_similarity_to_sham(data: PreparedData, rng: np.random.Generator)
     }
 
 
-def analysis_07_variability_dispersion(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_07_variability_dispersion(data, rng):
     out = ensure_dir(OUT_DIR / "07_network_variability_dispersion")
     metrics = ["network_var_delta", "roi_dispersion_delta"]
     rows = []
@@ -899,7 +864,7 @@ def analysis_07_variability_dispersion(data: PreparedData, rng: np.random.Genera
     }
 
 
-def corr_edge_vector(values: np.ndarray) -> tuple[np.ndarray, dict[str, float]]:
+def corr_edge_vector(values):
     arr = np.asarray(values, dtype=float)
     if arr.ndim != 2:
         return np.array([], dtype=float), {"mean_abs_corr": np.nan, "mean_corr": np.nan}
@@ -924,7 +889,7 @@ def corr_edge_vector(values: np.ndarray) -> tuple[np.ndarray, dict[str, float]]:
     return edges, {"mean_abs_corr": float(np.mean(np.abs(finite_edges))), "mean_corr": float(np.mean(finite_edges))}
 
 
-def roi_edge_index(roi_cols: list[str]) -> pd.DataFrame:
+def roi_edge_index(roi_cols):
     edge_idx = np.triu_indices(len(roi_cols), k=1)
     rows = []
     for edge_id, (i, j) in enumerate(zip(edge_idx[0], edge_idx[1])):
@@ -934,7 +899,7 @@ def roi_edge_index(roi_cols: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def plot_edge_tstat_matrix(stats_df: pd.DataFrame, roi_cols: list[str], title: str, path: Path) -> None:
+def plot_edge_tstat_matrix(stats_df, roi_cols, title, path):
     matrix = pd.DataFrame(np.nan, index=roi_cols, columns=roi_cols, dtype=float)
     sig = pd.DataFrame(False, index=roi_cols, columns=roi_cols, dtype=bool)
     for row in stats_df.itertuples(index=False):
@@ -960,11 +925,11 @@ def plot_edge_tstat_matrix(stats_df: pd.DataFrame, roi_cols: list[str], title: s
     save_fig(fig, path)
 
 
-def analysis_main_result(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_main_result(data, rng):
     out = ensure_dir(OUT_DIR / "main result")
     edge_index = roi_edge_index(data.roi_cols)
     rows = []
-    edge_lookup: dict[tuple[Any, ...], np.ndarray] = {}
+    edge_lookup = {}
     for key, block_df in data.trial.groupby(["subject", "session", "medication", "run", "run_id", "condition_label", "condition_code"], sort=False):
         edges, metrics = corr_edge_vector(block_df[data.roi_cols].to_numpy(dtype=float))
         record = dict(zip(["subject", "session", "medication", "run", "run_id", "condition_label", "condition_code"], key))
@@ -1327,7 +1292,7 @@ def analysis_main_result(data: PreparedData, rng: np.random.Generator) -> dict[s
     }
 
 
-def circuit_for_roi(roi: str) -> str:
+def circuit_for_roi(roi):
     base = str(roi).rsplit("_", 1)[0]
     if base in {"Precentral", "Postcentral", "Supp_Motor_Area", "Paracentral_Lobule"}:
         return "motor_sensorimotor"
@@ -1340,7 +1305,7 @@ def circuit_for_roi(roi: str) -> str:
     return "cortical_association"
 
 
-def analysis_09_circuit_level(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_09_circuit_level(data, rng):
     out = ensure_dir(OUT_DIR / "09_circuit_level_aggregation")
     trial = data.trial.copy()
     circuit_map = {roi: circuit_for_roi(roi) for roi in data.roi_cols}
@@ -1390,7 +1355,7 @@ def analysis_09_circuit_level(data: PreparedData, rng: np.random.Generator) -> d
     }
 
 
-def maxt_permutation(cell_matrix: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+def maxt_permutation(cell_matrix, rng):
     arr = cell_matrix.to_numpy(dtype=float)
     n_per_cell = np.sum(np.isfinite(arr), axis=0)
     means = np.nanmean(arr, axis=0)
@@ -1415,7 +1380,7 @@ def maxt_permutation(cell_matrix: pd.DataFrame, rng: np.random.Generator) -> pd.
     return out.reset_index()
 
 
-def analysis_10_maxt_heatmap(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_10_maxt_heatmap(data, rng):
     out = ensure_dir(OUT_DIR / "10_permutation_maxt_heatmap")
     rows = []
     for med in ["OFF", "ON"]:
@@ -1450,7 +1415,7 @@ def analysis_10_maxt_heatmap(data: PreparedData, rng: np.random.Generator) -> di
     }
 
 
-def analysis_11_empirical_bayes(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_11_empirical_bayes(data, rng):
     del rng
     out = ensure_dir(OUT_DIR / "11_bayesian_hierarchical_shrinkage")
     rows = []
@@ -1524,7 +1489,7 @@ def analysis_11_empirical_bayes(data: PreparedData, rng: np.random.Generator) ->
     }
 
 
-def run_decoder(df: pd.DataFrame, roi_cols: list[str], label: str, out: Path) -> dict[str, Any]:
+def run_decoder(df, roi_cols, label, out):
     if not HAS_SKLEARN:
         return {"label": label, "status": "skipped", "reason": "sklearn unavailable"}
     sub = df.dropna(subset=["active"]).copy()
@@ -1577,7 +1542,7 @@ def run_decoder(df: pd.DataFrame, roi_cols: list[str], label: str, out: Path) ->
     }
 
 
-def analysis_12_predictive_decoding(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_12_predictive_decoding(data, rng):
     del rng
     out = ensure_dir(OUT_DIR / "12_predictive_decoding")
     rows = [run_decoder(data.trial, data.roi_cols, "all_sessions", out)]
@@ -1606,7 +1571,7 @@ def analysis_12_predictive_decoding(data: PreparedData, rng: np.random.Generator
     }
 
 
-def correlation_row(x: pd.Series, y: pd.Series, label: str) -> dict[str, Any]:
+def correlation_row(x, y, label):
     valid = np.isfinite(x.astype(float)) & np.isfinite(y.astype(float))
     xv = x[valid].astype(float).to_numpy()
     yv = y[valid].astype(float).to_numpy()
@@ -1617,7 +1582,7 @@ def correlation_row(x: pd.Series, y: pd.Series, label: str) -> dict[str, Any]:
     return {"label": label, "n": int(xv.size), "pearson_r": float(r), "p_value": float(p), "spearman_rho": float(rho), "spearman_p": float(p_s)}
 
 
-def analysis_13_behaviour_linked(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_13_behaviour_linked(data, rng):
     del rng
     out = ensure_dir(OUT_DIR / "13_behaviour_linked_network")
     rows = []
@@ -1662,7 +1627,7 @@ def analysis_13_behaviour_linked(data: PreparedData, rng: np.random.Generator) -
     }
 
 
-def project_beta_with_threshold(beta_path: Path, weights: np.ndarray, percentile: float) -> np.ndarray:
+def project_beta_with_threshold(beta_path, weights, percentile):
     positive = np.isfinite(weights) & (weights > 0)
     threshold = float(np.percentile(weights[positive], percentile))
     mask = positive & (weights >= threshold)
@@ -1679,7 +1644,7 @@ def project_beta_with_threshold(beta_path: Path, weights: np.ndarray, percentile
     return out
 
 
-def project_beta_for_percentiles(beta_path: Path, weights: np.ndarray, percentiles: list[float]) -> dict[float, np.ndarray]:
+def project_beta_for_percentiles(beta_path, weights, percentiles):
     """Project one run once through the largest mask, then reuse subsets."""
     positive = np.isfinite(weights) & (weights > 0)
     thresholds = {float(p): float(np.percentile(weights[positive], float(p))) for p in percentiles}
@@ -1694,7 +1659,7 @@ def project_beta_for_percentiles(beta_path: Path, weights: np.ndarray, percentil
     selected = np.asarray(flat[base_indices, :], dtype=np.float64)
     finite = np.isfinite(selected)
 
-    out: dict[float, np.ndarray] = {}
+    out = {}
     for percentile in percentiles:
         keep = base_weights >= thresholds[float(percentile)]
         selected_weights = base_weights[keep]
@@ -1709,7 +1674,7 @@ def project_beta_for_percentiles(beta_path: Path, weights: np.ndarray, percentil
     return out
 
 
-def analysis_14_threshold_sensitivity(data: PreparedData, rng: np.random.Generator) -> dict[str, Any]:
+def analysis_14_threshold_sensitivity(data, rng):
     del data
     out = ensure_dir(OUT_DIR / "14_threshold_sensitivity")
     if not RUN_INVENTORY.exists() or not WEIGHT_MAP.exists():
@@ -1794,7 +1759,7 @@ def analysis_14_threshold_sensitivity(data: PreparedData, rng: np.random.Generat
     }
 
 
-def write_method_summary(summary: pd.DataFrame) -> None:
+def write_method_summary(summary):
     summary = summary.copy()
     summary["best_p_numeric"] = pd.to_numeric(summary["best_p"], errors="coerce")
     summary["rank"] = summary["best_p_numeric"].rank(method="min", na_option="bottom").astype(int)
@@ -1830,13 +1795,13 @@ def write_method_summary(summary: pd.DataFrame) -> None:
     (OUT_DIR / "PROMISING_METHODS.md").write_text("\n".join(lines))
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-threshold-sensitivity", action="store_true", help="Skip analysis 14, which reprojects beta volumes.")
     return parser.parse_args()
 
 
-def main() -> None:
+def main():
     args = parse_args()
     ensure_dir(OUT_DIR)
     warnings.filterwarnings("ignore", category=RuntimeWarning)

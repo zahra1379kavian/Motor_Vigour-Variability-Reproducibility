@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Prepare robust-FLAME and responder-only FSFs from the original mixed model."""
 
-from __future__ import annotations
 
 import re
 import subprocess
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -24,31 +22,31 @@ RIGHT_M1_MM = (38, -24, 56)
 ROI_RADIUS_MM = 8
 
 
-@dataclass(frozen=True)
 class InputFeat:
-    index: int
-    subject: int
-    session: int
-    path: Path
+    def __init__(self, index, subject, session, path):
+        self.index = index
+        self.subject = subject
+        self.session = session
+        self.path = path
 
 
-@dataclass(frozen=True)
 class SubjectResponse:
-    subject: int
-    n_sessions: int
-    mean_z_left: float
-    mean_z_right: float
+    def __init__(self, subject, n_sessions, mean_z_left, mean_z_right):
+        self.subject = subject
+        self.n_sessions = n_sessions
+        self.mean_z_left = mean_z_left
+        self.mean_z_right = mean_z_right
 
     @property
-    def responder(self) -> bool:
+    def responder(self):
         return self.mean_z_left > 0 or self.mean_z_right > 0
 
 
-def run(cmd: list[str], stdin: str | None = None) -> str:
+def run(cmd, stdin=None):
     return subprocess.check_output(cmd, input=stdin, text=True)
 
 
-def replace_setting(text: str, key: str, value: str) -> str:
+def replace_setting(text, key, value):
     pattern = re.compile(rf"^(set {re.escape(key)}\s+).*$", flags=re.MULTILINE)
     text, count = pattern.subn(lambda m: f"{m.group(1)}{value}", text)
     if count == 0:
@@ -56,7 +54,7 @@ def replace_setting(text: str, key: str, value: str) -> str:
     return text
 
 
-def mm_to_vox(coord: tuple[int, int, int]) -> tuple[int, int, int]:
+def mm_to_vox(coord):
     out = run(
         ["std2imgcoord", "-img", str(REF_IMG), "-std", str(REF_IMG), "-vox"],
         stdin=f"{coord[0]} {coord[1]} {coord[2]}\n",
@@ -64,7 +62,7 @@ def mm_to_vox(coord: tuple[int, int, int]) -> tuple[int, int, int]:
     return tuple(int(round(float(v))) for v in out.split()[:3])
 
 
-def make_sphere(point_name: str, sphere_name: str, coord: tuple[int, int, int]) -> Path:
+def make_sphere(point_name, sphere_name, coord):
     vx, vy, vz = mm_to_vox(coord)
     point = QC_DIR / point_name
     sphere = QC_DIR / sphere_name
@@ -107,7 +105,7 @@ def make_sphere(point_name: str, sphere_name: str, coord: tuple[int, int, int]) 
     return sphere.with_suffix(".nii.gz")
 
 
-def make_rois() -> tuple[Path, Path, Path]:
+def make_rois():
     QC_DIR.mkdir(parents=True, exist_ok=True)
     left = make_sphere("m1_left_point", "m1_left_8mm", LEFT_M1_MM)
     right = make_sphere("m1_right_point", "m1_right_8mm", RIGHT_M1_MM)
@@ -116,9 +114,9 @@ def make_rois() -> tuple[Path, Path, Path]:
     return left, right, bilateral.with_suffix(".nii.gz")
 
 
-def parse_inputs(fsf: str) -> list[InputFeat]:
+def parse_inputs(fsf):
     multiple = int(re.search(r"^set fmri\(multiple\)\s+(\d+)", fsf, re.MULTILINE).group(1))
-    inputs: list[InputFeat] = []
+    inputs = []
     for match in re.finditer(r'^set feat_files\((\d+)\)\s+"([^"]+)"', fsf, re.MULTILINE):
         index = int(match.group(1))
         if index > multiple:
@@ -139,18 +137,18 @@ def parse_inputs(fsf: str) -> list[InputFeat]:
     return inputs
 
 
-def fsl_mean(img: Path, mask: Path) -> float:
+def fsl_mean(img, mask):
     out = run(["fslstats", str(img), "-k", str(mask), "-M"])
     return float(out.split()[0])
 
 
-def classify_responders(inputs: list[InputFeat], left_roi: Path, right_roi: Path) -> dict[int, SubjectResponse]:
-    by_subject: dict[int, list[tuple[float, float]]] = defaultdict(list)
+def classify_responders(inputs, left_roi, right_roi):
+    by_subject = defaultdict(list)
     for item in inputs:
         zstat = item.path / "stats/zstat1.nii.gz"
         by_subject[item.subject].append((fsl_mean(zstat, left_roi), fsl_mean(zstat, right_roi)))
 
-    responses: dict[int, SubjectResponse] = {}
+    responses = {}
     for subject, rows in sorted(by_subject.items()):
         n_sessions = len(rows)
         responses[subject] = SubjectResponse(
@@ -162,14 +160,14 @@ def classify_responders(inputs: list[InputFeat], left_roi: Path, right_roi: Path
     return responses
 
 
-def make_robust_fsf(template: str) -> str:
+def make_robust_fsf(template):
     fsf = replace_setting(template, "fmri(outputdir)", f'"{ROBUST_OUTPUT}"')
     fsf = replace_setting(fsf, "fmri(robust_yn)", "1")
     fsf = replace_setting(fsf, "fmri(overwrite_yn)", "1")
     return fsf
 
 
-def make_responder_fsf(template: str, included: list[InputFeat]) -> str:
+def make_responder_fsf(template, included):
     fsf = replace_setting(template, "fmri(outputdir)", f'"{RESPONDER_OUTPUT}"')
     fsf = replace_setting(fsf, "fmri(npts)", str(len(included)))
     fsf = replace_setting(fsf, "fmri(multiple)", str(len(included)))
@@ -183,7 +181,7 @@ def make_responder_fsf(template: str, included: list[InputFeat]) -> str:
     return fsf
 
 
-def write_summary(inputs: list[InputFeat], responses: dict[int, SubjectResponse]) -> None:
+def write_summary(inputs, responses):
     included_subjects = {sub for sub, response in responses.items() if response.responder}
     summary = QC_DIR / "mixed_model_responder_summary.tsv"
     with summary.open("w") as f:
@@ -214,7 +212,7 @@ def write_summary(inputs: list[InputFeat], responses: dict[int, SubjectResponse]
         )
 
 
-def main() -> int:
+def main():
     if not SOURCE_FSF.exists():
         raise FileNotFoundError(SOURCE_FSF)
     if not REF_IMG.exists():

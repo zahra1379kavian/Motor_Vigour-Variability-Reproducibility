@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot active-GVS versus sham effects on RT and vigour projection metrics."""
 
-from __future__ import annotations
 
 import argparse
 import json
@@ -64,7 +63,7 @@ METRICS = {
 }
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Use the GVS trial inventory beta volumes and the revised behaviour inputs "
@@ -80,14 +79,14 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _resolve_path(path: str | Path) -> Path:
+def _resolve_path(path):
     path = Path(path)
     if path.is_absolute():
         return path
     return ROOT / path
 
 
-def _mean_normalized_adjacent_change(values: np.ndarray) -> tuple[float, int]:
+def _mean_normalized_adjacent_change(values):
     values = np.asarray(values, dtype=np.float64)
     if values.size < 2:
         return np.nan, 0
@@ -107,7 +106,7 @@ def _mean_normalized_adjacent_change(values: np.ndarray) -> tuple[float, int]:
     return float(np.mean(score)), int(np.count_nonzero(keep))
 
 
-def _coupling_fisher_z(projection: np.ndarray, rt_ms: np.ndarray, min_pairs: int) -> tuple[float, float, int]:
+def _coupling_fisher_z(projection, rt_ms, min_pairs):
     projection = np.asarray(projection, dtype=np.float64)
     rt_ms = np.asarray(rt_ms, dtype=np.float64)
     keep = np.isfinite(projection) & np.isfinite(rt_ms)
@@ -123,7 +122,7 @@ def _coupling_fisher_z(projection: np.ndarray, rt_ms: np.ndarray, min_pairs: int
     return float(np.arctanh(r)), r, n
 
 
-def _load_inputs(inventory_path: Path, run_metrics_path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _load_inputs(inventory_path, run_metrics_path):
     inventory = pd.read_csv(inventory_path)
     required_inventory = {
         "subject",
@@ -138,25 +137,19 @@ def _load_inputs(inventory_path: Path, run_metrics_path: Path) -> tuple[pd.DataF
     }
     missing = sorted(required_inventory - set(inventory.columns))
     if missing:
-        raise RuntimeError(f"{inventory_path} is missing columns: {', '.join(missing)}")
+        raise ValueError(f"{inventory_path} is missing columns: {', '.join(missing)}")
 
     run_metrics = pd.read_csv(run_metrics_path)
     required_metrics = {"sub_tag", "ses", "run", "behaviour_path"}
     missing = sorted(required_metrics - set(run_metrics.columns))
     if missing:
-        raise RuntimeError(f"{run_metrics_path} is missing columns: {', '.join(missing)}")
+        raise ValueError(f"{run_metrics_path} is missing columns: {', '.join(missing)}")
 
     run_metrics = run_metrics.rename(columns={"sub_tag": "subject", "ses": "session"})
     return inventory, run_metrics
 
 
-def _run_projection_and_rt(
-    row: pd.Series,
-    beta_path: Path,
-    weights: np.ndarray,
-    *,
-    behaviour_column: int,
-) -> tuple[np.ndarray, np.ndarray, Path, Path]:
+def _run_projection_and_rt(row, beta_path, weights, *, behaviour_column):
     projection_path = _resolve_path(beta_path)
     behaviour_path = _resolve_path(row["behaviour_path"])
     if not projection_path.exists():
@@ -173,13 +166,7 @@ def _run_projection_and_rt(
     return projection, rt_s * 1000.0, projection_path, behaviour_path
 
 
-def _build_trial_table(
-    inventory: pd.DataFrame,
-    run_metrics: pd.DataFrame,
-    weights: np.ndarray,
-    *,
-    behaviour_column: int,
-) -> pd.DataFrame:
+def _build_trial_table(inventory, run_metrics, weights, *, behaviour_column):
     metric_lookup = {
         (str(row.subject), int(row.session), int(row.run)): row
         for row in run_metrics.itertuples(index=False)
@@ -191,8 +178,8 @@ def _build_trial_table(
         .to_dict()
     )
     missing_runs = []
-    rows: list[dict[str, object]] = []
-    cache: dict[tuple[str, int, int], tuple[np.ndarray, np.ndarray, Path, Path]] = {}
+    rows = []
+    cache = {}
 
     run_keys = inventory[["subject", "session", "run"]].drop_duplicates().sort_values(["subject", "session", "run"])
     for run_index, run_row in enumerate(run_keys.itertuples(index=False), start=1):
@@ -215,7 +202,7 @@ def _build_trial_table(
         )
 
     if missing_runs:
-        raise RuntimeError(f"Run metrics are missing {len(missing_runs)} inventory runs.")
+        raise ValueError(f"Run metrics are missing {len(missing_runs)} inventory runs.")
 
     for row in inventory.itertuples(index=False):
         key = (str(row.subject), int(row.session), int(row.run))
@@ -244,12 +231,12 @@ def _build_trial_table(
             )
 
     if not rows:
-        raise RuntimeError("No GVS projection/RT trial rows were built.")
+        raise ValueError("No GVS projection/RT trial rows were built.")
     return pd.DataFrame(rows)
 
 
-def _block_metrics(trials: pd.DataFrame, min_coupling_pairs: int) -> pd.DataFrame:
-    rows: list[dict[str, object]] = []
+def _block_metrics(trials, min_coupling_pairs):
+    rows = []
     group_cols = [
         "subject",
         "session",
@@ -287,8 +274,8 @@ def _block_metrics(trials: pd.DataFrame, min_coupling_pairs: int) -> pd.DataFram
     return pd.DataFrame(rows).sort_values(group_cols).reset_index(drop=True)
 
 
-def _run_pairs(blocks: pd.DataFrame) -> pd.DataFrame:
-    rows: list[dict[str, object]] = []
+def _run_pairs(blocks):
+    rows = []
     index_cols = ["subject", "session", "medication", "run"]
     metric_cols = list(METRICS)
     for key, group in blocks.groupby(index_cols, sort=True):
@@ -314,7 +301,7 @@ def _run_pairs(blocks: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _subject_pairs(run_pairs: pd.DataFrame) -> pd.DataFrame:
+def _subject_pairs(run_pairs):
     subject = (
         run_pairs.replace([np.inf, -np.inf], np.nan)
         .dropna(subset=["sham_value", "active_value", "delta_active_minus_sham"])
@@ -329,10 +316,10 @@ def _subject_pairs(run_pairs: pd.DataFrame) -> pd.DataFrame:
     return subject.sort_values(["metric", "subject"]).reset_index(drop=True)
 
 
-def _one_sample_stats(values: np.ndarray) -> dict[str, float | int]:
+def _one_sample_stats(values):
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
-    row: dict[str, float | int] = {
+    row = {
         "n_subjects": int(values.size),
         "mean_delta": float(np.mean(values)) if values.size else np.nan,
         "ci95_low": np.nan,
@@ -355,7 +342,7 @@ def _one_sample_stats(values: np.ndarray) -> dict[str, float | int]:
     return row
 
 
-def _stats_table(subject_pairs: pd.DataFrame) -> pd.DataFrame:
+def _stats_table(subject_pairs):
     rows = []
     for metric, group in subject_pairs.groupby("metric", sort=False):
         row = {"metric": metric, **_one_sample_stats(group["delta_active_minus_sham"].to_numpy(dtype=np.float64))}
@@ -363,7 +350,7 @@ def _stats_table(subject_pairs: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _expanded_limits(values: np.ndarray) -> tuple[float, float]:
+def _expanded_limits(values):
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
     if values.size == 0:
@@ -377,7 +364,7 @@ def _expanded_limits(values: np.ndarray) -> tuple[float, float]:
     return low - pad, high + pad
 
 
-def _draw_metric_panel(ax: plt.Axes, subject_pairs: pd.DataFrame, metric: str) -> None:
+def _draw_metric_panel(ax, subject_pairs, metric):
     spec = METRICS[metric]
     data = subject_pairs.loc[subject_pairs["metric"].eq(metric)].copy()
     data = data.sort_values("delta_active_minus_sham").reset_index(drop=True)
@@ -429,7 +416,7 @@ def _draw_metric_panel(ax: plt.Axes, subject_pairs: pd.DataFrame, metric: str) -
         tick_label.set_fontweight("bold")
 
 
-def _save_figure(subject_pairs: pd.DataFrame, out_dir: Path) -> tuple[Path, Path]:
+def _save_figure(subject_pairs, out_dir):
     with plt.rc_context(
         {
             "font.family": "sans-serif",
@@ -471,7 +458,7 @@ def _json_safe(value):
     return value
 
 
-def main() -> None:
+def main():
     args = _parse_args()
     inventory, run_metrics = _load_inputs(args.inventory, args.run_metrics)
     weights = _load_weights(args.weight_map)

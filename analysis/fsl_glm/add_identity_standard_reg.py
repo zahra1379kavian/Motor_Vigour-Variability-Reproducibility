@@ -5,13 +5,11 @@ Use this only when first-level cope images are already in the same standard
 space/grid as the chosen reference image.
 """
 
-from __future__ import annotations
 
 import argparse
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -26,17 +24,17 @@ IDENTITY_MAT = """1 0 0 0
 """
 
 
-@dataclass(frozen=True)
 class ImageGrid:
-    dim1: str
-    dim2: str
-    dim3: str
-    pixdim1: float
-    pixdim2: float
-    pixdim3: float
+    def __init__(self, dim1, dim2, dim3, pixdim1, pixdim2, pixdim3):
+        self.dim1 = dim1
+        self.dim2 = dim2
+        self.dim3 = dim3
+        self.pixdim1 = pixdim1
+        self.pixdim2 = pixdim2
+        self.pixdim3 = pixdim3
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Create reg/example_func2standard.mat as identity in FEAT dirs."
     )
@@ -55,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def fslval(image: Path, field: str) -> str:
+def fslval(image, field):
     result = subprocess.run(
         ["fslval", str(image), field],
         check=True,
@@ -66,7 +64,7 @@ def fslval(image: Path, field: str) -> str:
     return result.stdout.strip()
 
 
-def grid(image: Path) -> ImageGrid:
+def grid(image):
     return ImageGrid(
         dim1=fslval(image, "dim1"),
         dim2=fslval(image, "dim2"),
@@ -77,7 +75,7 @@ def grid(image: Path) -> ImageGrid:
     )
 
 
-def same_grid(left: ImageGrid, right: ImageGrid) -> bool:
+def same_grid(left, right):
     return (
         left.dim1 == right.dim1
         and left.dim2 == right.dim2
@@ -88,7 +86,7 @@ def same_grid(left: ImageGrid, right: ImageGrid) -> bool:
     )
 
 
-def completed_feat_dirs(root: Path) -> list[Path]:
+def completed_feat_dirs(root):
     return sorted(
         path
         for path in root.glob("*.feat")
@@ -98,7 +96,7 @@ def completed_feat_dirs(root: Path) -> list[Path]:
     )
 
 
-def write_identity_reg(feat_dir: Path, standard: Path, overwrite: bool) -> None:
+def write_identity_reg(feat_dir, standard, overwrite):
     reg_dir = feat_dir / "reg"
     reg_dir.mkdir(exist_ok=True)
 
@@ -112,7 +110,7 @@ def write_identity_reg(feat_dir: Path, standard: Path, overwrite: bool) -> None:
     shutil.copyfile(feat_dir / "example_func.nii.gz", reg_dir / "example_func2standard.nii.gz")
 
 
-def main() -> int:
+def main():
     args = parse_args()
     feat_root = args.feat_root.resolve()
     standard = args.standard.resolve()
@@ -127,8 +125,8 @@ def main() -> int:
         return 1
 
     standard_grid = grid(standard)
-    ready: list[Path] = []
-    skipped: list[str] = []
+    ready = []
+    skipped = []
 
     for feat_dir in feat_dirs:
         mat_path = feat_dir / "reg/example_func2standard.mat"

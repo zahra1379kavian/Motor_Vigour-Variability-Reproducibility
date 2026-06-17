@@ -37,7 +37,6 @@ Outputs (under med_fc_change_consistency/):
   * med_fc_change_consistency_method.md
 """
 
-from __future__ import annotations
 
 import argparse
 import importlib.util
@@ -77,10 +76,10 @@ TRIAL_META_COLUMNS = {
 }
 
 
-def _load(path: Path, name: str):
+def _load(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not import {path}")
+        raise ImportError(f"Could not import {path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -97,7 +96,7 @@ FC_METRICS = [
 ]
 
 
-def load_timeseries(subject: str, session: str) -> np.ndarray | None:
+def load_timeseries(subject, session):
     path = TS_DIR / f"{subject}_{session}.csv"
     if not path.exists():
         return None
@@ -106,7 +105,7 @@ def load_timeseries(subject: str, session: str) -> np.ndarray | None:
     return df.to_numpy(dtype=float)
 
 
-def _session_label(value) -> str:
+def _session_label(value):
     text = str(value).strip()
     if text.startswith("ses-"):
         return text
@@ -115,30 +114,30 @@ def _session_label(value) -> str:
     return f"ses-{text}"
 
 
-def _run_label(value) -> str:
+def _run_label(value):
     text = str(value).strip()
     if text.endswith(".0"):
         text = text[:-2]
     return text
 
 
-def load_run_timeseries(trial_table: Path) -> tuple[list[str], dict[tuple[str, str, str], np.ndarray]]:
+def load_run_timeseries(trial_table):
     """Load run-level ROI beta series from a long table with subject/session/run columns."""
     if not trial_table.exists():
-        raise RuntimeError(f"Missing run-labelled beta-series table: {trial_table}")
+        raise FileNotFoundError(f"Missing run-labelled beta-series table: {trial_table}")
     df = pd.read_csv(trial_table)
     required = {"subject", "session", "run"}
     missing = required - set(df.columns)
     if missing:
-        raise RuntimeError(f"{trial_table} is missing columns: {', '.join(sorted(missing))}")
+        raise ValueError(f"{trial_table} is missing columns: {', '.join(sorted(missing))}")
     roi_cols = [c for c in df.columns if c not in TRIAL_META_COLUMNS]
     if len(roi_cols) < 2:
-        raise RuntimeError(f"{trial_table} has fewer than two ROI beta-series columns")
+        raise ValueError(f"{trial_table} has fewer than two ROI beta-series columns")
 
     work = df.copy()
     work["_session_label"] = work["session"].map(_session_label)
     work["_run_label"] = work["run"].map(_run_label)
-    run_ts: dict[tuple[str, str, str], np.ndarray] = {}
+    run_ts = {}
     for (subject, session, run), group in work.groupby(
         ["subject", "_session_label", "_run_label"], sort=True
     ):
@@ -150,7 +149,7 @@ def load_run_timeseries(trial_table: Path) -> tuple[list[str], dict[tuple[str, s
     return roi_cols, run_ts
 
 
-def complete_subjects() -> list[str]:
+def complete_subjects():
     subs = sorted({p.name.split("_ses")[0] for p in TS_DIR.glob("*.csv")})
     return [
         s for s in subs
@@ -159,7 +158,7 @@ def complete_subjects() -> list[str]:
     ]
 
 
-def complete_run_subjects(run_ts: dict[tuple[str, str, str], np.ndarray]) -> list[str]:
+def complete_run_subjects(run_ts):
     subjects = sorted({subject for subject, _, _ in run_ts})
     required = {
         (OFF_SESSION, RUN_1), (OFF_SESSION, RUN_2),
@@ -173,7 +172,7 @@ def complete_run_subjects(run_ts: dict[tuple[str, str, str], np.ndarray]) -> lis
     return keep
 
 
-def corr_distance(a: np.ndarray, b: np.ndarray) -> float:
+def corr_distance(a, b):
     mask = np.isfinite(a) & np.isfinite(b)
     x, y = a[mask], b[mask]
     if x.size < 3 or np.std(x) == 0 or np.std(y) == 0:
@@ -181,7 +180,7 @@ def corr_distance(a: np.ndarray, b: np.ndarray) -> float:
     return 1.0 - float(np.corrcoef(x, y)[0, 1])
 
 
-def run_distances(run_ts, subject: str, fc_fn) -> tuple[float, float]:
+def run_distances(run_ts, subject, fc_fn):
     """Return (within_state_dist, between_state_dist) from run 1/run 2 networks."""
     off_edges = {
         run: fc_fn(run_ts[(subject, OFF_SESSION, run)])
@@ -203,7 +202,7 @@ def run_distances(run_ts, subject: str, fc_fn) -> tuple[float, float]:
     return float(np.nanmean(within)), float(np.nanmean(between))
 
 
-def split_distances(off_ts, on_ts, fc_fn, rng) -> tuple[float, float]:
+def split_distances(off_ts, on_ts, fc_fn, rng):
     """Return (within_state_dist, between_state_dist) averaged over splits."""
     within, between = [], []
     for _ in range(N_SPLITS):
@@ -227,14 +226,14 @@ def split_distances(off_ts, on_ts, fc_fn, rng) -> tuple[float, float]:
     return float(np.nanmean(within)), float(np.nanmean(between))
 
 
-def concatenate_session_runs(run_ts, subject: str, session: str) -> np.ndarray:
+def concatenate_session_runs(run_ts, subject, session):
     return np.vstack([
         run_ts[(subject, session, RUN_1)],
         run_ts[(subject, session, RUN_2)],
     ])
 
 
-def paired_signflip_p(delta: np.ndarray, rng) -> float:
+def paired_signflip_p(delta, rng):
     delta = delta[np.isfinite(delta)]
     n = delta.size
     if n < 3 or np.std(delta) == 0:
@@ -245,7 +244,7 @@ def paired_signflip_p(delta: np.ndarray, rng) -> float:
     return float((np.sum(null >= obs - 1e-12) + 1) / (N_PERM + 1))
 
 
-def consistency_stats(deltas: np.ndarray, rng) -> dict:
+def consistency_stats(deltas, rng):
     """deltas: subjects x edges (ON - OFF). Mean pairwise corr + LOO + perm."""
     # drop edges that are NaN for any subject
     good = np.isfinite(deltas).all(axis=0)
@@ -284,7 +283,7 @@ def consistency_stats(deltas: np.ndarray, rng) -> dict:
                 p_loo_greater=float(p_loo_greater), loo=loo)
 
 
-def main() -> None:
+def main():
     global TS_DIR, OUT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--trial-table", type=Path, default=DEFAULT_TRIAL_TABLE,
@@ -402,26 +401,26 @@ def main() -> None:
     print(summary[cols].to_string(index=False))
 
 
-def _noise_style(noise_floor: str) -> tuple[str, list[str], str]:
+def _noise_style(noise_floor):
     if noise_floor == "run1_vs_run2":
         return "within-state run 1 vs 2", ["run 1\nvs run 2", "ON vs\nOFF"], "run-to-run noise"
     return "within-state split halves", ["within\nhalves", "ON vs\nOFF"], "split-half noise"
 
 
-def _summary_noise_floor(summary: pd.DataFrame) -> str:
+def _summary_noise_floor(summary):
     if "noise_floor" in summary.columns and not summary["noise_floor"].dropna().empty:
         return str(summary["noise_floor"].dropna().iloc[0])
     return "split_half"
 
 
-def _load_edge_summary(panel_dir: Path) -> pd.DataFrame | None:
+def _load_edge_summary(panel_dir):
     path = panel_dir.parent / "within_subject_med_fc" / "within_subject_metric_summary.csv"
     if not path.exists():
         return None
     return pd.read_csv(path)
 
 
-def _edge_title_line(edge_summary: pd.DataFrame | None, fc: str, g: pd.Series) -> str:
+def _edge_title_line(edge_summary, fc, g):
     if edge_summary is None or "metric" not in edge_summary.columns:
         return (f"consistency r={g['mean_pairwise_delta_corr']:.3f} "
                 f"p={g['consistency_p_perm']:.3g}")
@@ -434,9 +433,7 @@ def _edge_title_line(edge_summary: pd.DataFrame | None, fc: str, g: pd.Series) -
             f"perm={int(row['n_sig_edges_fdr_perm'])}")
 
 
-def _draw_metric_axis(ax, noise: pd.DataFrame, summary: pd.DataFrame, fc: str,
-                      *, show_ylabel: bool, show_legend: bool,
-                      edge_summary: pd.DataFrame | None = None) -> None:
+def _draw_metric_axis(ax, noise, summary, fc, *, show_ylabel, show_legend, edge_summary=None):
     d = noise[noise.fc_metric == fc]
     g = summary[summary.fc_metric == fc].iloc[0]
     noise_floor = str(g["noise_floor"]) if "noise_floor" in g.index else _summary_noise_floor(summary)
@@ -461,7 +458,7 @@ def _draw_metric_axis(ax, noise: pd.DataFrame, summary: pd.DataFrame, fc: str,
         ax.legend(fontsize=6, loc="upper left")
 
 
-def _make_figure(noise: pd.DataFrame, summary: pd.DataFrame) -> None:
+def _make_figure(noise, summary):
     fcs = list(dict.fromkeys(summary["fc_metric"]))
     fig, axes = plt.subplots(1, len(fcs), figsize=(3.2 * len(fcs), 4.0), squeeze=False)
     _, _, noise_title = _noise_style(_summary_noise_floor(summary))
@@ -479,15 +476,15 @@ def _make_figure(noise: pd.DataFrame, summary: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def _make_merged_figure(panel_specs: list[tuple[str, Path]], out_dir: Path) -> None:
+def _make_merged_figure(panel_specs, out_dir):
     if not panel_specs:
-        raise RuntimeError("No panels were provided for merged figure")
+        raise ValueError("No panels were provided for merged figure")
     panels = []
     for label, panel_dir in panel_specs:
         noise_path = panel_dir / "change_vs_noise_subject.csv"
         summary_path = panel_dir / "change_consistency_summary.csv"
         if not noise_path.exists() or not summary_path.exists():
-            raise RuntimeError(f"Missing consistency CSVs under {panel_dir}")
+            raise FileNotFoundError(f"Missing consistency CSVs under {panel_dir}")
         panels.append((label, pd.read_csv(noise_path), pd.read_csv(summary_path),
                        _load_edge_summary(panel_dir)))
 
@@ -508,7 +505,7 @@ def _make_merged_figure(panel_specs: list[tuple[str, Path]], out_dir: Path) -> N
     plt.close(fig)
 
 
-def _method_note(n_subjects: int, *, source: str, trial_table: Path | None) -> str:
+def _method_note(n_subjects, *, source, trial_table):
     fc = "\n".join(f"  - `{n}`" for n, _ in FC_METRICS)
     if source == "run1_vs_run2":
         q1 = f"""**Q1 -- change beyond run-to-run noise.** Run-labelled ROI beta series were

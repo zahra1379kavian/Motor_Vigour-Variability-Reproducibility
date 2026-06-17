@@ -12,7 +12,6 @@ outputs in outputs/feat/session_fixed.gfeat are skipped unless --overwrite is
 used. Partial outputs are regenerated with overwrite enabled for that job.
 """
 
-from __future__ import annotations
 
 import argparse
 import re
@@ -20,7 +19,6 @@ import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -38,23 +36,23 @@ FALLBACK_TEMPLATE = Path(
 FEAT_DIR_RE = re.compile(r"sub-pd(?P<sub>\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.feat$")
 
 
-@dataclass(frozen=True)
 class FixedPair:
-    sub: int
-    ses: int
-    run1: Path
-    run2: Path
+    def __init__(self, sub, ses, run1, run2):
+        self.sub = sub
+        self.ses = ses
+        self.run1 = run1
+        self.run2 = run2
 
     @property
-    def label(self) -> str:
+    def label(self):
         return f"sub{self.sub:02d}-ses{self.ses}"
 
     @property
-    def bids_label(self) -> str:
+    def bids_label(self):
         return f"sub-pd{self.sub:03d}_ses-{self.ses}"
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate and optionally run run-pair fixed-effects FEAT FSFs."
     )
@@ -93,11 +91,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def numeric_filter(values: list[str] | None, label: str) -> set[int]:
+def numeric_filter(values, label):
     if not values:
         return set()
 
-    parsed: set[int] = set()
+    parsed = set()
     for value in values:
         match = re.search(r"\d+", value)
         if not match:
@@ -106,9 +104,9 @@ def numeric_filter(values: list[str] | None, label: str) -> set[int]:
     return parsed
 
 
-def discover_pairs(firstlevel_dir: Path) -> tuple[list[FixedPair], list[str]]:
-    runs: dict[tuple[int, int], dict[int, Path]] = {}
-    duplicates: list[str] = []
+def discover_pairs(firstlevel_dir):
+    runs = {}
+    duplicates = []
 
     for feat_dir in sorted(firstlevel_dir.glob("*.feat")):
         match = FEAT_DIR_RE.match(feat_dir.name)
@@ -126,8 +124,8 @@ def discover_pairs(firstlevel_dir: Path) -> tuple[list[FixedPair], list[str]]:
             )
         by_run[run] = feat_dir
 
-    pairs: list[FixedPair] = []
-    incomplete: list[str] = []
+    pairs = []
+    incomplete = []
     for (sub, ses), by_run in sorted(runs.items()):
         missing = [str(run) for run in (1, 2) if run not in by_run]
         if missing:
@@ -140,7 +138,7 @@ def discover_pairs(firstlevel_dir: Path) -> tuple[list[FixedPair], list[str]]:
     return pairs, duplicates + incomplete
 
 
-def filter_pairs(pairs: list[FixedPair], args: argparse.Namespace) -> list[FixedPair]:
+def filter_pairs(pairs, args):
     subjects = numeric_filter(args.subject, "subject")
     sessions = numeric_filter(args.session, "session")
 
@@ -152,7 +150,7 @@ def filter_pairs(pairs: list[FixedPair], args: argparse.Namespace) -> list[Fixed
     ]
 
 
-def replace_setting(text: str, key: str, value: str) -> str:
+def replace_setting(text, key, value):
     pattern = re.compile(rf"^(set {re.escape(key)}\s+).*$", flags=re.MULTILINE)
     new_text, count = pattern.subn(lambda match: f"{match.group(1)}{value}", text)
     if count != 1:
@@ -160,7 +158,7 @@ def replace_setting(text: str, key: str, value: str) -> str:
     return new_text
 
 
-def resolve_template(path: Path) -> Path:
+def resolve_template(path):
     if path.exists():
         return path
     if path == DEFAULT_TEMPLATE and FALLBACK_TEMPLATE.exists():
@@ -168,8 +166,8 @@ def resolve_template(path: Path) -> Path:
     return path
 
 
-def validate_pair(pair: FixedPair) -> list[str]:
-    errors: list[str] = []
+def validate_pair(pair):
+    errors = []
     required = (
         "report.html",
         "stats/cope1.nii.gz",
@@ -185,11 +183,11 @@ def validate_pair(pair: FixedPair) -> list[str]:
     return errors
 
 
-def output_dir_for(pair: FixedPair, group_dir: Path) -> Path:
+def output_dir_for(pair, group_dir):
     return group_dir / f"{pair.label}.gfeat"
 
 
-def make_fsf(template: str, pair: FixedPair, output_dir: Path, overwrite: bool) -> str:
+def make_fsf(template, pair, output_dir, overwrite):
     fsf = template
     replacements = {
         "fmri(outputdir)": f'"{output_dir}"',
@@ -227,7 +225,7 @@ def make_fsf(template: str, pair: FixedPair, output_dir: Path, overwrite: bool) 
     return fsf
 
 
-def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> tuple[Path, int]:
+def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
         result = subprocess.run(
@@ -239,7 +237,7 @@ def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> tuple[Path, int]:
     return fsf, result.returncode
 
 
-def main() -> int:
+def main():
     args = parse_args()
     if args.jobs < 1:
         raise ValueError("--jobs must be >= 1")
@@ -267,7 +265,7 @@ def main() -> int:
         print("No complete run-1/run-2 subject/session pairs matched the requested filters.", file=sys.stderr)
         return 1
 
-    validation_errors: list[str] = []
+    validation_errors = []
     for pair in pairs:
         validation_errors.extend(validate_pair(pair))
     if validation_errors:
@@ -280,9 +278,9 @@ def main() -> int:
     group_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    fsfs: list[Path] = []
-    skipped_existing: list[Path] = []
-    partial_existing: list[Path] = []
+    fsfs = []
+    skipped_existing = []
+    partial_existing = []
     for pair in pairs:
         out_dir = output_dir_for(pair, group_dir)
         if out_dir.exists() and not args.overwrite:
@@ -326,7 +324,7 @@ def main() -> int:
         return 0
 
     print(f"Starting FEAT jobs: {len(fsfs)} with --jobs {args.jobs}")
-    failures: list[tuple[Path, int]] = []
+    failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures = {
             pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """Create and optionally run the mixed-effects model across sessions."""
 
-from __future__ import annotations
 
 import argparse
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -26,18 +24,18 @@ FALLBACK_TEMPLATE = Path(
 SESSION_RE = re.compile(r"sub(?P<sub>\d+)-ses(?P<ses>\d+)\.gfeat$")
 
 
-@dataclass(frozen=True)
 class SessionInput:
-    sub: int
-    ses: int
-    path: Path
+    def __init__(self, sub, ses, path):
+        self.sub = sub
+        self.ses = ses
+        self.path = path
 
     @property
-    def label(self) -> str:
+    def label(self):
         return f"sub{self.sub:02d}-ses{self.ses}"
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate and optionally run a mixed-effects FEAT across subject/session inputs."
     )
@@ -59,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def replace_setting(text: str, key: str, value: str, append_missing: bool = False) -> str:
+def replace_setting(text, key, value, append_missing=False):
     pattern = re.compile(rf"^(set {re.escape(key)}\s+).*$", flags=re.MULTILINE)
     new_text, count = pattern.subn(lambda match: f"{match.group(1)}{value}", text)
     if count == 0:
@@ -69,7 +67,7 @@ def replace_setting(text: str, key: str, value: str, append_missing: bool = Fals
     return new_text
 
 
-def strip_input_settings(text: str) -> str:
+def strip_input_settings(text):
     patterns = (
         r'^set feat_files\(\d+\)\s+.*\n?',
         r'^set fmri\(evg\d+\.1\)\s+.*\n?',
@@ -80,7 +78,7 @@ def strip_input_settings(text: str) -> str:
     return f"{text.rstrip()}\n"
 
 
-def resolve_template(path: Path) -> Path:
+def resolve_template(path):
     if path.exists():
         return path
     if path == DEFAULT_TEMPLATE and FALLBACK_TEMPLATE.exists():
@@ -88,9 +86,9 @@ def resolve_template(path: Path) -> Path:
     return path
 
 
-def discover_inputs(session_dir: Path) -> tuple[list[SessionInput], list[str]]:
-    inputs: list[SessionInput] = []
-    warnings: list[str] = []
+def discover_inputs(session_dir):
+    inputs = []
+    warnings = []
     for gfeat in sorted(session_dir.glob("sub*-ses*.gfeat")):
         match = SESSION_RE.match(gfeat.name)
         if not match:
@@ -115,7 +113,7 @@ def discover_inputs(session_dir: Path) -> tuple[list[SessionInput], list[str]]:
     return inputs, warnings
 
 
-def make_fsf(template: str, inputs: list[SessionInput], output_base: Path, overwrite: bool) -> str:
+def make_fsf(template, inputs, output_base, overwrite):
     n_inputs = len(inputs)
     fsf = strip_input_settings(template)
     replacements = {
@@ -158,7 +156,7 @@ def make_fsf(template: str, inputs: list[SessionInput], output_base: Path, overw
     return fsf
 
 
-def write_input_manifest(fsf_dir: Path, inputs: list[SessionInput], excluded_inputs: list[SessionInput]) -> None:
+def write_input_manifest(fsf_dir, inputs, excluded_inputs):
     manifest = fsf_dir / "mixed_model_inputs.tsv"
     with manifest.open("w") as f:
         f.write("status\tsubject\tsession\tpath\n")
@@ -168,7 +166,7 @@ def write_input_manifest(fsf_dir: Path, inputs: list[SessionInput], excluded_inp
             f.write(f"excluded\tsub{item.sub:02d}\tses{item.ses}\t{item.path.resolve()}\n")
 
 
-def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> int:
+def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
         result = subprocess.run(
@@ -180,14 +178,14 @@ def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> int:
     return result.returncode
 
 
-def gfeat_dir(output_base: Path) -> Path:
+def gfeat_dir(output_base):
     text = str(output_base)
     if text.endswith(".gfeat"):
         return output_base
     return output_base.with_name(output_base.name + ".gfeat")
 
 
-def main() -> int:
+def main():
     args = parse_args()
     template_path = resolve_template(args.template.resolve())
     session_dir = args.session_dir.resolve()

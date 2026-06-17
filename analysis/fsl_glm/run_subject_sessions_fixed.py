@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Combine session fixed-effect FEAT outputs into subject fixed effects."""
 
-from __future__ import annotations
 
 import argparse
 import re
@@ -9,7 +8,6 @@ import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -27,17 +25,17 @@ FALLBACK_TEMPLATE = Path(
 SESSION_RE = re.compile(r"sub(?P<sub>\d+)-ses(?P<ses>\d+)\.gfeat$")
 
 
-@dataclass(frozen=True)
 class SubjectSessions:
-    sub: int
-    sessions: tuple[Path, ...]
+    def __init__(self, sub, sessions):
+        self.sub = sub
+        self.sessions = sessions
 
     @property
-    def label(self) -> str:
+    def label(self):
         return f"sub{self.sub:02d}"
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description="Generate and run subject-level fixed-effects FEATs.")
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--session-dir", type=Path, default=DEFAULT_SESSION_DIR)
@@ -52,10 +50,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def numeric_filter(values: list[str] | None) -> set[int]:
+def numeric_filter(values):
     if not values:
         return set()
-    parsed: set[int] = set()
+    parsed = set()
     for value in values:
         match = re.search(r"\d+", value)
         if not match:
@@ -64,9 +62,9 @@ def numeric_filter(values: list[str] | None) -> set[int]:
     return parsed
 
 
-def discover_subjects(session_dir: Path) -> tuple[list[SubjectSessions], list[str]]:
-    by_subject: dict[int, list[tuple[int, Path]]] = {}
-    warnings: list[str] = []
+def discover_subjects(session_dir):
+    by_subject = {}
+    warnings = []
 
     for gfeat in sorted(session_dir.glob("sub*-ses*.gfeat")):
         match = SESSION_RE.match(gfeat.name)
@@ -93,7 +91,7 @@ def discover_subjects(session_dir: Path) -> tuple[list[SubjectSessions], list[st
     return subjects, warnings
 
 
-def replace_setting(text: str, key: str, value: str) -> str:
+def replace_setting(text, key, value):
     pattern = re.compile(rf"^(set {re.escape(key)}\s+).*$", flags=re.MULTILINE)
     new_text, count = pattern.subn(lambda match: f"{match.group(1)}{value}", text)
     if count == 0:
@@ -101,7 +99,7 @@ def replace_setting(text: str, key: str, value: str) -> str:
     return new_text
 
 
-def resolve_template(path: Path) -> Path:
+def resolve_template(path):
     if path.exists():
         return path
     if path == DEFAULT_TEMPLATE and FALLBACK_TEMPLATE.exists():
@@ -109,7 +107,7 @@ def resolve_template(path: Path) -> Path:
     return path
 
 
-def make_fsf(template: str, subject: SubjectSessions, output_dir: Path, overwrite: bool) -> str:
+def make_fsf(template, subject, output_dir, overwrite):
     n_sessions = len(subject.sessions)
     fsf = template
     replacements = {
@@ -148,14 +146,14 @@ def make_fsf(template: str, subject: SubjectSessions, output_dir: Path, overwrit
     return fsf
 
 
-def run_feat(fsf: Path, log_path: Path, feat_cmd: str) -> tuple[Path, int]:
+def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
         result = subprocess.run([feat_cmd, str(fsf)], stdout=log, stderr=subprocess.STDOUT, text=True)
     return fsf, result.returncode
 
 
-def main() -> int:
+def main():
     args = parse_args()
     if args.jobs < 1:
         raise ValueError("--jobs must be >= 1")
@@ -180,8 +178,8 @@ def main() -> int:
     args.log_dir.mkdir(parents=True, exist_ok=True)
 
     template = template_path.read_text()
-    fsfs: list[Path] = []
-    skipped: list[Path] = []
+    fsfs = []
+    skipped = []
     for subject in subjects:
         out_dir = args.subject_dir / f"{subject.label}.gfeat"
         if out_dir.exists() and (out_dir / "report.html").exists() and not args.overwrite:
@@ -209,7 +207,7 @@ def main() -> int:
         print("No FEAT jobs to run.")
         return 0
 
-    failures: list[tuple[Path, int]] = []
+    failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures = {
             pool.submit(run_feat, fsf, args.log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf

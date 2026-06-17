@@ -16,15 +16,10 @@ from analyze_ablation_constraints import (
 )
 
 
-def motor_overlap_masks(
-    selected_mask: np.ndarray,
-    display_affine: np.ndarray,
-    task_only_map: Path = DEFAULT_TASK_ONLY_MAP,
-    task_z_threshold: float = DEFAULT_TASK_ONLY_Z_THRESHOLD,
-) -> tuple[np.ndarray, np.ndarray]:
+def motor_overlap_masks(selected_mask, display_affine, task_only_map=DEFAULT_TASK_ONLY_MAP, task_z_threshold=DEFAULT_TASK_ONLY_Z_THRESHOLD):
     task_img, task_data = _load_data(task_only_map)
     if task_img.shape[:3] != selected_mask.shape:
-        raise RuntimeError(f"{task_only_map} shape {task_img.shape[:3]} differs from selected mask {selected_mask.shape}.")
+        raise ValueError(f"{task_only_map} shape {task_img.shape[:3]} differs from selected mask {selected_mask.shape}.")
 
     task_mask = np.isfinite(task_data) & (task_data >= task_z_threshold)
     for axis in range(3):
@@ -48,11 +43,7 @@ def motor_overlap_masks(
     return display_mask, shared_motor_mask
 
 
-def fill_from_nearest_selected(
-    weights: np.ndarray,
-    selected_mask: np.ndarray,
-    fill_mask: np.ndarray,
-) -> np.ndarray:
+def fill_from_nearest_selected(weights, selected_mask, fill_mask):
     missing_mask = fill_mask & ~selected_mask & ~np.isfinite(weights)
     valid_mask = selected_mask & np.isfinite(weights)
     if not np.any(missing_mask) or not np.any(valid_mask):

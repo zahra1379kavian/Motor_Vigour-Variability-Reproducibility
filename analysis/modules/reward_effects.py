@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Evaluate low-vs-high reward effects on inverse reaction time."""
 
-from __future__ import annotations
 
 import argparse
 import json
@@ -60,12 +59,12 @@ PAIRED_COLUMN_X = np.array([0.0, 0.42])
 PAIRED_COLUMN_X_LIMITS = (-0.08, 0.5)
 
 
-def _bold_figure_text(fig: plt.Figure) -> None:
+def _bold_figure_text(fig):
     for text in fig.findobj(match=Text):
         text.set_fontweight("bold")
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Load PRECISIONSTIM behaviour .mat files and compare low- vs "
@@ -87,31 +86,31 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _load_reward(path: Path) -> np.ndarray:
+def _load_reward(path):
     mat = loadmat(path, squeeze_me=False, struct_as_record=False)
     if "res" not in mat:
-        raise RuntimeError(f"{path} does not contain variable 'res'")
+        raise ValueError(f"{path} does not contain variable 'res'")
     res = mat["res"][0, 0]
     if not hasattr(res, "reward"):
-        raise RuntimeError(f"{path} variable 'res' does not contain field 'reward'")
+        raise ValueError(f"{path} variable 'res' does not contain field 'reward'")
     reward = np.asarray(res.reward, dtype=np.float64)
     if reward.ndim != 2:
-        raise RuntimeError(f"{path} res.reward must be 2D, got shape {reward.shape}")
+        raise ValueError(f"{path} res.reward must be 2D, got shape {reward.shape}")
     return reward
 
 
-def _load_behav_metrics(path: Path) -> list[np.ndarray]:
+def _load_behav_metrics(path):
     mat = loadmat(path, squeeze_me=False, struct_as_record=False)
     if "behav_metrics" not in mat:
-        raise RuntimeError(f"{path} does not contain variable 'behav_metrics'")
+        raise ValueError(f"{path} does not contain variable 'behav_metrics'")
     cells = np.asarray(mat["behav_metrics"], dtype=object).ravel()
     metrics = [np.asarray(cell, dtype=np.float64) for cell in cells]
     if not metrics:
-        raise RuntimeError(f"{path} behav_metrics is empty")
+        raise ValueError(f"{path} behav_metrics is empty")
     return metrics
 
 
-def _reward_level(code: float, low_codes: set[float], high_codes: set[float]) -> str | None:
+def _reward_level(code, low_codes, high_codes):
     if not np.isfinite(code):
         return None
     rounded = float(int(round(code)))
@@ -122,30 +121,28 @@ def _reward_level(code: float, low_codes: set[float], high_codes: set[float]) ->
     return None
 
 
-def _subject_number(subject: str) -> int:
+def _subject_number(subject):
     match = re.search(r"\d+", str(subject))
     if match is None:
-        raise RuntimeError(f"Could not parse subject number from {subject!r}")
+        raise ValueError(f"Could not parse subject number from {subject!r}")
     return int(match.group(0))
 
 
-def _session_from_medication(medication: str) -> int:
+def _session_from_medication(medication):
     key = str(medication).upper()
     if key not in SESSION_BY_MEDICATION:
-        raise RuntimeError(f"Could not map medication label {medication!r} to a session number")
+        raise ValueError(f"Could not map medication label {medication!r} to a session number")
     return SESSION_BY_MEDICATION[key]
 
 
-def _session_from_subject_medication(subject: str, medication: str) -> int:
+def _session_from_subject_medication(subject, medication):
     key = (_subject_number(subject), str(medication).upper())
     if key in SUBJECT_MEDICATION_SESSION_OVERRIDES:
         return SUBJECT_MEDICATION_SESSION_OVERRIDES[key]
     return _session_from_medication(medication)
 
 
-def _apply_subject_session_exclusions(
-    pairs: list[dict[str, object]],
-) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+def _apply_subject_session_exclusions(pairs):
     exclusions = {(int(subject), int(session)) for subject, session in DEFAULT_EXCLUDED_SUBJECT_SESSIONS}
     included = []
     excluded = []
@@ -158,11 +155,11 @@ def _apply_subject_session_exclusions(
         else:
             included.append(pair)
     if not included:
-        raise RuntimeError("No behaviour files remain after subject/session exclusions")
+        raise ValueError("No behaviour files remain after subject/session exclusions")
     return included, excluded
 
 
-def _discover_pairs(behaviour_root: Path) -> list[dict[str, object]]:
+def _discover_pairs(behaviour_root):
     reward_dir = behaviour_root / "Consolidated_behav_data"
     metrics_dir = behaviour_root / "Behaviour_metrics_revised"
     if not reward_dir.exists():
@@ -189,38 +186,31 @@ def _discover_pairs(behaviour_root: Path) -> list[dict[str, object]]:
             }
         )
     if not pairs:
-        raise RuntimeError(f"No paired behaviour .mat files found under {behaviour_root}")
+        raise ValueError(f"No paired behaviour .mat files found under {behaviour_root}")
     return pairs
 
 
-def _build_trial_table(
-    pairs: list[dict[str, object]],
-    rt_column_index: int,
-    low_codes: set[float],
-    high_codes: set[float],
-    min_rt: float | None,
-    max_rt: float | None,
-) -> pd.DataFrame:
+def _build_trial_table(pairs, rt_column_index, low_codes, high_codes, min_rt, max_rt):
     rows = []
     for pair in pairs:
         reward = _load_reward(Path(pair["reward_path"]))
         metrics = _load_behav_metrics(Path(pair["metrics_path"]))
         if len(metrics) < reward.shape[1]:
-            raise RuntimeError(
+            raise ValueError(
                 f"{pair['metrics_path']} has {len(metrics)} GVS cells but reward has {reward.shape[1]} columns"
             )
         for gvs_index in range(reward.shape[1]):
             gvs_number = gvs_index + 1
             metric = metrics[gvs_index]
             if metric.ndim != 2:
-                raise RuntimeError(f"{pair['metrics_path']} GVS{gvs_number} metric must be 2D, got {metric.shape}")
+                raise ValueError(f"{pair['metrics_path']} GVS{gvs_number} metric must be 2D, got {metric.shape}")
             if metric.shape[1] <= rt_column_index:
-                raise RuntimeError(
+                raise ValueError(
                     f"{pair['metrics_path']} GVS{gvs_number} has {metric.shape[1]} columns; "
                     f"cannot read RT column {rt_column_index + 1}"
                 )
             if metric.shape[0] != reward.shape[0]:
-                raise RuntimeError(
+                raise ValueError(
                     f"{pair['subject']} {pair['medication']} GVS{gvs_number}: "
                     f"reward rows {reward.shape[0]} != behaviour rows {metric.shape[0]}"
                 )
@@ -260,11 +250,11 @@ def _build_trial_table(
                     }
                 )
     if not rows:
-        raise RuntimeError("No finite low/high reward inverse RT trials were found")
+        raise ValueError("No finite low/high reward inverse RT trials were found")
     return pd.DataFrame(rows).sort_values(["subject", "medication", "gvs", "trial_in_gvs"]).reset_index(drop=True)
 
 
-def _paired_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
+def _paired_summary(df, group_cols):
     grouped = (
         df.groupby(group_cols + ["reward_level"], dropna=False)
         .agg(mean_inv_rt=("inv_rt", "mean"), median_inv_rt=("inv_rt", "median"), n_trials=("inv_rt", "size"))
@@ -287,10 +277,10 @@ def _paired_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     return summary
 
 
-def _one_sample_stats(values: np.ndarray, analysis: str, unit: str) -> dict[str, float | str | int]:
+def _one_sample_stats(values, analysis, unit):
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
-    row: dict[str, float | str | int] = {
+    row = {
         "analysis": analysis,
         "unit": unit,
         "contrast": "high_minus_low",
@@ -331,7 +321,7 @@ def _one_sample_stats(values: np.ndarray, analysis: str, unit: str) -> dict[str,
     return row
 
 
-def _paired_difference_stats(summary: pd.DataFrame) -> pd.DataFrame:
+def _paired_difference_stats(summary):
     rows = [
         _one_sample_stats(
             summary["subject"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
@@ -381,7 +371,7 @@ def _paired_difference_stats(summary: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _regression_tables(trials: pd.DataFrame) -> pd.DataFrame:
+def _regression_tables(trials):
     if smf is None:
         return pd.DataFrame([{"model": "trial_fixed_effects", "status": "skipped", "reason": "statsmodels is unavailable"}])
     model_data = trials.copy()
@@ -424,7 +414,7 @@ def _regression_tables(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _format_p_value(value: float) -> str:
+def _format_p_value(value):
     if not np.isfinite(value):
         return "p = n/a"
     if value < 0.001:
@@ -432,7 +422,7 @@ def _format_p_value(value: float) -> str:
     return f"p = {value:.3f}"
 
 
-def _format_t_test(row: pd.Series, label: str) -> str:
+def _format_t_test(row, label):
     n = int(row["n"])
     df = n - 1
     return (
@@ -441,15 +431,7 @@ def _format_t_test(row: pd.Series, label: str) -> str:
     )
 
 
-def _add_stat_annotation(
-    ax: plt.Axes,
-    text: str,
-    x: float = 0.98,
-    y: float = 0.98,
-    ha: str = "right",
-    va: str = "top",
-    fontsize: int = 9,
-) -> None:
+def _add_stat_annotation(ax, text, x=0.98, y=0.98, ha="right", va="top", fontsize=9):
     ax.text(
         x,
         y,
@@ -462,7 +444,7 @@ def _add_stat_annotation(
     )
 
 
-def _gvs_stat_annotation(stats_df: pd.DataFrame) -> str:
+def _gvs_stat_annotation(stats_df):
     rows = stats_df.loc[
         stats_df["analysis"].astype(str).str.startswith("exploratory_")
         & stats_df["unit"].astype(str).eq("subject_gvs")
@@ -476,7 +458,7 @@ def _gvs_stat_annotation(stats_df: pd.DataFrame) -> str:
     return f"min p: {label}\nt({int(row['n']) - 1})={row['t_statistic']:.2f}, {_format_p_value(float(row['p_ttest_two_sided']))}"
 
 
-def _significance_stars(p_value: float) -> str:
+def _significance_stars(p_value):
     if not np.isfinite(p_value) or p_value >= 0.05:
         return ""
     if p_value < 0.001:
@@ -486,7 +468,7 @@ def _significance_stars(p_value: float) -> str:
     return "*"
 
 
-def _subject_rt_range_stats(trials: pd.DataFrame) -> pd.DataFrame:
+def _subject_rt_range_stats(trials):
     rows = []
     for subject, group in trials.groupby("subject", sort=True):
         # The source metric column is 1/RT; the legacy "inv_rt" column stores its reciprocal, RT in seconds.
@@ -526,7 +508,7 @@ def _subject_rt_range_stats(trials: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _save_subject_rt_bar_range_figure(subject_rt_stats: pd.DataFrame, out_dir: Path) -> list[Path]:
+def _save_subject_rt_bar_range_figure(subject_rt_stats, out_dir):
     subjects = subject_rt_stats["subject"].tolist()
     n_cols = 3
     n_rows = int(np.ceil(len(subjects) / n_cols))
@@ -585,7 +567,7 @@ def _save_subject_rt_bar_range_figure(subject_rt_stats: pd.DataFrame, out_dir: P
     return _save_figure(fig, out_dir / "reward_rt_subject_bar_range", pad_inches=0.05)
 
 
-def _save_paired_subject_figure(subject_summary: pd.DataFrame, stats_df: pd.DataFrame, out_dir: Path) -> list[Path]:
+def _save_paired_subject_figure(subject_summary, stats_df, out_dir):
     fig, ax = plt.subplots(figsize=PAIRED_FIGURE_SIZE)
     x = PAIRED_COLUMN_X
     for _, row in subject_summary.iterrows():
@@ -642,7 +624,7 @@ def _save_paired_subject_figure(subject_summary: pd.DataFrame, stats_df: pd.Data
     return _save_figure(fig, out_dir / "reward_rt_subject_paired", pad_inches=0.03)
 
 
-def _save_medication_delta_figure(subject_medication: pd.DataFrame, stats_df: pd.DataFrame, out_dir: Path) -> list[Path]:
+def _save_medication_delta_figure(subject_medication, stats_df, out_dir):
     fig, ax = plt.subplots(figsize=PAIRED_FIGURE_SIZE)
     pivot = subject_medication.pivot(index="subject", columns="medication", values="delta_inv_rt_high_minus_low")
     paired_pivot = pivot.dropna(subset=["OFF", "ON"])
@@ -680,7 +662,7 @@ def _save_medication_delta_figure(subject_medication: pd.DataFrame, stats_df: pd
     return _save_figure(fig, out_dir / "reward_rt_medication_delta")
 
 
-def _save_gvs_delta_figure(subject_gvs: pd.DataFrame, stats_df: pd.DataFrame, out_dir: Path) -> list[Path]:
+def _save_gvs_delta_figure(subject_gvs, stats_df, out_dir):
     fig, ax = plt.subplots(figsize=(8.2, 4.6))
     summary = (
         subject_gvs.groupby(["gvs", "gvs_label"], sort=True)["delta_inv_rt_high_minus_low"]
@@ -713,7 +695,7 @@ def _save_gvs_delta_figure(subject_gvs: pd.DataFrame, stats_df: pd.DataFrame, ou
     return _save_figure(fig, out_dir / "reward_rt_gvs_delta")
 
 
-def _save_figure(fig: plt.Figure, stem: Path, pad_inches: float = 0.1) -> list[Path]:
+def _save_figure(fig, stem, pad_inches=0.1):
     png_path = stem.with_suffix(".png")
     pdf_path = stem.with_suffix(".pdf")
     fig.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=pad_inches)
@@ -722,17 +704,7 @@ def _save_figure(fig: plt.Figure, stem: Path, pad_inches: float = 0.1) -> list[P
     return [png_path, pdf_path]
 
 
-def _write_report(
-    out_dir: Path,
-    trials: pd.DataFrame,
-    summary: dict[str, pd.DataFrame],
-    stats_df: pd.DataFrame,
-    regression_df: pd.DataFrame,
-    low_codes: set[float],
-    high_codes: set[float],
-    excluded_codes: list[float],
-    excluded_subject_sessions: list[dict[str, object]],
-) -> None:
+def _write_report(out_dir, trials, summary, stats_df, regression_df, low_codes, high_codes, excluded_codes, excluded_subject_sessions):
     primary = stats_df.loc[stats_df["analysis"] == "primary_subject_collapsed_across_medication_and_gvs"].iloc[0]
     regression_reward = regression_df.loc[
         (regression_df.get("model", "") == "reward_main_subject_fixed_effects")
@@ -778,7 +750,7 @@ def _write_report(
     (out_dir / "reward_rt_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
 
 
-def main() -> None:
+def main():
     args = _parse_args()
     if args.rt_column < 1:
         raise ValueError("--rt-column is one-based and must be >= 1")

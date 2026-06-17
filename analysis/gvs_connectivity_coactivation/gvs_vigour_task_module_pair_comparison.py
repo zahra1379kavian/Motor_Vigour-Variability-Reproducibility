@@ -20,7 +20,6 @@ relative to the rest of the network.  We repeat across estimators to check that 
 difference is not metric-specific.
 """
 
-from __future__ import annotations
 
 import argparse
 from itertools import combinations
@@ -44,7 +43,7 @@ INPUTS = {
 FDR_SCOPE = "pool=ALL_SUBJECTS_BLOCKS;gvs=ANY_GVS"
 
 # Same six-module mapping used by plot_paper_roi_group_edge_density_violins.py
-def roi_group(roi: str) -> str:
+def roi_group(roi):
     base = str(roi).rsplit("_", 1)[0]
     if base in {"Occipital", "Fusiform"}:
         return "Visual"
@@ -70,7 +69,7 @@ TARGET_PAIRS = {
 }
 
 
-def load_edges(path: Path, metric: str) -> pd.DataFrame:
+def load_edges(path, metric):
     df = pd.read_csv(path, low_memory=False)
     m = (df.metric == metric) & (df.fdr_scope == FDR_SCOPE)
     df = df.loc[m, ["roi_i", "roi_j", "mean", "sig_fdr"]].copy()
@@ -81,11 +80,11 @@ def load_edges(path: Path, metric: str) -> pd.DataFrame:
     return df
 
 
-def pair_key(pair: tuple[str, str]) -> frozenset:
+def pair_key(pair):
     return frozenset(pair)
 
 
-def module_pair_table(df: pd.DataFrame) -> pd.DataFrame:
+def module_pair_table(df):
     rows = []
     mods = sorted({m for fs in df.pair for m in fs})
     for a, b in list(combinations(mods, 2)) + [(m, m) for m in mods]:
@@ -99,7 +98,7 @@ def module_pair_table(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def fisher_network_contrast(vig: pd.DataFrame, task: pd.DataFrame, key: frozenset):
+def fisher_network_contrast(vig, task, key):
     """2x2: rows = network (Vigour/Task), cols = (sig, not-sig) within target pair."""
     v = vig[vig.pair == key]
     t = task[task.pair == key]
@@ -113,7 +112,7 @@ def fisher_network_contrast(vig: pd.DataFrame, task: pd.DataFrame, key: frozense
     return table, or_, p
 
 
-def logistic_interaction(vig: pd.DataFrame, task: pd.DataFrame, key: frozenset):
+def logistic_interaction(vig, task, key):
     """sig ~ network * in_pair across the full edge set of both networks."""
     v = vig.assign(network="Vigour")
     t = task.assign(network="Task")
@@ -129,7 +128,7 @@ def logistic_interaction(vig: pd.DataFrame, task: pd.DataFrame, key: frozenset):
         return np.nan, str(exc)
 
 
-def omnibus_interaction(vig: pd.DataFrame, task: pd.DataFrame) -> dict:
+def omnibus_interaction(vig, task):
     """Likelihood-ratio omnibus: does network change the module-pair pattern of
     GVS significance at all?  sig ~ C(pair_label)*C(network) vs sig ~ C(pair_label)+
     C(network).  A non-significant LR test means the two networks reorganise the same
@@ -164,7 +163,7 @@ def fdr_bh(pvals):
     return q
 
 
-def run_metric(metric: str) -> pd.DataFrame:
+def run_metric(metric):
     vig = load_edges(INPUTS["Vigour"], metric)
     task = load_edges(INPUTS["Task"], metric)
     vt = module_pair_table(vig).set_index("pair")
@@ -193,8 +192,7 @@ def run_metric(metric: str) -> pd.DataFrame:
     return out
 
 
-def make_figure(all_out: pd.DataFrame, metrics: list[str], omni: dict[str, dict],
-                out_png: Path) -> None:
+def make_figure(all_out, metrics, omni, out_png):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -257,7 +255,7 @@ def make_figure(all_out: pd.DataFrame, metrics: list[str], omni: dict[str, dict]
     plt.close(fig)
 
 
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser()
     # Only mutual_info_quantile and spearman_rho are available for BOTH networks
     # in the ALL_SUBJECTS_BLOCKS;ANY_GVS scope (task pipeline computed these two).

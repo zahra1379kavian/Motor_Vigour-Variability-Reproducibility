@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plot inter/intra FDR-significant edge densities as observed bars."""
 
-from __future__ import annotations
 
 import argparse
 from pathlib import Path
@@ -70,7 +69,7 @@ plt.rcParams.update(
 )
 
 
-def roi_side(roi: str) -> str:
+def roi_side(roi):
     roi = str(roi)
     if roi.endswith("_L"):
         return "L"
@@ -79,7 +78,7 @@ def roi_side(roi: str) -> str:
     return ""
 
 
-def hemisphere_relation(roi_i: str, roi_j: str) -> str:
+def hemisphere_relation(roi_i, roi_j):
     side_i = roi_side(roi_i)
     side_j = roi_side(roi_j)
     if side_i and side_j and side_i == side_j:
@@ -89,13 +88,13 @@ def hemisphere_relation(roi_i: str, roi_j: str) -> str:
     return "Unclassified"
 
 
-def bool_series(series: pd.Series) -> pd.Series:
+def bool_series(series):
     if pd.api.types.is_bool_dtype(series):
         return series.fillna(False)
     return series.astype(str).str.lower().isin({"true", "1", "yes", "y"})
 
 
-def fdr_bh(p_values: list[float]) -> list[float]:
+def fdr_bh(p_values):
     p_array = np.asarray(p_values, dtype=np.float64)
     q_values = np.full(p_array.shape, np.nan, dtype=np.float64)
     valid = np.isfinite(p_array)
@@ -118,13 +117,7 @@ def fdr_bh(p_values: list[float]) -> list[float]:
     return q_values.tolist()
 
 
-def load_edge_table(
-    label: str,
-    path: Path,
-    metric: str,
-    analysis_view: str,
-    fdr_scope: str,
-) -> pd.DataFrame:
+def load_edge_table(label, path, metric, analysis_view, fdr_scope):
     if not path.exists():
         raise FileNotFoundError(f"Missing full edge stats CSV: {path}")
     df = pd.read_csv(path, low_memory=False)
@@ -163,8 +156,8 @@ def load_edge_table(
     return matched
 
 
-def build_groups(data: pd.DataFrame, result_labels: tuple[str, str]) -> list[dict[str, object]]:
-    groups: list[dict[str, object]] = []
+def build_groups(data, result_labels):
+    groups = []
     for result_index, result_label in enumerate(result_labels):
         base_position = result_index * 4.85
         for direction_index, (direction_key, direction_label) in enumerate(DIRECTION_ORDER):
@@ -196,11 +189,11 @@ def build_groups(data: pd.DataFrame, result_labels: tuple[str, str]) -> list[dic
     return groups
 
 
-def group_color(group: dict[str, object]) -> str:
+def group_color(group):
     return INCREMENT_COLOR if group["direction_key"] == "Improved" else DECREMENT_COLOR
 
 
-def density_tests(groups: list[dict[str, object]]) -> list[dict[str, object]]:
+def density_tests(groups):
     rows = []
     for left, right in zip(groups[0::2], groups[1::2], strict=True):
         left_success = int(left["n_sig_edges"])
@@ -241,7 +234,7 @@ def density_tests(groups: list[dict[str, object]]) -> list[dict[str, object]]:
     return rows
 
 
-def write_group_summary(groups: list[dict[str, object]], output_base: Path) -> Path:
+def write_group_summary(groups, output_base):
     rows = []
     for group in groups:
         rows.append(
@@ -259,7 +252,7 @@ def write_group_summary(groups: list[dict[str, object]], output_base: Path) -> P
     return path
 
 
-def write_test_summary(test_rows: list[dict[str, object]], output_base: Path) -> Path:
+def write_test_summary(test_rows, output_base):
     export_rows = []
     for row in test_rows:
         export_rows.append(
@@ -274,7 +267,7 @@ def write_test_summary(test_rows: list[dict[str, object]], output_base: Path) ->
     return path
 
 
-def format_p(value: float) -> str:
+def format_p(value):
     if not np.isfinite(value):
         return "NA"
     if value < 0.001:
@@ -282,7 +275,7 @@ def format_p(value: float) -> str:
     return f"{value:.3f}"
 
 
-def add_test_annotation(ax: plt.Axes, row: dict[str, object], y_limit: float) -> None:
+def add_test_annotation(ax, row, y_limit):
     x_left = float(row["left_position"])
     x_right = float(row["right_position"])
     y = min(
@@ -310,11 +303,7 @@ def add_test_annotation(ax: plt.Axes, row: dict[str, object], y_limit: float) ->
     )
 
 
-def plot_density_bars(
-    groups: list[dict[str, object]],
-    test_rows: list[dict[str, object]],
-    output_base: Path,
-) -> tuple[Path, Path]:
+def plot_density_bars(groups, test_rows, output_base):
     positions = [float(group["position"]) for group in groups]
     colors = [group_color(group) for group in groups]
     observed = [float(group["observed_density"]) for group in groups]
@@ -376,7 +365,7 @@ def plot_density_bars(
     return png_path, pdf_path
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metric", default=DEFAULT_METRIC)
     parser.add_argument("--analysis-view", default=DEFAULT_ANALYSIS_VIEW)
@@ -397,7 +386,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     inputs = tuple((label, Path(path)) for label, path in args.input) if args.input else DEFAULT_INPUTS
     if len(inputs) != 2:

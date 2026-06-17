@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """ROI quantification for the full-vs-task-only anatomy ablation figure."""
 
-from __future__ import annotations
 
 import argparse
 import json
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import nibabel as nib
@@ -102,15 +100,15 @@ ROI_FULL_NAMES = {
 }
 
 
-@dataclass
 class RegionMask:
-    name: str
-    mask: np.ndarray
-    sources: set[str] = field(default_factory=set)
-    matched_labels: list[str] = field(default_factory=list)
+    def __init__(self, name, mask, sources=None, matched_labels=None):
+        self.name = name
+        self.mask = mask
+        self.sources = set() if sources is None else sources
+        self.matched_labels = list() if matched_labels is None else matched_labels
 
 
-def _resample_labels(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Image) -> np.ndarray:
+def _resample_labels(label_img, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     resampled = image.resample_to_img(
@@ -123,12 +121,12 @@ def _resample_labels(label_img: nib.Nifti1Image, reference_img: nib.Nifti1Image)
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
-def _atlas_img(atlas: object) -> nib.Nifti1Image:
+def _atlas_img(atlas):
     maps = atlas.maps
     return maps if isinstance(maps, nib.Nifti1Image) else nib.load(maps)
 
 
-def _white_matter_mask(reference_img: nib.Nifti1Image, cache_dir: Path) -> np.ndarray:
+def _white_matter_mask(reference_img, cache_dir):
     atlas = datasets.fetch_atlas_harvard_oxford(HARVARD_OXFORD_SUBCORTICAL, data_dir=str(cache_dir), verbose=0)
     atlas_data = _resample_labels(_atlas_img(atlas), reference_img)
     label_values = [
@@ -139,11 +137,7 @@ def _white_matter_mask(reference_img: nib.Nifti1Image, cache_dir: Path) -> np.nd
     return np.isin(atlas_data, label_values)
 
 
-def _exclude_white_matter(
-    masks: dict[str, np.ndarray],
-    white_matter: np.ndarray,
-    metadata: dict[str, object],
-) -> tuple[dict[str, np.ndarray], dict[str, object]]:
+def _exclude_white_matter(masks, white_matter, metadata):
     full = masks["vigour"] & ~white_matter
     task = masks["task"] & ~white_matter
     updated = dict(masks)
@@ -169,29 +163,29 @@ def _exclude_white_matter(
     return updated, updated_metadata
 
 
-def _strip_laterality(label: str) -> str:
+def _strip_laterality(label):
     return re.sub(r"^(Left|Right)\s+", "", label).strip()
 
 
-def _strip_aal_laterality(label: str) -> str:
+def _strip_aal_laterality(label):
     return re.sub(r"_(L|R)$", "", label).strip()
 
 
-def _safe_subregion_name(label: str) -> str:
+def _safe_subregion_name(label):
     cleaned = re.sub(r"[^A-Za-z0-9]+", "_", _strip_laterality(label)).strip("_")
     return cleaned or "Unmapped"
 
 
-def _safe_unknown_ho_name(label: str) -> str:
+def _safe_unknown_ho_name(label):
     cleaned = re.sub(r"[^A-Za-z0-9]+", "_", _strip_laterality(label)).strip("_")
     return f"HO_{cleaned}" if cleaned else "HO_Unmapped"
 
 
-def _aal_subregion_name(label: str) -> str:
+def _aal_subregion_name(label):
     return _safe_subregion_name(_strip_aal_laterality(label))
 
 
-def _ho_subregion_name(label: str, family: str) -> str:
+def _ho_subregion_name(label, family):
     base = _strip_laterality(label)
     if family == "subcortical":
         exact = {
@@ -205,7 +199,7 @@ def _ho_subregion_name(label: str, family: str) -> str:
     return _safe_subregion_name(base)
 
 
-def _ho_group_name(label: str, family: str) -> str:
+def _ho_group_name(label, family):
     base = _strip_laterality(label)
     low = base.lower()
 
@@ -252,13 +246,7 @@ def _ho_group_name(label: str, family: str) -> str:
     return _safe_unknown_ho_name(base)
 
 
-def _add_region(
-    regions: dict[str, RegionMask],
-    name: str,
-    mask: np.ndarray,
-    source: str,
-    matched_label: str,
-) -> None:
+def _add_region(regions, name, mask, source, matched_label):
     if not np.any(mask):
         return
     if name not in regions:
@@ -269,12 +257,7 @@ def _add_region(
         regions[name].matched_labels.append(matched_label)
 
 
-def _build_aal3_regions(
-    reference_img: nib.Nifti1Image,
-    cache_dir: Path,
-    analysis_space_mask: np.ndarray,
-    subregions: bool = False,
-) -> tuple[dict[str, RegionMask], np.ndarray, dict[str, object]]:
+def _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregions=False):
     if subregions:
         atlas = datasets.fetch_atlas_aal(version=DEFAULT_AAL_VERSION, data_dir=str(cache_dir), verbose=0)
         atlas_data = _resample_labels(_atlas_img(atlas), reference_img)
@@ -284,7 +267,7 @@ def _build_aal3_regions(
             for label_value, label_name in zip(atlas.indices, atlas.labels)
             if int(label_value) != 0 and str(label_name).lower() != "background"
         ]
-        regions: dict[str, RegionMask] = {}
+        regions = {}
         assigned = np.zeros(reference_img.shape[:3], dtype=bool)
         for label_value, label_name in label_pairs:
             mask = (atlas_data == label_value) & analysis_space_mask
@@ -309,7 +292,7 @@ def _build_aal3_regions(
         return regions, assigned, metadata
 
     groups, metadata = _build_roi_groups(reference_img, DEFAULT_AAL_VERSION, cache_dir)
-    regions: dict[str, RegionMask] = {}
+    regions = {}
     assigned = np.zeros(reference_img.shape[:3], dtype=bool)
     for group in groups:
         mask = group.mask & analysis_space_mask
@@ -318,14 +301,7 @@ def _build_aal3_regions(
     return regions, assigned, metadata
 
 
-def _add_harvard_oxford_fill(
-    regions: dict[str, RegionMask],
-    assigned: np.ndarray,
-    reference_img: nib.Nifti1Image,
-    cache_dir: Path,
-    analysis_space_mask: np.ndarray,
-    subregions: bool = False,
-) -> np.ndarray:
+def _add_harvard_oxford_fill(regions, assigned, reference_img, cache_dir, analysis_space_mask, subregions=False):
     fill_specs = (
         (HARVARD_OXFORD_CORTICAL, "cortical", "Harvard-Oxford cortical maxprob-thr25 fill after AAL3"),
         (HARVARD_OXFORD_SUBCORTICAL, "subcortical", "Harvard-Oxford subcortical maxprob-thr25 fill after AAL3"),
@@ -349,17 +325,13 @@ def _add_harvard_oxford_fill(
     return assigned
 
 
-def _add_nearest_label_fill(
-    regions: dict[str, RegionMask],
-    assigned: np.ndarray,
-    target_mask: np.ndarray,
-) -> tuple[np.ndarray, int]:
+def _add_nearest_label_fill(regions, assigned, target_mask):
     missing = target_mask & ~assigned
     n_missing = int(np.count_nonzero(missing))
     if n_missing == 0:
         return assigned, 0
     if not np.any(assigned):
-        raise RuntimeError("Cannot fill atlas-unassigned voxels because no atlas labels are assigned.")
+        raise ValueError("Cannot fill atlas-unassigned voxels because no atlas labels are assigned.")
 
     region_names = list(regions)
     label_volume = np.zeros(assigned.shape, dtype=np.int16)
@@ -386,13 +358,7 @@ def _add_nearest_label_fill(
     return assigned, n_missing
 
 
-def _build_regions(
-    reference_img: nib.Nifti1Image,
-    cache_dir: Path,
-    analysis_space_mask: np.ndarray,
-    atlas_mode: str,
-    target_fill_mask: np.ndarray | None = None,
-) -> tuple[dict[str, RegionMask], np.ndarray, dict[str, object]]:
+def _build_regions(reference_img, cache_dir, analysis_space_mask, atlas_mode, target_fill_mask=None):
     subregions = atlas_mode.startswith("aal3_subregions")
     regions, assigned, metadata = _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregions)
     if atlas_mode in HO_FILL_ATLAS_MODES:
@@ -420,7 +386,7 @@ def _build_regions(
         metadata["subregion_mode"] = bool(subregions)
     if atlas_mode in NEAREST_FILL_ATLAS_MODES:
         if target_fill_mask is None:
-            raise RuntimeError("target_fill_mask is required for nearest-label atlas fill.")
+            raise ValueError("target_fill_mask is required for nearest-label atlas fill.")
         assigned, n_nearest_filled = _add_nearest_label_fill(regions, assigned, target_fill_mask & analysis_space_mask)
         metadata = dict(metadata)
         if subregions:
@@ -444,19 +410,14 @@ def _build_regions(
     return regions, assigned, metadata
 
 
-def _load_figure_masks(
-    reference_map: Path,
-    full_html: Path,
-    task_map: Path,
-    task_z_threshold: float,
-) -> tuple[nib.Nifti1Image, dict[str, np.ndarray], dict[str, object]]:
+def _load_figure_masks(reference_map, full_html, task_map, task_z_threshold):
     reference_img, _ = _load_data(reference_map)
     _, full_mask, html_affine = _html_sprite_volumes(full_html)
     task_img, task_data = _load_data(task_map)
     if full_mask.shape != reference_img.shape[:3]:
-        raise RuntimeError(f"{full_html} overlay shape {full_mask.shape} differs from {reference_map}.")
+        raise ValueError(f"{full_html} overlay shape {full_mask.shape} differs from {reference_map}.")
     if task_img.shape[:3] != full_mask.shape:
-        raise RuntimeError(f"{task_map} shape {task_img.shape[:3]} differs from {full_html}.")
+        raise ValueError(f"{task_map} shape {task_img.shape[:3]} differs from {full_html}.")
 
     task_mask = np.isfinite(task_data) & (task_data >= task_z_threshold)
     for axis in range(3):
@@ -500,11 +461,11 @@ def _load_figure_masks(
     return display_img, masks, metadata
 
 
-def _safe_pct(numerator: int | float, denominator: int | float) -> float:
+def _safe_pct(numerator, denominator):
     return float(numerator / denominator) if denominator else np.nan
 
 
-def _center_mm(mask: np.ndarray, affine: np.ndarray) -> tuple[float, float, float]:
+def _center_mm(mask, affine):
     coords = np.column_stack(np.nonzero(mask))
     if coords.size == 0:
         return (np.nan, np.nan, np.nan)
@@ -512,14 +473,9 @@ def _center_mm(mask: np.ndarray, affine: np.ndarray) -> tuple[float, float, floa
     return (float(xyz[0]), float(xyz[1]), float(xyz[2]))
 
 
-def _roi_quantification(
-    regions: dict[str, RegionMask],
-    assigned_mask: np.ndarray,
-    masks: dict[str, np.ndarray],
-    reference_img: nib.Nifti1Image,
-) -> pd.DataFrame:
+def _roi_quantification(regions, assigned_mask, masks, reference_img):
     totals = {name: int(np.count_nonzero(mask)) for name, mask in masks.items()}
-    rows: list[dict[str, object]] = []
+    rows = []
     all_regions = list(regions.values())
     unassigned_selected = masks["union"] & ~assigned_mask
     if np.any(unassigned_selected):
@@ -598,7 +554,7 @@ def _roi_quantification(
     return pd.DataFrame(rows).sort_values(["union_voxels", "roi_name"], ascending=[False, True])
 
 
-def _atlas_assigned_masks(reference_img: nib.Nifti1Image, cache_dir: Path, analysis_space_mask: np.ndarray) -> dict[str, np.ndarray]:
+def _atlas_assigned_masks(reference_img, cache_dir, analysis_space_mask):
     groups, _ = _build_roi_groups(reference_img, DEFAULT_AAL_VERSION, cache_dir)
     aal3 = np.zeros(reference_img.shape[:3], dtype=bool)
     for group in groups:
@@ -623,20 +579,13 @@ def _atlas_assigned_masks(reference_img: nib.Nifti1Image, cache_dir: Path, analy
     }
 
 
-def _coverage_table(
-    reference_img: nib.Nifti1Image,
-    cache_dir: Path,
-    analysis_space_mask: np.ndarray,
-    selected_assigned_mask: np.ndarray,
-    atlas_mode: str,
-    masks: dict[str, np.ndarray],
-) -> pd.DataFrame:
+def _coverage_table(reference_img, cache_dir, analysis_space_mask, selected_assigned_mask, atlas_mode, masks):
     assigned_masks = _atlas_assigned_masks(reference_img, cache_dir, analysis_space_mask)
     selected_name = _selected_atlas_name(atlas_mode)
     assigned_masks[selected_name] = selected_assigned_mask
     rows = []
     for atlas_name, assigned in assigned_masks.items():
-        row: dict[str, object] = {
+        row = {
             "atlas_name": atlas_name,
             "atlas_voxels_in_analysis_space": int(np.count_nonzero(assigned)),
         }
@@ -651,7 +600,7 @@ def _coverage_table(
     return pd.DataFrame(rows).sort_values("union_assigned_pct", ascending=False)
 
 
-def _set_summary(roi_df: pd.DataFrame) -> pd.DataFrame:
+def _set_summary(roi_df):
     specs = (
         ("regions_with_vigour_only_voxels", roi_df["vigour_only_voxels"].gt(0)),
         ("regions_with_task_only_voxels", roi_df["task_only_voxels"].gt(0)),
@@ -685,11 +634,11 @@ def _set_summary(roi_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _fmt_pct(value: float) -> str:
+def _fmt_pct(value):
     return "NA" if pd.isna(value) else f"{100.0 * float(value):.1f}%"
 
 
-def _selected_atlas_name(atlas_mode: str) -> str:
+def _selected_atlas_name(atlas_mode):
     if atlas_mode == "aal3_subregions_ho_nearest":
         return "AAL3v2 bilateral subregions + Harvard-Oxford exact-label fill + residual nearest-label fill"
     if atlas_mode == "aal3_subregions_ho_fill":
@@ -703,7 +652,7 @@ def _selected_atlas_name(atlas_mode: str) -> str:
     return "AAL3v2 coarse"
 
 
-def _roi_status(row: pd.Series) -> str:
+def _roi_status(row):
     if int(row["both_voxels"]) > 0:
         return "Shared voxels present"
     if int(row["vigour_network_voxels"]) > 0 and int(row["task_activation_voxels"]) > 0:
@@ -715,7 +664,7 @@ def _roi_status(row: pd.Series) -> str:
     return "No selected voxels"
 
 
-def _clean_roi_table(roi_df: pd.DataFrame) -> pd.DataFrame:
+def _clean_roi_table(roi_df):
     clean = roi_df.copy()
     clean["same_voxel_overlap_voxels"] = clean["both_voxels"].astype(int)
     clean["same_voxel_overlap_pct_of_roi"] = clean["both_pct_of_roi"]
@@ -748,29 +697,29 @@ def _clean_roi_table(roi_df: pd.DataFrame) -> pd.DataFrame:
     return clean[cols].sort_values(["union_voxels", "roi_name"], ascending=[False, True])
 
 
-def _format_count(value: int | float) -> str:
+def _format_count(value):
     if pd.isna(value):
         return ""
     return f"{int(value):,}"
 
 
-def _format_pct_roi(value: int | float) -> str:
+def _format_pct_roi(value):
     if pd.isna(value):
         return ""
     return f"{100.0 * float(value):.2f}%"
 
 
-def _format_count_pct(count: int | float, pct: int | float) -> str:
+def _format_count_pct(count, pct):
     if pd.isna(count) or pd.isna(pct):
         return ""
     return f"{_format_count(count)} ({_format_pct_roi(pct)})"
 
 
-def _roi_full_name(label: str) -> str:
+def _roi_full_name(label):
     return ROI_FULL_NAMES.get(str(label), str(label).replace("_", " "))
 
 
-def _plot_summary_image(out_path: Path, clean_df: pd.DataFrame, totals: dict[str, int], atlas_mode: str) -> None:
+def _plot_summary_image(out_path, clean_df, totals, atlas_mode):
     plot_df = clean_df[clean_df["union_voxels"].gt(0)].sort_values(
         ["vigour_only_pct_of_roi", "roi_name"],
         ascending=[True, True],
@@ -820,7 +769,7 @@ def _plot_summary_image(out_path: Path, clean_df: pd.DataFrame, totals: dict[str
     plt.close(fig)
 
 
-def _plot_clean_table_image(out_path: Path, clean_df: pd.DataFrame, totals: dict[str, int], atlas_mode: str) -> None:
+def _plot_clean_table_image(out_path, clean_df, totals, atlas_mode):
     display_df = clean_df[clean_df["union_voxels"].gt(0)].copy()
     display_df = display_df.sort_values(["selected_union_pct_of_roi", "roi_name"], ascending=[False, True])
     display_df = display_df[
@@ -891,25 +840,17 @@ def _plot_clean_table_image(out_path: Path, clean_df: pd.DataFrame, totals: dict
     plt.close(fig)
 
 
-def _top_region_lines(roi_df: pd.DataFrame, value_col: str, pct_col: str, n: int = 8) -> list[str]:
+def _top_region_lines(roi_df, value_col, pct_col, n=8):
     sub = roi_df[roi_df[value_col].gt(0)].sort_values(value_col, ascending=False).head(n)
     return [f"- {row.roi_name}: {int(row[value_col]):,} ({_fmt_pct(row[pct_col])})" for _, row in sub.iterrows()]
 
 
-def _top_roi_pct_lines(roi_df: pd.DataFrame, pct_col: str, count_col: str, n: int = 8) -> list[str]:
+def _top_roi_pct_lines(roi_df, pct_col, count_col, n=8):
     sub = roi_df[roi_df[pct_col].gt(0)].sort_values(pct_col, ascending=False).head(n)
     return [f"- {row.roi_name}: {_fmt_pct(row[pct_col])} of ROI" for _, row in sub.iterrows()]
 
 
-def _write_report(
-    out_base: Path,
-    roi_df: pd.DataFrame,
-    set_df: pd.DataFrame,
-    coverage_df: pd.DataFrame,
-    metadata: dict[str, object],
-    totals: dict[str, int],
-    atlas_mode: str,
-) -> None:
+def _write_report(out_base, roi_df, set_df, coverage_df, metadata, totals, atlas_mode):
     selected_atlas = _selected_atlas_name(atlas_mode)
     coverage_lines = []
     for _, row in coverage_df.iterrows():
@@ -969,7 +910,7 @@ def _write_report(
     out_base.with_name(out_base.name + "_report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def run(args: argparse.Namespace) -> dict[str, Path]:
+def run(args):
     reference_img, masks, mask_metadata = _load_figure_masks(
         args.reference_map,
         args.full_html,
@@ -1057,7 +998,7 @@ def run(args: argparse.Namespace) -> dict[str, Path]:
     }
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference-map", type=Path, default=DEFAULT_MAIN_MAP)
     parser.add_argument("--full-html", type=Path, default=DEFAULT_FULL_MODEL_HTML)
@@ -1083,7 +1024,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main():
     outputs = run(parse_args())
     for label, path in outputs.items():
         print(f"{label}: {path}")

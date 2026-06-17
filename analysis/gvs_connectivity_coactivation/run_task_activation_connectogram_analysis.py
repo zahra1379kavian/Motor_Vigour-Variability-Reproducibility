@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rerun edge-connectogram sensitivity using task-activation ROI voxels."""
 
-from __future__ import annotations
 
 import argparse
 import importlib.util
@@ -9,7 +8,6 @@ import json
 import sys
 import warnings
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -31,17 +29,17 @@ DEFAULT_RUN_INVENTORY = ROOT / "data" / "processed" / "gvs_connectivity" / "comm
 DEFAULT_METRICS = ("mutual_info_quantile", "spearman_rho")
 
 
-def load_module(path: Path, name: str):
+def load_module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not import {path}")
+        raise ImportError(f"Could not import {path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
 
-def json_default(value: Any) -> Any:
+def json_default(value):
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (np.floating,)):
@@ -51,16 +49,16 @@ def json_default(value: Any) -> Any:
     return str(value)
 
 
-def validate_metric_names(metric_names: tuple[str, ...], sensitivity) -> list[tuple[str, str, Any]]:
+def validate_metric_names(metric_names, sensitivity):
     metric_lookup = {metric: (metric, family, fn) for metric, family, fn in sensitivity.METRICS}
     missing = [metric for metric in metric_names if metric not in metric_lookup]
     if missing:
         available = ", ".join(sorted(metric_lookup))
-        raise RuntimeError(f"Unknown metric(s): {', '.join(missing)}. Available metrics: {available}")
+        raise ValueError(f"Unknown metric(s): {', '.join(missing)}. Available metrics: {available}")
     return [metric_lookup[metric] for metric in metric_names]
 
 
-def write_roi_definition(rois, path: Path, z_threshold: float) -> pd.DataFrame:
+def write_roi_definition(rois, path, z_threshold):
     rows = []
     for roi in rois:
         weights = np.asarray(roi.weights, dtype=np.float64)
@@ -83,7 +81,7 @@ def write_roi_definition(rois, path: Path, z_threshold: float) -> pd.DataFrame:
     return roi_def
 
 
-def build_trial_table(args: argparse.Namespace, rois, reference_img, out_path: Path) -> pd.DataFrame:
+def build_trial_table(args, rois, reference_img, out_path):
     inventory = pd.read_csv(args.run_inventory)
     required = {
         "subject",
@@ -98,7 +96,7 @@ def build_trial_table(args: argparse.Namespace, rois, reference_img, out_path: P
     }
     missing = sorted(required - set(inventory.columns))
     if missing:
-        raise RuntimeError(f"{args.run_inventory} is missing required columns: {', '.join(missing)}")
+        raise ValueError(f"{args.run_inventory} is missing required columns: {', '.join(missing)}")
 
     roi_names = [roi.name for roi in rois]
     frames = []
@@ -106,7 +104,7 @@ def build_trial_table(args: argparse.Namespace, rois, reference_img, out_path: P
     for run_index, (source_beta_path, run_rows) in enumerate(grouped, start=1):
         beta_path = Path(str(source_beta_path))
         if not beta_path.exists():
-            raise RuntimeError(f"Missing beta file listed in run inventory: {beta_path}")
+            raise FileNotFoundError(f"Missing beta file listed in run inventory: {beta_path}")
         print(f"Extracting task-activation ROI betas {run_index}/{len(grouped)}: {beta_path.name}", flush=True)
         run_ts = M._extract_roi_timeseries_from_beta(beta_path, reference_img, rois)
         run_rows = run_rows.sort_values(["trial_start", "condition_code"]).reset_index(drop=True)
@@ -114,7 +112,7 @@ def build_trial_table(args: argparse.Namespace, rois, reference_img, out_path: P
             start = int(row.trial_start)
             stop = int(row.trial_stop)
             if start < 0 or stop > run_ts.shape[0] or stop <= start:
-                raise RuntimeError(
+                raise ValueError(
                     f"Invalid trial slice {start}:{stop} for {beta_path}; beta run has {run_ts.shape[0]} trials"
                 )
             block = run_ts.iloc[start:stop].reset_index(drop=True).copy()
@@ -133,7 +131,7 @@ def build_trial_table(args: argparse.Namespace, rois, reference_img, out_path: P
     return trial
 
 
-def run_metric_sensitivity(args: argparse.Namespace, trial_table: Path, roi_def: Path, sensitivity) -> tuple[pd.DataFrame, pd.DataFrame]:
+def run_metric_sensitivity(args, trial_table, roi_def, sensitivity):
     metric_dir = args.out_dir / "metric_sensitivity"
     metric_dir.mkdir(parents=True, exist_ok=True)
 
@@ -192,7 +190,7 @@ def run_metric_sensitivity(args: argparse.Namespace, trial_table: Path, roi_def:
     return stats_df, sig_df
 
 
-def run_connectogram_report(args: argparse.Namespace, roi_def: Path, plot_module) -> pd.DataFrame:
+def run_connectogram_report(args, roi_def, plot_module):
     metric_dir = args.out_dir / "metric_sensitivity"
     sig_csv = metric_dir / "fdr_significant_edge_connectivity_metric_sensitivity.csv"
     plot_module.ROI_DEF = roi_def
@@ -202,7 +200,7 @@ def run_connectogram_report(args: argparse.Namespace, roi_def: Path, plot_module
     return pd.read_csv(plot_module.OUT_DIR / "fdr_connectogram_summary.csv")
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task-activation-map", type=Path, default=task.DEFAULT_TASK_ACTIVATION_MAP)
     parser.add_argument("--task-z-threshold", type=float, default=task.DEFAULT_TASK_Z_THRESHOLD)
@@ -220,7 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main():
     args = build_parser().parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 

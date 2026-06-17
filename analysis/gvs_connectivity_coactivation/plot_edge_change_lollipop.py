@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Rank FDR-significant connectivity edges with a signed lollipop plot."""
 
-from __future__ import annotations
 
 import argparse
 import re
@@ -48,13 +47,13 @@ plt.rcParams.update(
 )
 
 
-def clean_slug(text: str) -> str:
+def clean_slug(text):
     text = str(text)
     text = re.sub(r"[^A-Za-z0-9]+", "_", text)
     return text.strip("_").lower()
 
 
-def roi_label(roi: str) -> str:
+def roi_label(roi):
     roi = str(roi)
     if roi.endswith("_L"):
         return f"{roi[:-2].replace('_', ' ')} L"
@@ -63,15 +62,15 @@ def roi_label(roi: str) -> str:
     return roi.replace("_", " ")
 
 
-def edge_label(row: pd.Series) -> str:
+def edge_label(row):
     return f"{roi_label(row['roi_i'])} - {roi_label(row['roi_j'])}"
 
 
-def pretty_label(text: str) -> str:
+def pretty_label(text):
     return str(text).replace("_", " ")
 
 
-def load_edges(path: Path) -> pd.DataFrame:
+def load_edges(path):
     df = pd.read_csv(path, low_memory=False)
     if "sig_fdr" in df.columns:
         df = df.loc[df["sig_fdr"].astype(bool)].copy()
@@ -83,7 +82,7 @@ def load_edges(path: Path) -> pd.DataFrame:
     return df
 
 
-def selected_edges(df: pd.DataFrame, metric: str, analysis_view: str, fdr_scope: str, top_n: int) -> pd.DataFrame:
+def selected_edges(df, metric, analysis_view, fdr_scope, top_n):
     mask = (
         (df["metric"].astype(str) == metric)
         & (df["analysis_view"].astype(str) == analysis_view)
@@ -95,15 +94,7 @@ def selected_edges(df: pd.DataFrame, metric: str, analysis_view: str, fdr_scope:
     return out.sort_values(["abs_mean", "q_fdr", "p_signflip"], ascending=[False, True, True]).head(top_n).copy()
 
 
-def plot_lollipop(
-    df: pd.DataFrame,
-    path_base: Path,
-    title: str,
-    subtitle: str,
-    *,
-    label_axis: str = "y",
-    show_title: bool = True,
-) -> None:
+def plot_lollipop(df, path_base, title, subtitle, *, label_axis="y", show_title=True):
     plot_df = df.copy()
     plot_df["display_edge"] = plot_df.apply(edge_label, axis=1)
 
@@ -215,12 +206,12 @@ def plot_lollipop(
     plt.close(fig)
 
 
-def output_base(out_dir: Path, metric: str, analysis_view: str, fdr_scope: str, top_n: int) -> Path:
+def output_base(out_dir, metric, analysis_view, fdr_scope, top_n):
     scope_slug = clean_slug(f"{analysis_view}_{fdr_scope}")
     return out_dir / f"{clean_slug(metric)}__{scope_slug}__top{top_n}_lollipop"
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metric", default=DEFAULT_METRIC)
     parser.add_argument("--analysis-view", default=DEFAULT_ANALYSIS_VIEW)
