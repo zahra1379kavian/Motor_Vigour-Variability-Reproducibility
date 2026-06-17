@@ -1,6 +1,9 @@
 # Scripts
 
-These are short figure-facing entry points. Run them from the repository root:
+These are the files you run first. They have simple figure names and call the
+longer code in `analysis/`.
+
+Run them from the repository root:
 
 ```bash
 python scripts/figure_03_vigour_network_map.py

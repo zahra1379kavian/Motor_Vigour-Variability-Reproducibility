@@ -7,20 +7,40 @@ large intermediate folders were left out.
 
 Supplementary figures are stored separately from the main figures.
 
-## Repository Layout
+## How To Read This Repository
 
-- `figures/main/`: publication-ready main figures as PNG and PDF.
-- `figures/supplementary/`: publication-ready supplementary figures as PNG and
-  PDF where available.
-- `results/main/`: machine-readable tables, JSON/NPZ summaries, and source
-  figure exports grouped by paper figure.
-- `results/supplementary/`: companion outputs for supplementary figures.
-- `data/`: compact derived maps, ablation inputs, metadata, and processed GVS
-  connectivity tables needed by the included analyses.
-- `analysis/modules/`: copied analysis modules from the working repository,
-  with defaults updated for this curated layout.
-- `analysis/gvs_connectivity_coactivation/`: GVS connectivity analysis code.
-- `scripts/`: reviewer-facing entry points with descriptive figure names.
+Most readers should start with `figures/`, `results/`, and `scripts/`.
+
+| Folder | What it is for | Do you usually edit it? |
+| --- | --- | --- |
+| `figures/main/` | Final main paper figure images. | No |
+| `figures/supplementary/` | Final supplementary figure images. | No |
+| `results/main/` | Tables, summaries, and source outputs behind main figures. | No |
+| `results/supplementary/` | Tables, summaries, and source outputs behind supplementary figures. | No |
+| `scripts/` | Short commands for regenerating/checking figures. Start here if you want to run code. | Sometimes |
+| `analysis/` | Larger analysis code called by the scripts. You only need this if you want to inspect or modify methods. | Rarely |
+| `data/` | Compact derived maps, ablation inputs, metadata, and processed tables. | No |
+
+### Scripts vs Analysis Code
+
+`scripts/` contains small, readable entry points with paper-style names, for example:
+
+```bash
+python scripts/figure_03_vigour_network_map.py
+```
+
+That script then calls the longer implementation code in `analysis/`. In other
+words:
+
+```text
+You run:        scripts/figure_03_vigour_network_map.py
+It uses code:   analysis/modules/plot_weight_multiplane_colorbar.py
+It writes to:   results/main/figure_03_vigour_network_map/
+Final figure:   figures/main/figure_03_vigour_network_voxel_weights.png
+```
+
+So, for normal use, run files from `scripts/`. Treat `analysis/` as the code
+library behind those scripts.
 
 ## Main Figures
 

@@ -1,13 +1,13 @@
 # Analysis Code
 
-`modules/` contains the copied analysis modules used to generate the main
-figures. Their default input and output paths were updated for this curated
-repository layout.
+This folder contains the longer implementation code. Most users do not need to
+run these files directly.
 
-`gvs_connectivity_coactivation/` contains the GVS connectivity scripts used for
-Figure 7.
+Use `scripts/` for normal figure regeneration. The scripts call files in this
+folder.
 
-`fsl_glm/` contains the copied FSL GLM workflow scripts used for the
-Supplementary Figure 4 FEAT analysis.
-
-Use the descriptive entry points in `scripts/` for normal figure regeneration.
+- `modules/`: general analysis code for behaviour, voxel maps, ablation,
+  medication effects, and supplementary figures.
+- `gvs_connectivity_coactivation/`: GVS connectivity code used for Figures 7
+  and Supplementary Figure 10.
+- `fsl_glm/`: FSL GLM workflow code used for Supplementary Figure 4.
