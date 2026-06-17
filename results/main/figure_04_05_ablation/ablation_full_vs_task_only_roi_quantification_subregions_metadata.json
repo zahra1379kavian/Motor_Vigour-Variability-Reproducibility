@@ -1,0 +1,516 @@
+{
+  "inputs": {
+    "reference_map": "data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5.nii.gz",
+    "full_model_html": "data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5_bold_thr90.html",
+    "task_activation_map": "data/z_valu_standard_glm.nii.gz",
+    "task_activation_threshold": "z >= 3.5",
+    "mask_definition": "Vigour network uses the selected overlay embedded in the thresholded full-model HTML; task activation uses the standard-GLM z map thresholded at z >= threshold; both masks then exclude the brainstem mask used by the anatomy figure. Harvard-Oxford cerebral white-matter voxels are excluded from the ROI quantification.",
+    "raw_vigour_voxels": 6638,
+    "raw_task_activation_voxels": 35154,
+    "brainstem_suppressed_vigour_voxels": 255,
+    "brainstem_suppressed_task_activation_voxels": 2410,
+    "white_matter_mask_source": "Harvard-Oxford subcortical: Left/Right Cerebral White Matter",
+    "white_matter_suppressed_vigour_voxels": 426,
+    "white_matter_suppressed_task_activation_voxels": 11134,
+    "white_matter_suppressed_overlap_voxels": 21
+  },
+  "atlas": {
+    "roi_definition": "aal3_bilateral_subregions_with_harvard_oxford_subregions_and_nearest_selected_voxel_fill",
+    "priority_order": [
+      "Precentral",
+      "Frontal_Sup_2",
+      "Frontal_Mid_2",
+      "Frontal_Inf_Oper",
+      "Frontal_Inf_Tri",
+      "Frontal_Inf_Orb_2",
+      "Rolandic_Oper",
+      "Supp_Motor_Area",
+      "Olfactory",
+      "Frontal_Sup_Medial",
+      "Frontal_Med_Orb",
+      "Rectus",
+      "OFCmed",
+      "OFCant",
+      "OFCpost",
+      "OFClat",
+      "Insula",
+      "Cingulate_Mid",
+      "Cingulate_Post",
+      "Hippocampus",
+      "ParaHippocampal",
+      "Amygdala",
+      "Calcarine",
+      "Cuneus",
+      "Lingual",
+      "Occipital_Sup",
+      "Occipital_Mid",
+      "Occipital_Inf",
+      "Fusiform",
+      "Postcentral",
+      "Parietal_Sup",
+      "Parietal_Inf",
+      "SupraMarginal",
+      "Angular",
+      "Precuneus",
+      "Paracentral_Lobule",
+      "Caudate",
+      "Putamen",
+      "Pallidum",
+      "Heschl",
+      "Temporal_Sup",
+      "Temporal_Pole_Sup",
+      "Temporal_Mid",
+      "Temporal_Pole_Mid",
+      "Temporal_Inf",
+      "Cerebellum_Crus1",
+      "Cerebellum_Crus2",
+      "Cerebellum_3",
+      "Cerebellum_4_5",
+      "Cerebellum_6",
+      "Cerebellum_7b",
+      "Cerebellum_8",
+      "Cerebellum_9",
+      "Cerebellum_10",
+      "Vermis_4_5",
+      "Vermis_6",
+      "Vermis_7",
+      "Vermis_8",
+      "Vermis_9",
+      "Vermis_10",
+      "Thal_AV",
+      "Thal_LP",
+      "Thal_VA",
+      "Thal_VL",
+      "Thal_VPL",
+      "Thal_IL",
+      "Thal_MDm",
+      "Thal_MDl",
+      "Thal_LGN",
+      "Thal_PuI",
+      "Thal_PuM",
+      "Thal_PuA",
+      "Thal_PuL",
+      "ACC_sub",
+      "ACC_pre",
+      "ACC_sup",
+      "N_Acc"
+    ],
+    "atlas_info": {
+      "name": "AAL3v2 bilateral subregions",
+      "description": "AAL3v2 (AAL3v1.nii)",
+      "version": "3v2",
+      "map": "/home/zkavian/nilearn_data/aal_3v2/AAL3/AAL3v1.nii",
+      "n_labels": 166,
+      "n_regions": 77,
+      "grouping": "Left/right AAL labels merged only into bilateral subregions; broad anatomical groups are not used."
+    },
+    "subregion_mode": true,
+    "roi_sources": {
+      "Precentral": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Sup_2": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Mid_2": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Inf_Oper": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Inf_Tri": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Inf_Orb_2": "AAL3v2 (AAL3v1.nii)",
+      "Rolandic_Oper": "AAL3v2 (AAL3v1.nii)",
+      "Supp_Motor_Area": "AAL3v2 (AAL3v1.nii)",
+      "Olfactory": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Sup_Medial": "AAL3v2 (AAL3v1.nii)",
+      "Frontal_Med_Orb": "AAL3v2 (AAL3v1.nii)",
+      "Rectus": "AAL3v2 (AAL3v1.nii)",
+      "OFCmed": "AAL3v2 (AAL3v1.nii)",
+      "OFCant": "AAL3v2 (AAL3v1.nii)",
+      "OFCpost": "AAL3v2 (AAL3v1.nii)",
+      "OFClat": "AAL3v2 (AAL3v1.nii)",
+      "Insula": "AAL3v2 (AAL3v1.nii)",
+      "Cingulate_Mid": "AAL3v2 (AAL3v1.nii)",
+      "Cingulate_Post": "AAL3v2 (AAL3v1.nii)",
+      "Hippocampus": "AAL3v2 (AAL3v1.nii)",
+      "ParaHippocampal": "AAL3v2 (AAL3v1.nii)",
+      "Amygdala": "AAL3v2 (AAL3v1.nii)",
+      "Calcarine": "AAL3v2 (AAL3v1.nii)",
+      "Cuneus": "AAL3v2 (AAL3v1.nii)",
+      "Lingual": "AAL3v2 (AAL3v1.nii)",
+      "Occipital_Sup": "AAL3v2 (AAL3v1.nii)",
+      "Occipital_Mid": "AAL3v2 (AAL3v1.nii)",
+      "Occipital_Inf": "AAL3v2 (AAL3v1.nii)",
+      "Fusiform": "AAL3v2 (AAL3v1.nii)",
+      "Postcentral": "AAL3v2 (AAL3v1.nii)",
+      "Parietal_Sup": "AAL3v2 (AAL3v1.nii)",
+      "Parietal_Inf": "AAL3v2 (AAL3v1.nii)",
+      "SupraMarginal": "AAL3v2 (AAL3v1.nii)",
+      "Angular": "AAL3v2 (AAL3v1.nii)",
+      "Precuneus": "AAL3v2 (AAL3v1.nii)",
+      "Paracentral_Lobule": "AAL3v2 (AAL3v1.nii)",
+      "Caudate": "AAL3v2 (AAL3v1.nii)",
+      "Putamen": "AAL3v2 (AAL3v1.nii)",
+      "Pallidum": "AAL3v2 (AAL3v1.nii)",
+      "Heschl": "AAL3v2 (AAL3v1.nii)",
+      "Temporal_Sup": "AAL3v2 (AAL3v1.nii)",
+      "Temporal_Pole_Sup": "AAL3v2 (AAL3v1.nii)",
+      "Temporal_Mid": "AAL3v2 (AAL3v1.nii)",
+      "Temporal_Pole_Mid": "AAL3v2 (AAL3v1.nii)",
+      "Temporal_Inf": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_Crus1": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_Crus2": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_3": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_4_5": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_6": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_7b": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_8": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_9": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum_10": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_4_5": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_6": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_7": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_8": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_9": "AAL3v2 (AAL3v1.nii)",
+      "Vermis_10": "AAL3v2 (AAL3v1.nii)",
+      "Thal_AV": "AAL3v2 (AAL3v1.nii)",
+      "Thal_LP": "AAL3v2 (AAL3v1.nii)",
+      "Thal_VA": "AAL3v2 (AAL3v1.nii)",
+      "Thal_VL": "AAL3v2 (AAL3v1.nii)",
+      "Thal_VPL": "AAL3v2 (AAL3v1.nii)",
+      "Thal_IL": "AAL3v2 (AAL3v1.nii)",
+      "Thal_MDm": "AAL3v2 (AAL3v1.nii)",
+      "Thal_MDl": "AAL3v2 (AAL3v1.nii)",
+      "Thal_LGN": "AAL3v2 (AAL3v1.nii)",
+      "Thal_PuI": "AAL3v2 (AAL3v1.nii)",
+      "Thal_PuM": "AAL3v2 (AAL3v1.nii)",
+      "Thal_PuA": "AAL3v2 (AAL3v1.nii)",
+      "Thal_PuL": "AAL3v2 (AAL3v1.nii)",
+      "ACC_sub": "AAL3v2 (AAL3v1.nii)",
+      "ACC_pre": "AAL3v2 (AAL3v1.nii)",
+      "ACC_sup": "AAL3v2 (AAL3v1.nii)",
+      "N_Acc": "AAL3v2 (AAL3v1.nii)"
+    },
+    "roi_matched_labels": {
+      "Precentral": [
+        "Precentral_L",
+        "Precentral_R"
+      ],
+      "Frontal_Sup_2": [
+        "Frontal_Sup_2_L",
+        "Frontal_Sup_2_R"
+      ],
+      "Frontal_Mid_2": [
+        "Frontal_Mid_2_L",
+        "Frontal_Mid_2_R"
+      ],
+      "Frontal_Inf_Oper": [
+        "Frontal_Inf_Oper_L",
+        "Frontal_Inf_Oper_R"
+      ],
+      "Frontal_Inf_Tri": [
+        "Frontal_Inf_Tri_L",
+        "Frontal_Inf_Tri_R"
+      ],
+      "Frontal_Inf_Orb_2": [
+        "Frontal_Inf_Orb_2_L",
+        "Frontal_Inf_Orb_2_R"
+      ],
+      "Rolandic_Oper": [
+        "Rolandic_Oper_L",
+        "Rolandic_Oper_R"
+      ],
+      "Supp_Motor_Area": [
+        "Supp_Motor_Area_L",
+        "Supp_Motor_Area_R"
+      ],
+      "Olfactory": [
+        "Olfactory_L",
+        "Olfactory_R"
+      ],
+      "Frontal_Sup_Medial": [
+        "Frontal_Sup_Medial_L",
+        "Frontal_Sup_Medial_R"
+      ],
+      "Frontal_Med_Orb": [
+        "Frontal_Med_Orb_L",
+        "Frontal_Med_Orb_R"
+      ],
+      "Rectus": [
+        "Rectus_L",
+        "Rectus_R"
+      ],
+      "OFCmed": [
+        "OFCmed_L",
+        "OFCmed_R"
+      ],
+      "OFCant": [
+        "OFCant_L",
+        "OFCant_R"
+      ],
+      "OFCpost": [
+        "OFCpost_L",
+        "OFCpost_R"
+      ],
+      "OFClat": [
+        "OFClat_L",
+        "OFClat_R"
+      ],
+      "Insula": [
+        "Insula_L",
+        "Insula_R"
+      ],
+      "Cingulate_Mid": [
+        "Cingulate_Mid_L",
+        "Cingulate_Mid_R"
+      ],
+      "Cingulate_Post": [
+        "Cingulate_Post_L",
+        "Cingulate_Post_R"
+      ],
+      "Hippocampus": [
+        "Hippocampus_L",
+        "Hippocampus_R"
+      ],
+      "ParaHippocampal": [
+        "ParaHippocampal_L",
+        "ParaHippocampal_R"
+      ],
+      "Amygdala": [
+        "Amygdala_L",
+        "Amygdala_R"
+      ],
+      "Calcarine": [
+        "Calcarine_L",
+        "Calcarine_R"
+      ],
+      "Cuneus": [
+        "Cuneus_L",
+        "Cuneus_R"
+      ],
+      "Lingual": [
+        "Lingual_L",
+        "Lingual_R"
+      ],
+      "Occipital_Sup": [
+        "Occipital_Sup_L",
+        "Occipital_Sup_R"
+      ],
+      "Occipital_Mid": [
+        "Occipital_Mid_L",
+        "Occipital_Mid_R"
+      ],
+      "Occipital_Inf": [
+        "Occipital_Inf_L",
+        "Occipital_Inf_R"
+      ],
+      "Fusiform": [
+        "Fusiform_L",
+        "Fusiform_R"
+      ],
+      "Postcentral": [
+        "Postcentral_L",
+        "Postcentral_R"
+      ],
+      "Parietal_Sup": [
+        "Parietal_Sup_L",
+        "Parietal_Sup_R"
+      ],
+      "Parietal_Inf": [
+        "Parietal_Inf_L",
+        "Parietal_Inf_R"
+      ],
+      "SupraMarginal": [
+        "SupraMarginal_L",
+        "SupraMarginal_R"
+      ],
+      "Angular": [
+        "Angular_L",
+        "Angular_R"
+      ],
+      "Precuneus": [
+        "Precuneus_L",
+        "Precuneus_R"
+      ],
+      "Paracentral_Lobule": [
+        "Paracentral_Lobule_L",
+        "Paracentral_Lobule_R"
+      ],
+      "Caudate": [
+        "Caudate_L",
+        "Caudate_R"
+      ],
+      "Putamen": [
+        "Putamen_L",
+        "Putamen_R"
+      ],
+      "Pallidum": [
+        "Pallidum_L",
+        "Pallidum_R"
+      ],
+      "Heschl": [
+        "Heschl_L",
+        "Heschl_R"
+      ],
+      "Temporal_Sup": [
+        "Temporal_Sup_L",
+        "Temporal_Sup_R"
+      ],
+      "Temporal_Pole_Sup": [
+        "Temporal_Pole_Sup_L",
+        "Temporal_Pole_Sup_R"
+      ],
+      "Temporal_Mid": [
+        "Temporal_Mid_L",
+        "Temporal_Mid_R"
+      ],
+      "Temporal_Pole_Mid": [
+        "Temporal_Pole_Mid_L",
+        "Temporal_Pole_Mid_R"
+      ],
+      "Temporal_Inf": [
+        "Temporal_Inf_L",
+        "Temporal_Inf_R"
+      ],
+      "Cerebellum_Crus1": [
+        "Cerebellum_Crus1_L",
+        "Cerebellum_Crus1_R"
+      ],
+      "Cerebellum_Crus2": [
+        "Cerebellum_Crus2_L",
+        "Cerebellum_Crus2_R"
+      ],
+      "Cerebellum_3": [
+        "Cerebellum_3_R"
+      ],
+      "Cerebellum_4_5": [
+        "Cerebellum_4_5_L",
+        "Cerebellum_4_5_R"
+      ],
+      "Cerebellum_6": [
+        "Cerebellum_6_L",
+        "Cerebellum_6_R"
+      ],
+      "Cerebellum_7b": [
+        "Cerebellum_7b_L",
+        "Cerebellum_7b_R"
+      ],
+      "Cerebellum_8": [
+        "Cerebellum_8_L",
+        "Cerebellum_8_R"
+      ],
+      "Cerebellum_9": [
+        "Cerebellum_9_L",
+        "Cerebellum_9_R"
+      ],
+      "Cerebellum_10": [
+        "Cerebellum_10_L",
+        "Cerebellum_10_R"
+      ],
+      "Vermis_4_5": [
+        "Vermis_4_5"
+      ],
+      "Vermis_6": [
+        "Vermis_6"
+      ],
+      "Vermis_7": [
+        "Vermis_7"
+      ],
+      "Vermis_8": [
+        "Vermis_8"
+      ],
+      "Vermis_9": [
+        "Vermis_9"
+      ],
+      "Vermis_10": [
+        "Vermis_10"
+      ],
+      "Thal_AV": [
+        "Thal_AV_L",
+        "Thal_AV_R"
+      ],
+      "Thal_LP": [
+        "Thal_LP_L",
+        "Thal_LP_R"
+      ],
+      "Thal_VA": [
+        "Thal_VA_L",
+        "Thal_VA_R"
+      ],
+      "Thal_VL": [
+        "Thal_VL_L",
+        "Thal_VL_R"
+      ],
+      "Thal_VPL": [
+        "Thal_VPL_L",
+        "Thal_VPL_R"
+      ],
+      "Thal_IL": [
+        "Thal_IL_R"
+      ],
+      "Thal_MDm": [
+        "Thal_MDm_L",
+        "Thal_MDm_R"
+      ],
+      "Thal_MDl": [
+        "Thal_MDl_L",
+        "Thal_MDl_R"
+      ],
+      "Thal_LGN": [
+        "Thal_LGN_L",
+        "Thal_LGN_R"
+      ],
+      "Thal_PuI": [
+        "Thal_PuI_L",
+        "Thal_PuI_R"
+      ],
+      "Thal_PuM": [
+        "Thal_PuM_L",
+        "Thal_PuM_R"
+      ],
+      "Thal_PuA": [
+        "Thal_PuA_L",
+        "Thal_PuA_R"
+      ],
+      "Thal_PuL": [
+        "Thal_PuL_L",
+        "Thal_PuL_R"
+      ],
+      "ACC_sub": [
+        "ACC_sub_L",
+        "ACC_sub_R"
+      ],
+      "ACC_pre": [
+        "ACC_pre_L",
+        "ACC_pre_R"
+      ],
+      "ACC_sup": [
+        "ACC_sup_L",
+        "ACC_sup_R"
+      ],
+      "N_Acc": [
+        "N_Acc_L",
+        "N_Acc_R"
+      ]
+    },
+    "fill_rule": "AAL3 bilateral subregions are assigned first; AAL3-unassigned voxels are filled from exact Harvard-Oxford cortical and subcortical maxprob-thr25 labels; remaining selected voxels are assigned to the nearest existing anatomical subregion label.",
+    "nearest_label_filled_selected_voxels": 600
+  },
+  "atlas_mode": "aal3_subregions_ho_nearest",
+  "exclude_white_matter": true,
+  "totals": {
+    "raw_vigour": 6638,
+    "raw_task": 35154,
+    "brainstem": 14150,
+    "vigour": 5957,
+    "task": 21610,
+    "vigour_only": 5454,
+    "task_only": 21107,
+    "both": 503,
+    "union": 27064,
+    "white_matter": 61473
+  },
+  "outputs": {
+    "by_roi": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_by_roi.csv",
+    "region_sets": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_region_sets.csv",
+    "clean_table": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_clean_table.csv",
+    "summary_image": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_summary.png",
+    "clean_table_image": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_clean_table.png",
+    "atlas_coverage": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_atlas_coverage.csv",
+    "metadata": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_metadata.json",
+    "report": "figures/ablation/ablation_full_vs_task_only_roi_quantification_subregions_report.md"
+  }
+}

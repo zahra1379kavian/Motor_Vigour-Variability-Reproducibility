@@ -1,0 +1,47 @@
+{
+  "connectivity_metric": "pearson_fisher_z",
+  "method": "intra-ROI voxel-pair FC and between-ROI FC are both summarized as Fisher-z Pearson correlations; intra-ROI session means average ROI-level values equally so ROIs with more voxels do not dominate.",
+  "n_sessions": 35,
+  "n_complete_subjects": 17,
+  "tests": {
+    "within_roi_on_minus_off": {
+      "n_subjects": 17,
+      "mean": 0.014702443660515731,
+      "sd": 0.018982062116783393,
+      "sem": 0.004603826299972558,
+      "ci95_low": 0.004942767890510845,
+      "ci95_high": 0.024462119430520617,
+      "cohen_dz": 0.7745440706105505,
+      "paired_t_statistic": 3.1935270148231636,
+      "paired_t_p_value_two_sided": 0.005654091178749303,
+      "wilcoxon_statistic": 16.0,
+      "wilcoxon_p_value_two_sided": 0.0025787353515625
+    },
+    "between_roi_on_minus_off": {
+      "n_subjects": 17,
+      "mean": -0.0006474541875241559,
+      "sd": 0.007406023516128124,
+      "sem": 0.001796224542517915,
+      "ci95_low": -0.004455280113798721,
+      "ci95_high": 0.003160371738750409,
+      "cohen_dz": -0.0874226480802002,
+      "paired_t_statistic": -0.36045281210586644,
+      "paired_t_p_value_two_sided": 0.7232229669884483,
+      "wilcoxon_statistic": 66.0,
+      "wilcoxon_p_value_two_sided": 0.644134521484375
+    },
+    "within_minus_between_delta": {
+      "n_subjects": 17,
+      "mean": 0.015349897848039888,
+      "sd": 0.018637605799961838,
+      "sem": 0.0045202833718745285,
+      "ci95_low": 0.005767325174022455,
+      "ci95_high": 0.02493247052205732,
+      "cohen_dz": 0.8235981602353302,
+      "paired_t_statistic": 3.3957822077146447,
+      "paired_t_p_value_two_sided": 0.0036928863256264484,
+      "wilcoxon_statistic": 17.0,
+      "wilcoxon_p_value_two_sided": 0.0031585693359375
+    }
+  }
+}

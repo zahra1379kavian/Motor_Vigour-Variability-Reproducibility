@@ -1,0 +1,9 @@
+*.png binary
+*.pdf binary
+*.nii.gz binary
+*.npz binary
+*.html text
+*.csv text
+*.tsv text
+*.json text
+*.py text

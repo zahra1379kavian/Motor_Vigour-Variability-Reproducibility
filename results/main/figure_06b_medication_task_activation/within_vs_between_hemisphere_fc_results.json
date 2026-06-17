@@ -1,0 +1,86 @@
+{
+  "connectivity_metric": "mutual_information_ksg",
+  "method": "Mean mutual-information edge weights are summarized separately for within-hemisphere and between-hemisphere ROI pairs.",
+  "n_sessions": 35,
+  "n_complete_subjects": 17,
+  "tests": {
+    "within_hemisphere_on_minus_off": {
+      "n_subjects": 17,
+      "mean": -0.00046804119059722744,
+      "sd": 0.005600163101357723,
+      "sem": 0.001358239058093204,
+      "ci95_low": -0.0033473793674579657,
+      "ci95_high": 0.002411296986263511,
+      "cohen_dz": -0.08357634985376657,
+      "paired_t_statistic": -0.3445941182506547,
+      "paired_t_p_value_two_sided": 0.7348873189418265,
+      "wilcoxon_statistic": 76.0,
+      "wilcoxon_p_value_two_sided": 1.0
+    },
+    "between_hemisphere_on_minus_off": {
+      "n_subjects": 17,
+      "mean": -0.0002511621247054174,
+      "sd": 0.0038249655156993643,
+      "sem": 0.000927690402092565,
+      "ci95_low": -0.0022177779241379166,
+      "ci95_high": 0.0017154536747270815,
+      "cohen_dz": -0.06566389256962868,
+      "paired_t_statistic": -0.2707391648537897,
+      "paired_t_p_value_two_sided": 0.7900531823575982,
+      "wilcoxon_statistic": 65.0,
+      "wilcoxon_p_value_two_sided": 0.6112213134765625
+    },
+    "within_minus_between_hemisphere_delta": {
+      "n_subjects": 17,
+      "mean": -0.00021687906589181008,
+      "sd": 0.0053106163413901,
+      "sem": 0.0012880136536872117,
+      "ci95_low": -0.0029473460358123466,
+      "ci95_high": 0.0025135879040287267,
+      "cohen_dz": -0.040838775002722205,
+      "paired_t_statistic": -0.16838258295705782,
+      "paired_t_p_value_two_sided": 0.8683924512903974,
+      "wilcoxon_statistic": 73.0,
+      "wilcoxon_p_value_two_sided": 0.8899688720703125
+    },
+    "left_within_hemisphere_on_minus_off": {
+      "n_subjects": 17,
+      "mean": -0.00019115383366553862,
+      "sd": 0.007534663578611541,
+      "sem": 0.0018274243404770435,
+      "ci95_low": -0.004065120376968285,
+      "ci95_high": 0.0036828127096372072,
+      "cohen_dz": -0.025369922846742908,
+      "paired_t_statistic": -0.10460287161089171,
+      "paired_t_p_value_two_sided": 0.9179909939203806,
+      "wilcoxon_statistic": 71.0,
+      "wilcoxon_p_value_two_sided": 0.8175811767578125
+    },
+    "right_within_hemisphere_on_minus_off": {
+      "n_subjects": 17,
+      "mean": -0.0006623481077422731,
+      "sd": 0.005377293867697673,
+      "sem": 0.0013041853292060956,
+      "ci95_low": -0.0034270974982925743,
+      "ci95_high": 0.002102401282808028,
+      "cohen_dz": -0.12317498802159797,
+      "paired_t_statistic": -0.5078634860472385,
+      "paired_t_p_value_two_sided": 0.6184784606182341,
+      "wilcoxon_statistic": 65.0,
+      "wilcoxon_p_value_two_sided": 0.6112213134765625
+    },
+    "left_minus_right_within_hemisphere_delta": {
+      "n_subjects": 17,
+      "mean": 0.0004711942740767345,
+      "sd": 0.006107993364284038,
+      "sem": 0.0014814059883244033,
+      "ci95_low": -0.002669246130869908,
+      "ci95_high": 0.0036116346790233764,
+      "cohen_dz": 0.0771438745876841,
+      "paired_t_statistic": 0.3180723432944236,
+      "paired_t_p_value_two_sided": 0.754543868233459,
+      "wilcoxon_statistic": 65.0,
+      "wilcoxon_p_value_two_sided": 0.6112213134765625
+    }
+  }
+}

@@ -1,0 +1,900 @@
+{
+  "roi_definition": "aal3_left_right_coarse_anatomical_groups",
+  "priority_order": [
+    "Precentral_L",
+    "Precentral_R",
+    "Frontal_L",
+    "Frontal_R",
+    "Rolandic_Oper_L",
+    "Rolandic_Oper_R",
+    "Supp_Motor_Area_L",
+    "Supp_Motor_Area_R",
+    "Olfactory_L",
+    "Olfactory_R",
+    "Orbitofrontal_L",
+    "Orbitofrontal_R",
+    "Insula_L",
+    "Insula_R",
+    "Cingulate_L",
+    "Cingulate_R",
+    "Hippocampus_L",
+    "Hippocampus_R",
+    "ParaHippocampal_L",
+    "ParaHippocampal_R",
+    "Amygdala_L",
+    "Amygdala_R",
+    "Occipital_L",
+    "Occipital_R",
+    "Fusiform_L",
+    "Fusiform_R",
+    "Postcentral_L",
+    "Postcentral_R",
+    "Parietal_L",
+    "Parietal_R",
+    "Paracentral_Lobule_L",
+    "Paracentral_Lobule_R",
+    "Caudate_L",
+    "Caudate_R",
+    "Putamen_L",
+    "Putamen_R",
+    "Pallidum_L",
+    "Pallidum_R",
+    "Temporal_L",
+    "Temporal_R",
+    "Cerebellum_L",
+    "Cerebellum_R",
+    "Thalamus_L",
+    "Thalamus_R",
+    "N_Acc_L",
+    "N_Acc_R",
+    "VTA_L",
+    "VTA_R",
+    "SN_pc_L",
+    "SN_pc_R",
+    "SN_pr_L",
+    "SN_pr_R",
+    "Red_N_L",
+    "Red_N_R",
+    "LC_L",
+    "LC_R",
+    "Unassigned Active Voxels"
+  ],
+  "atlas_info": {
+    "name": "AAL3v2 (Automated Anatomical Labeling 3)",
+    "description": "AAL3v2 (AAL3v1.nii)",
+    "version": "3v2",
+    "map": "/home/zkavian/nilearn_data/aal_3v2/AAL3/AAL3v1.nii",
+    "n_labels": 166,
+    "n_regions": 56,
+    "grouping": "Original AAL left/right labels merged into coarse anatomical groups within hemisphere; midline labels excluded."
+  },
+  "roi_sources": {
+    "Precentral_L": "AAL3v2 (AAL3v1.nii)",
+    "Precentral_R": "AAL3v2 (AAL3v1.nii)",
+    "Frontal_L": "AAL3v2 (AAL3v1.nii)",
+    "Frontal_R": "AAL3v2 (AAL3v1.nii)",
+    "Rolandic_Oper_L": "AAL3v2 (AAL3v1.nii)",
+    "Rolandic_Oper_R": "AAL3v2 (AAL3v1.nii)",
+    "Supp_Motor_Area_L": "AAL3v2 (AAL3v1.nii)",
+    "Supp_Motor_Area_R": "AAL3v2 (AAL3v1.nii)",
+    "Olfactory_L": "AAL3v2 (AAL3v1.nii)",
+    "Olfactory_R": "AAL3v2 (AAL3v1.nii)",
+    "Orbitofrontal_L": "AAL3v2 (AAL3v1.nii)",
+    "Orbitofrontal_R": "AAL3v2 (AAL3v1.nii)",
+    "Insula_L": "AAL3v2 (AAL3v1.nii)",
+    "Insula_R": "AAL3v2 (AAL3v1.nii)",
+    "Cingulate_L": "AAL3v2 (AAL3v1.nii)",
+    "Cingulate_R": "AAL3v2 (AAL3v1.nii)",
+    "Hippocampus_L": "AAL3v2 (AAL3v1.nii)",
+    "Hippocampus_R": "AAL3v2 (AAL3v1.nii)",
+    "ParaHippocampal_L": "AAL3v2 (AAL3v1.nii)",
+    "ParaHippocampal_R": "AAL3v2 (AAL3v1.nii)",
+    "Amygdala_L": "AAL3v2 (AAL3v1.nii)",
+    "Amygdala_R": "AAL3v2 (AAL3v1.nii)",
+    "Occipital_L": "AAL3v2 (AAL3v1.nii)",
+    "Occipital_R": "AAL3v2 (AAL3v1.nii)",
+    "Fusiform_L": "AAL3v2 (AAL3v1.nii)",
+    "Fusiform_R": "AAL3v2 (AAL3v1.nii)",
+    "Postcentral_L": "AAL3v2 (AAL3v1.nii)",
+    "Postcentral_R": "AAL3v2 (AAL3v1.nii)",
+    "Parietal_L": "AAL3v2 (AAL3v1.nii)",
+    "Parietal_R": "AAL3v2 (AAL3v1.nii)",
+    "Paracentral_Lobule_L": "AAL3v2 (AAL3v1.nii)",
+    "Paracentral_Lobule_R": "AAL3v2 (AAL3v1.nii)",
+    "Caudate_L": "AAL3v2 (AAL3v1.nii)",
+    "Caudate_R": "AAL3v2 (AAL3v1.nii)",
+    "Putamen_L": "AAL3v2 (AAL3v1.nii)",
+    "Putamen_R": "AAL3v2 (AAL3v1.nii)",
+    "Pallidum_L": "AAL3v2 (AAL3v1.nii)",
+    "Pallidum_R": "AAL3v2 (AAL3v1.nii)",
+    "Temporal_L": "AAL3v2 (AAL3v1.nii)",
+    "Temporal_R": "AAL3v2 (AAL3v1.nii)",
+    "Cerebellum_L": "AAL3v2 (AAL3v1.nii)",
+    "Cerebellum_R": "AAL3v2 (AAL3v1.nii)",
+    "Thalamus_L": "AAL3v2 (AAL3v1.nii)",
+    "Thalamus_R": "AAL3v2 (AAL3v1.nii)",
+    "N_Acc_L": "AAL3v2 (AAL3v1.nii)",
+    "N_Acc_R": "AAL3v2 (AAL3v1.nii)",
+    "VTA_L": "AAL3v2 (AAL3v1.nii)",
+    "VTA_R": "AAL3v2 (AAL3v1.nii)",
+    "SN_pc_L": "AAL3v2 (AAL3v1.nii)",
+    "SN_pc_R": "AAL3v2 (AAL3v1.nii)",
+    "SN_pr_L": "AAL3v2 (AAL3v1.nii)",
+    "SN_pr_R": "AAL3v2 (AAL3v1.nii)",
+    "Red_N_L": "AAL3v2 (AAL3v1.nii)",
+    "Red_N_R": "AAL3v2 (AAL3v1.nii)",
+    "LC_L": "AAL3v2 (AAL3v1.nii)",
+    "LC_R": "AAL3v2 (AAL3v1.nii)"
+  },
+  "roi_matched_labels": {
+    "Precentral_L": [
+      "Precentral_L"
+    ],
+    "Precentral_R": [
+      "Precentral_R"
+    ],
+    "Frontal_L": [
+      "Frontal_Sup_2_L",
+      "Frontal_Mid_2_L",
+      "Frontal_Inf_Oper_L",
+      "Frontal_Inf_Tri_L",
+      "Frontal_Inf_Orb_2_L",
+      "Frontal_Sup_Medial_L",
+      "Frontal_Med_Orb_L"
+    ],
+    "Frontal_R": [
+      "Frontal_Sup_2_R",
+      "Frontal_Mid_2_R",
+      "Frontal_Inf_Oper_R",
+      "Frontal_Inf_Tri_R",
+      "Frontal_Inf_Orb_2_R",
+      "Frontal_Sup_Medial_R",
+      "Frontal_Med_Orb_R"
+    ],
+    "Rolandic_Oper_L": [
+      "Rolandic_Oper_L"
+    ],
+    "Rolandic_Oper_R": [
+      "Rolandic_Oper_R"
+    ],
+    "Supp_Motor_Area_L": [
+      "Supp_Motor_Area_L"
+    ],
+    "Supp_Motor_Area_R": [
+      "Supp_Motor_Area_R"
+    ],
+    "Olfactory_L": [
+      "Olfactory_L"
+    ],
+    "Olfactory_R": [
+      "Olfactory_R"
+    ],
+    "Orbitofrontal_L": [
+      "Rectus_L",
+      "OFCmed_L",
+      "OFCant_L",
+      "OFCpost_L",
+      "OFClat_L"
+    ],
+    "Orbitofrontal_R": [
+      "Rectus_R",
+      "OFCmed_R",
+      "OFCant_R",
+      "OFCpost_R",
+      "OFClat_R"
+    ],
+    "Insula_L": [
+      "Insula_L"
+    ],
+    "Insula_R": [
+      "Insula_R"
+    ],
+    "Cingulate_L": [
+      "Cingulate_Mid_L",
+      "Cingulate_Post_L",
+      "ACC_sub_L",
+      "ACC_pre_L",
+      "ACC_sup_L"
+    ],
+    "Cingulate_R": [
+      "Cingulate_Mid_R",
+      "Cingulate_Post_R",
+      "ACC_sub_R",
+      "ACC_pre_R",
+      "ACC_sup_R"
+    ],
+    "Hippocampus_L": [
+      "Hippocampus_L"
+    ],
+    "Hippocampus_R": [
+      "Hippocampus_R"
+    ],
+    "ParaHippocampal_L": [
+      "ParaHippocampal_L"
+    ],
+    "ParaHippocampal_R": [
+      "ParaHippocampal_R"
+    ],
+    "Amygdala_L": [
+      "Amygdala_L"
+    ],
+    "Amygdala_R": [
+      "Amygdala_R"
+    ],
+    "Occipital_L": [
+      "Calcarine_L",
+      "Cuneus_L",
+      "Lingual_L",
+      "Occipital_Sup_L",
+      "Occipital_Mid_L",
+      "Occipital_Inf_L"
+    ],
+    "Occipital_R": [
+      "Calcarine_R",
+      "Cuneus_R",
+      "Lingual_R",
+      "Occipital_Sup_R",
+      "Occipital_Mid_R",
+      "Occipital_Inf_R"
+    ],
+    "Fusiform_L": [
+      "Fusiform_L"
+    ],
+    "Fusiform_R": [
+      "Fusiform_R"
+    ],
+    "Postcentral_L": [
+      "Postcentral_L"
+    ],
+    "Postcentral_R": [
+      "Postcentral_R"
+    ],
+    "Parietal_L": [
+      "Parietal_Sup_L",
+      "Parietal_Inf_L",
+      "SupraMarginal_L",
+      "Angular_L",
+      "Precuneus_L"
+    ],
+    "Parietal_R": [
+      "Parietal_Sup_R",
+      "Parietal_Inf_R",
+      "SupraMarginal_R",
+      "Angular_R",
+      "Precuneus_R"
+    ],
+    "Paracentral_Lobule_L": [
+      "Paracentral_Lobule_L"
+    ],
+    "Paracentral_Lobule_R": [
+      "Paracentral_Lobule_R"
+    ],
+    "Caudate_L": [
+      "Caudate_L"
+    ],
+    "Caudate_R": [
+      "Caudate_R"
+    ],
+    "Putamen_L": [
+      "Putamen_L"
+    ],
+    "Putamen_R": [
+      "Putamen_R"
+    ],
+    "Pallidum_L": [
+      "Pallidum_L"
+    ],
+    "Pallidum_R": [
+      "Pallidum_R"
+    ],
+    "Temporal_L": [
+      "Heschl_L",
+      "Temporal_Sup_L",
+      "Temporal_Pole_Sup_L",
+      "Temporal_Mid_L",
+      "Temporal_Pole_Mid_L",
+      "Temporal_Inf_L"
+    ],
+    "Temporal_R": [
+      "Heschl_R",
+      "Temporal_Sup_R",
+      "Temporal_Pole_Sup_R",
+      "Temporal_Mid_R",
+      "Temporal_Pole_Mid_R",
+      "Temporal_Inf_R"
+    ],
+    "Cerebellum_L": [
+      "Cerebellum_Crus1_L",
+      "Cerebellum_Crus2_L",
+      "Cerebellum_3_L",
+      "Cerebellum_4_5_L",
+      "Cerebellum_6_L",
+      "Cerebellum_7b_L",
+      "Cerebellum_8_L",
+      "Cerebellum_9_L",
+      "Cerebellum_10_L"
+    ],
+    "Cerebellum_R": [
+      "Cerebellum_Crus1_R",
+      "Cerebellum_Crus2_R",
+      "Cerebellum_3_R",
+      "Cerebellum_4_5_R",
+      "Cerebellum_6_R",
+      "Cerebellum_7b_R",
+      "Cerebellum_8_R",
+      "Cerebellum_9_R",
+      "Cerebellum_10_R"
+    ],
+    "Thalamus_L": [
+      "Thal_AV_L",
+      "Thal_LP_L",
+      "Thal_VA_L",
+      "Thal_VL_L",
+      "Thal_VPL_L",
+      "Thal_IL_L",
+      "Thal_Re_L",
+      "Thal_MDm_L",
+      "Thal_MDl_L",
+      "Thal_LGN_L",
+      "Thal_MGN_L",
+      "Thal_PuI_L",
+      "Thal_PuM_L",
+      "Thal_PuA_L",
+      "Thal_PuL_L"
+    ],
+    "Thalamus_R": [
+      "Thal_AV_R",
+      "Thal_LP_R",
+      "Thal_VA_R",
+      "Thal_VL_R",
+      "Thal_VPL_R",
+      "Thal_IL_R",
+      "Thal_Re_R",
+      "Thal_MDm_R",
+      "Thal_MDl_R",
+      "Thal_LGN_R",
+      "Thal_MGN_R",
+      "Thal_PuI_R",
+      "Thal_PuM_R",
+      "Thal_PuA_R",
+      "Thal_PuL_R"
+    ],
+    "N_Acc_L": [
+      "N_Acc_L"
+    ],
+    "N_Acc_R": [
+      "N_Acc_R"
+    ],
+    "VTA_L": [
+      "VTA_L"
+    ],
+    "VTA_R": [
+      "VTA_R"
+    ],
+    "SN_pc_L": [
+      "SN_pc_L"
+    ],
+    "SN_pc_R": [
+      "SN_pc_R"
+    ],
+    "SN_pr_L": [
+      "SN_pr_L"
+    ],
+    "SN_pr_R": [
+      "SN_pr_R"
+    ],
+    "Red_N_L": [
+      "Red_N_L"
+    ],
+    "Red_N_R": [
+      "Red_N_R"
+    ],
+    "LC_L": [
+      "LC_L"
+    ],
+    "LC_R": [
+      "LC_R"
+    ]
+  },
+  "split_hemispheres": true,
+  "source_roi_names": [
+    "Precentral",
+    "Frontal",
+    "Rolandic_Oper",
+    "Supp_Motor_Area",
+    "Olfactory",
+    "Orbitofrontal",
+    "Insula",
+    "Cingulate",
+    "Hippocampus",
+    "ParaHippocampal",
+    "Amygdala",
+    "Occipital",
+    "Fusiform",
+    "Postcentral",
+    "Parietal",
+    "Paracentral_Lobule",
+    "Caudate",
+    "Putamen",
+    "Pallidum",
+    "Temporal",
+    "Cerebellum",
+    "Thalamus",
+    "N_Acc",
+    "VTA",
+    "SN_pc",
+    "SN_pr",
+    "Red_N",
+    "LC"
+  ],
+  "excluded_rois": [],
+  "min_roi_voxels": 30,
+  "task_activation_map": "data/z_valu_standard_glm.nii.gz",
+  "task_activation_threshold": "z >= 3.1",
+  "task_activation_voxels": 49146,
+  "task_activation_roi_definition": "figures/med_effects_task_activation/task_activation_roi_definition.csv",
+  "session_manifest": null,
+  "beta_root": "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed",
+  "voxel_selection": "task-activation",
+  "voxel_weighting": "unit_weights",
+  "min_report_voxels": 25,
+  "connectivity_metric": "mutual_information_ksg",
+  "comparison_metric": "laplacian_spectral_distance_signed",
+  "mi_neighbors": 3,
+  "paired_subject_similarity_values": "figures/med_effects_task_activation/paired_subject_similarity_values.csv",
+  "paired_subject_similarity_stats": "figures/med_effects_task_activation/paired_subject_similarity_stats.json",
+  "paired_subject_similarity_primary_p": 0.328887939453125,
+  "paired_subject_similarity_primary_effect": -0.002222369836996526,
+  "node_strength_mi_values": "figures/med_effects_task_activation/node_strength_mi_values.csv",
+  "node_strength_mi_results": "figures/med_effects_task_activation/node_strength_mi_results.csv",
+  "node_strength_mi_figure": "figures/med_effects_task_activation/node_strength_mi_boxplot.png",
+  "node_strength_mi_top_n": 16,
+  "node_strength_mi_min_p": 0.007904052734375,
+  "intra_vs_between_fc_metric": "pearson_fisher_z",
+  "intra_vs_between_fc_skipped": [],
+  "intra_vs_between_fc_outputs": {
+    "roi_values": "figures/med_effects_task_activation/intra_vs_between_fc_roi_values.csv",
+    "session_values": "figures/med_effects_task_activation/intra_vs_between_fc_session_values.csv",
+    "subject_deltas": "figures/med_effects_task_activation/intra_vs_between_fc_subject_deltas.csv",
+    "results": "figures/med_effects_task_activation/intra_vs_between_fc_results.csv",
+    "results_json": "figures/med_effects_task_activation/intra_vs_between_fc_results.json",
+    "method": "figures/med_effects_task_activation/intra_vs_between_fc_method.md",
+    "figure": "figures/med_effects_task_activation/intra_vs_between_fc_medication_change.png"
+  },
+  "intra_vs_between_fc_primary_p": 0.011877958530097564,
+  "intra_vs_between_fc_primary_effect": 0.017855080961301124,
+  "within_vs_between_hemisphere_fc_skipped": null,
+  "within_vs_between_hemisphere_fc_outputs": {
+    "edge_values": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_edge_values.csv",
+    "session_values": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_session_values.csv",
+    "subject_deltas": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_subject_deltas.csv",
+    "results": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_results.csv",
+    "results_json": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_results.json",
+    "method": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_method.md",
+    "figure": "figures/med_effects_task_activation/within_vs_between_hemisphere_fc_medication_change.png"
+  },
+  "within_vs_between_hemisphere_fc_primary_p": 0.8683924512903974,
+  "within_vs_between_hemisphere_fc_primary_effect": -0.00021687906589181008,
+  "sessions": [
+    {
+      "label": "sub-pd001_ses-1",
+      "subject": "sub-pd001",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd001/cleaned_beta_volume_sub-pd001_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd001/cleaned_beta_volume_sub-pd001_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd001_ses-2",
+      "subject": "sub-pd001",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd001/cleaned_beta_volume_sub-pd001_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd001/cleaned_beta_volume_sub-pd001_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd002_ses-1",
+      "subject": "sub-pd002",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd002/cleaned_beta_volume_sub-pd002_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd002/cleaned_beta_volume_sub-pd002_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd002_ses-2",
+      "subject": "sub-pd002",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd002/cleaned_beta_volume_sub-pd002_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd002/cleaned_beta_volume_sub-pd002_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd003_ses-1",
+      "subject": "sub-pd003",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd003/cleaned_beta_volume_sub-pd003_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd003/cleaned_beta_volume_sub-pd003_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd003_ses-2",
+      "subject": "sub-pd003",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd003/cleaned_beta_volume_sub-pd003_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd003/cleaned_beta_volume_sub-pd003_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd004_ses-1",
+      "subject": "sub-pd004",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd004/cleaned_beta_volume_sub-pd004_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd004/cleaned_beta_volume_sub-pd004_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd004_ses-2",
+      "subject": "sub-pd004",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd004/cleaned_beta_volume_sub-pd004_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd004/cleaned_beta_volume_sub-pd004_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd007_ses-1",
+      "subject": "sub-pd007",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd007/cleaned_beta_volume_sub-pd007_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd007/cleaned_beta_volume_sub-pd007_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd007_ses-2",
+      "subject": "sub-pd007",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd007/cleaned_beta_volume_sub-pd007_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd007/cleaned_beta_volume_sub-pd007_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd009_ses-1",
+      "subject": "sub-pd009",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd009/cleaned_beta_volume_sub-pd009_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd009/cleaned_beta_volume_sub-pd009_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd009_ses-2",
+      "subject": "sub-pd009",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd009/cleaned_beta_volume_sub-pd009_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd009/cleaned_beta_volume_sub-pd009_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd010_ses-1",
+      "subject": "sub-pd010",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd010/cleaned_beta_volume_sub-pd010_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd010/cleaned_beta_volume_sub-pd010_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd010_ses-2",
+      "subject": "sub-pd010",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd010/cleaned_beta_volume_sub-pd010_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd010/cleaned_beta_volume_sub-pd010_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd011_ses-1",
+      "subject": "sub-pd011",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd011/cleaned_beta_volume_sub-pd011_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd011/cleaned_beta_volume_sub-pd011_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd011_ses-2",
+      "subject": "sub-pd011",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd011/cleaned_beta_volume_sub-pd011_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd011/cleaned_beta_volume_sub-pd011_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd012_ses-1",
+      "subject": "sub-pd012",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd012/cleaned_beta_volume_sub-pd012_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd012/cleaned_beta_volume_sub-pd012_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd012_ses-2",
+      "subject": "sub-pd012",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd012/cleaned_beta_volume_sub-pd012_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd012/cleaned_beta_volume_sub-pd012_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd013_ses-1",
+      "subject": "sub-pd013",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd013/cleaned_beta_volume_sub-pd013_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd013/cleaned_beta_volume_sub-pd013_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd013_ses-2",
+      "subject": "sub-pd013",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd013/cleaned_beta_volume_sub-pd013_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd013/cleaned_beta_volume_sub-pd013_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd014_ses-1",
+      "subject": "sub-pd014",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd014/cleaned_beta_volume_sub-pd014_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd014/cleaned_beta_volume_sub-pd014_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd014_ses-2",
+      "subject": "sub-pd014",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd014/cleaned_beta_volume_sub-pd014_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd014/cleaned_beta_volume_sub-pd014_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd015_ses-1",
+      "subject": "sub-pd015",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd015/cleaned_beta_volume_sub-pd015_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd015/cleaned_beta_volume_sub-pd015_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd015_ses-2",
+      "subject": "sub-pd015",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd015/cleaned_beta_volume_sub-pd015_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd015/cleaned_beta_volume_sub-pd015_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd017_ses-2",
+      "subject": "sub-pd017",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd017/cleaned_beta_volume_sub-pd017_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd017/cleaned_beta_volume_sub-pd017_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd018_ses-1",
+      "subject": "sub-pd018",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd018/cleaned_beta_volume_sub-pd018_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd018/cleaned_beta_volume_sub-pd018_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd018_ses-2",
+      "subject": "sub-pd018",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd018/cleaned_beta_volume_sub-pd018_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd018/cleaned_beta_volume_sub-pd018_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd020_ses-1",
+      "subject": "sub-pd020",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd020/cleaned_beta_volume_sub-pd020_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd020/cleaned_beta_volume_sub-pd020_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd020_ses-2",
+      "subject": "sub-pd020",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd020/cleaned_beta_volume_sub-pd020_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd020/cleaned_beta_volume_sub-pd020_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd023_ses-1",
+      "subject": "sub-pd023",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd023/cleaned_beta_volume_sub-pd023_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd023/cleaned_beta_volume_sub-pd023_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd023_ses-2",
+      "subject": "sub-pd023",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd023/cleaned_beta_volume_sub-pd023_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd023/cleaned_beta_volume_sub-pd023_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd024_ses-1",
+      "subject": "sub-pd024",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd024/cleaned_beta_volume_sub-pd024_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd024/cleaned_beta_volume_sub-pd024_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd024_ses-2",
+      "subject": "sub-pd024",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd024/cleaned_beta_volume_sub-pd024_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd024/cleaned_beta_volume_sub-pd024_ses-2_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd028_ses-1",
+      "subject": "sub-pd028",
+      "session": "1",
+      "state": "off",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd028/cleaned_beta_volume_sub-pd028_ses-1_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd028/cleaned_beta_volume_sub-pd028_ses-1_run-2.npy"
+      ]
+    },
+    {
+      "label": "sub-pd028_ses-2",
+      "subject": "sub-pd028",
+      "session": "2",
+      "state": "on",
+      "bold_path": null,
+      "timeseries_path": null,
+      "beta_paths": [
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd028/cleaned_beta_volume_sub-pd028_ses-2_run-1.npy",
+        "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed/sub-pd028/cleaned_beta_volume_sub-pd028_ses-2_run-2.npy"
+      ]
+    }
+  ]
+}

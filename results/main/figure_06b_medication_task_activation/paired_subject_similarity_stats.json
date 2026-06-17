@@ -1,0 +1,323 @@
+{
+  "test_scope": "complete subjects with one OFF and one ON session; cross-subject distances only",
+  "hypothesis": "OFF-OFF distances are greater than ON-ON distances when medication makes networks more similar across subjects",
+  "complete_subjects": [
+    {
+      "subject": "sub-pd001",
+      "off_label": "sub-pd001_ses-1",
+      "on_label": "sub-pd001_ses-2"
+    },
+    {
+      "subject": "sub-pd002",
+      "off_label": "sub-pd002_ses-1",
+      "on_label": "sub-pd002_ses-2"
+    },
+    {
+      "subject": "sub-pd003",
+      "off_label": "sub-pd003_ses-1",
+      "on_label": "sub-pd003_ses-2"
+    },
+    {
+      "subject": "sub-pd004",
+      "off_label": "sub-pd004_ses-1",
+      "on_label": "sub-pd004_ses-2"
+    },
+    {
+      "subject": "sub-pd007",
+      "off_label": "sub-pd007_ses-1",
+      "on_label": "sub-pd007_ses-2"
+    },
+    {
+      "subject": "sub-pd009",
+      "off_label": "sub-pd009_ses-1",
+      "on_label": "sub-pd009_ses-2"
+    },
+    {
+      "subject": "sub-pd010",
+      "off_label": "sub-pd010_ses-1",
+      "on_label": "sub-pd010_ses-2"
+    },
+    {
+      "subject": "sub-pd011",
+      "off_label": "sub-pd011_ses-1",
+      "on_label": "sub-pd011_ses-2"
+    },
+    {
+      "subject": "sub-pd012",
+      "off_label": "sub-pd012_ses-1",
+      "on_label": "sub-pd012_ses-2"
+    },
+    {
+      "subject": "sub-pd013",
+      "off_label": "sub-pd013_ses-1",
+      "on_label": "sub-pd013_ses-2"
+    },
+    {
+      "subject": "sub-pd014",
+      "off_label": "sub-pd014_ses-1",
+      "on_label": "sub-pd014_ses-2"
+    },
+    {
+      "subject": "sub-pd015",
+      "off_label": "sub-pd015_ses-1",
+      "on_label": "sub-pd015_ses-2"
+    },
+    {
+      "subject": "sub-pd018",
+      "off_label": "sub-pd018_ses-1",
+      "on_label": "sub-pd018_ses-2"
+    },
+    {
+      "subject": "sub-pd020",
+      "off_label": "sub-pd020_ses-1",
+      "on_label": "sub-pd020_ses-2"
+    },
+    {
+      "subject": "sub-pd023",
+      "off_label": "sub-pd023_ses-1",
+      "on_label": "sub-pd023_ses-2"
+    },
+    {
+      "subject": "sub-pd024",
+      "off_label": "sub-pd024_ses-1",
+      "on_label": "sub-pd024_ses-2"
+    },
+    {
+      "subject": "sub-pd028",
+      "off_label": "sub-pd028_ses-1",
+      "on_label": "sub-pd028_ses-2"
+    }
+  ],
+  "incomplete_subjects": [
+    {
+      "subject": "sub-pd017",
+      "n_off": 0,
+      "n_on": 1
+    }
+  ],
+  "observed": {
+    "means": {
+      "off-off": 0.02337146699833356,
+      "on-on": 0.025593836835330085,
+      "off-on": 0.02493365129718106
+    },
+    "contrasts": {
+      "off_minus_on": -0.002222369836996526,
+      "off_minus_off_on": -0.0015621842988475,
+      "on_minus_off_on": 0.000660185538149026
+    },
+    "pair_counts": {
+      "off-off": 136,
+      "on-on": 136,
+      "off-on": 272
+    }
+  },
+  "medication_label_permutation": {
+    "method": "exact within-subject OFF/ON medication-label swaps for complete subjects",
+    "observed_means": {
+      "off-off": 0.02337146699833356,
+      "on-on": 0.025593836835330085,
+      "off-on": 0.02493365129718106
+    },
+    "observed_contrasts": {
+      "off_minus_on": -0.002222369836996526,
+      "off_minus_off_on": -0.0015621842988475,
+      "on_minus_off_on": 0.000660185538149026
+    },
+    "pair_counts": {
+      "off-off": 136,
+      "on-on": 136,
+      "off-on": 272
+    },
+    "n_permutations": 131072,
+    "contrasts": {
+      "off_minus_on": {
+        "observed": -0.002222369836996526,
+        "p_value_two_sided": 0.328887939453125,
+        "p_value_greater": 0.8355636596679688,
+        "p_value_less": 0.1644439697265625
+      },
+      "off_minus_off_on": {
+        "observed": -0.0015621842988475,
+        "p_value_two_sided": 0.17818450927734375,
+        "p_value_greater": 0.9076461791992188,
+        "p_value_less": 0.0923614501953125
+      },
+      "on_minus_off_on": {
+        "observed": 0.000660185538149026,
+        "p_value_two_sided": 0.5731277465820312,
+        "p_value_greater": 0.292633056640625,
+        "p_value_less": 0.7073745727539062
+      }
+    },
+    "observed_off_off_mean": 0.02337146699833356,
+    "observed_on_on_mean": 0.025593836835330085,
+    "observed_off_minus_on": -0.002222369836996526,
+    "permutation_p_value_two_sided": 0.328887939453125,
+    "permutation_p_value_greater": 0.8355636596679688
+  },
+  "permutation": {
+    "method": "exact within-subject OFF/ON medication-label swaps for complete subjects",
+    "observed_means": {
+      "off-off": 0.02337146699833356,
+      "on-on": 0.025593836835330085,
+      "off-on": 0.02493365129718106
+    },
+    "observed_contrasts": {
+      "off_minus_on": -0.002222369836996526,
+      "off_minus_off_on": -0.0015621842988475,
+      "on_minus_off_on": 0.000660185538149026
+    },
+    "pair_counts": {
+      "off-off": 136,
+      "on-on": 136,
+      "off-on": 272
+    },
+    "n_permutations": 131072,
+    "contrasts": {
+      "off_minus_on": {
+        "observed": -0.002222369836996526,
+        "p_value_two_sided": 0.328887939453125,
+        "p_value_greater": 0.8355636596679688,
+        "p_value_less": 0.1644439697265625
+      },
+      "off_minus_off_on": {
+        "observed": -0.0015621842988475,
+        "p_value_two_sided": 0.17818450927734375,
+        "p_value_greater": 0.9076461791992188,
+        "p_value_less": 0.0923614501953125
+      },
+      "on_minus_off_on": {
+        "observed": 0.000660185538149026,
+        "p_value_two_sided": 0.5731277465820312,
+        "p_value_greater": 0.292633056640625,
+        "p_value_less": 0.7073745727539062
+      }
+    },
+    "observed_off_off_mean": 0.02337146699833356,
+    "observed_on_on_mean": 0.025593836835330085,
+    "observed_off_minus_on": -0.002222369836996526,
+    "permutation_p_value_two_sided": 0.328887939453125,
+    "permutation_p_value_greater": 0.8355636596679688
+  },
+  "subject_level": {
+    "n_subjects": 17,
+    "mean_off_minus_on": -0.002222369836996524,
+    "sd_off_minus_on": 0.0051491556373900165,
+    "sem_off_minus_on": 0.0012488536809237452,
+    "ci95_low": -0.004869821373138437,
+    "ci95_high": 0.0004250816991453895,
+    "cohen_dz": -0.4315988860113364,
+    "paired_t_statistic": -1.7795277949236563,
+    "paired_t_p_value_two_sided": 0.09415258378679842,
+    "wilcoxon_statistic": 44.0,
+    "wilcoxon_p_value_two_sided": 0.1323699951171875,
+    "contrasts": {
+      "off_minus_on": {
+        "n_subjects": 17,
+        "mean": -0.002222369836996524,
+        "sd": 0.0051491556373900165,
+        "sem": 0.0012488536809237452,
+        "ci95_low": -0.004869821373138437,
+        "ci95_high": 0.0004250816991453895,
+        "cohen_dz": -0.4315988860113364,
+        "paired_t_statistic": -1.7795277949236563,
+        "paired_t_p_value_two_sided": 0.09415258378679842,
+        "wilcoxon_statistic": 44.0,
+        "wilcoxon_p_value_two_sided": 0.1323699951171875
+      },
+      "off_minus_off_on": {
+        "n_subjects": 17,
+        "mean": -0.0015621842988475004,
+        "sd": 0.002584872081677132,
+        "sem": 0.0006269235659685303,
+        "ci95_low": -0.002891202888550721,
+        "ci95_high": -0.00023316570914427978,
+        "cohen_dz": -0.6043565211296317,
+        "paired_t_statistic": -2.491825772148303,
+        "paired_t_p_value_two_sided": 0.024066611287723142,
+        "wilcoxon_statistic": 32.0,
+        "wilcoxon_p_value_two_sided": 0.0347900390625
+      },
+      "on_minus_off_on": {
+        "n_subjects": 17,
+        "mean": 0.0006601855381490232,
+        "sd": 0.002945387068973212,
+        "sem": 0.0007143612937473507,
+        "ci95_low": -0.0008541927540243631,
+        "ci95_high": 0.0021745638303224094,
+        "cohen_dz": 0.2241422002233376,
+        "paired_t_statistic": 0.9241619666791632,
+        "paired_t_p_value_two_sided": 0.36913057130671323,
+        "wilcoxon_statistic": 56.0,
+        "wilcoxon_p_value_two_sided": 0.352874755859375
+      }
+    }
+  },
+  "subject_level_bootstrap": {
+    "method": "subject-level bootstrap: resample complete subjects and recompute OFF-OFF, ON-ON, and OFF-ON pairwise means",
+    "n_subjects": 17,
+    "n_bootstrap": 10000,
+    "valid_bootstrap_iterations": 10000,
+    "random_state": 0,
+    "observed_pair_counts": {
+      "off-off": 136,
+      "on-on": 136,
+      "off-on": 272
+    },
+    "means": {
+      "off-off": {
+        "estimate": 0.02337146699833356,
+        "ci95_low": 0.02063936376592353,
+        "ci95_high": 0.026018826418483233
+      },
+      "on-on": {
+        "estimate": 0.025593836835330085,
+        "ci95_low": 0.022154834497963533,
+        "ci95_high": 0.02897800205324169
+      },
+      "off-on": {
+        "estimate": 0.02493365129718106,
+        "ci95_low": 0.02295723593286011,
+        "ci95_high": 0.026985260172630005
+      }
+    },
+    "contrasts": {
+      "off_minus_on": {
+        "estimate": -0.002222369836996526,
+        "ci95_low": -0.006948093868208204,
+        "ci95_high": 0.002854430870329039
+      },
+      "off_minus_off_on": {
+        "estimate": -0.0015621842988475,
+        "ci95_low": -0.004084047260432881,
+        "ci95_high": 0.0008878148173078282
+      },
+      "on_minus_off_on": {
+        "estimate": 0.000660185538149026,
+        "ci95_low": -0.0024845136170157257,
+        "ci95_high": 0.003283846584282956
+      }
+    }
+  },
+  "mantel_style": {
+    "method": "Mantel-style test: correlate network-distance vector with medication contrast coding, then exactly swap OFF/ON labels within complete subjects",
+    "coding": "OFF-OFF=1, ON-ON=-1, OFF-ON=0; positive r means OFF-OFF distances are larger than ON-ON distances",
+    "n_pairs": 544,
+    "n_permutations": 131072,
+    "pearson_r": -0.1305179258494731,
+    "p_value_two_sided": 0.328887939453125,
+    "p_value_greater": 0.8355636596679688,
+    "p_value_less": 0.1644439697265625
+  },
+  "effect_size": {
+    "primary_contrast": "OFF-OFF - ON-ON",
+    "raw_difference": -0.002222369836996526,
+    "bootstrap_ci95_low": -0.006948093868208204,
+    "bootstrap_ci95_high": 0.002854430870329039,
+    "percent_on_on_lower_than_off_off": -9.508901761087511,
+    "cohen_dz_subject_level": -0.4315988860113364,
+    "subject_t_ci95_low": -0.004869821373138437,
+    "subject_t_ci95_high": 0.0004250816991453895
+  }
+}

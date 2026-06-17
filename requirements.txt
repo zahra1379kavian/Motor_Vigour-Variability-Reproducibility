@@ -1,0 +1,11 @@
+numpy
+pandas
+matplotlib
+Pillow
+scipy
+statsmodels
+nibabel
+nilearn
+scikit-learn
+pingouin
+h5py

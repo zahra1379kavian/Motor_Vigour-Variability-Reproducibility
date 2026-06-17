@@ -1,0 +1,7 @@
+,Frontal-Parietal,Subcortical,Cingulate-Temporal,Visual,Limbic-Olfactory,Somatosensory-Cerebellum
+Frontal-Parietal,0,2,1,2,2,4
+Subcortical,2,0,2,1,8,6
+Cingulate-Temporal,1,2,0,0,1,2
+Visual,2,1,0,0,2,4
+Limbic-Olfactory,2,8,1,2,3,5
+Somatosensory-Cerebellum,4,6,2,4,5,1

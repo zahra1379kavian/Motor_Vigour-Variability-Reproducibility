@@ -1,0 +1,11 @@
+paper_panel,figure_png,figure_pdf,source_results,entry_script
+Figure 2A,figure_02a_behavior_projection_subject_panel.png,figure_02a_behavior_projection_subject_panel.pdf,../../results/main/figure_02a_behavior_projection,../../scripts/figure_02a_behavior_projection.py
+Figure 2B,figure_02b_trial_variability_hypothesis.png,figure_02b_trial_variability_hypothesis.pdf,../../results/main/figure_02b_trial_variability,../../scripts/figure_02b_trial_variability_hypothesis.py
+Figure 3,figure_03_vigour_network_voxel_weights.png,figure_03_vigour_network_voxel_weights.pdf,../../results/main/figure_03_vigour_network_map,../../scripts/figure_03_vigour_network_map.py
+Figure 4,figure_04_full_model_vs_task_only_anatomy.png,figure_04_full_model_vs_task_only_anatomy.pdf,../../results/main/figure_04_05_ablation,../../scripts/figure_04_ablation_anatomy.py
+Figure 5,figure_05_full_model_vs_task_only_roi_summary.png,figure_05_full_model_vs_task_only_roi_summary.pdf,../../results/main/figure_04_05_ablation,../../scripts/figure_05_ablation_roi_summary.py
+Figure 6A,figure_06a_medication_fc_vigour_network.png,figure_06a_medication_fc_vigour_network.pdf,../../results/main/figure_06a_medication_vigour_network,../../scripts/figure_06a_medication_vigour_network_fc.py
+Figure 6B,figure_06b_medication_fc_task_activation.png,figure_06b_medication_fc_task_activation.pdf,../../results/main/figure_06b_medication_task_activation,../../scripts/figure_06b_medication_task_activation_fc.py
+Figure 7A,figure_07a_gvs_connectogram_vigour_network.png,figure_07a_gvs_connectogram_vigour_network.pdf,../../results/main/figure_07a_gvs_vigour_connectogram,../../scripts/figure_07a_gvs_vigour_connectogram.py
+Figure 7B,figure_07b_gvs_connectogram_task_activation.png,figure_07b_gvs_connectogram_task_activation.pdf,../../results/main/figure_07b_gvs_task_activation_connectogram,../../scripts/figure_07b_gvs_task_activation_connectogram.py
+

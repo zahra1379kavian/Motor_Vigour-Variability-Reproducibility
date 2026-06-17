@@ -1,0 +1,7 @@
+set_name,n_regions,regions,vigour_network_voxels,task_activation_voxels,vigour_only_voxels,task_only_voxels,both_voxels,union_voxels
+regions_with_vigour_only_voxels,23,Parietal; Cerebellum; Temporal; Occipital; Frontal; Postcentral; Fusiform; Insula; Cingulate; Putamen; Precentral; Orbitofrontal; Supp_Motor_Area; ParaHippocampal; Paracentral_Lobule; Rolandic_Oper; Pallidum; Caudate; Hippocampus; Amygdala; Cerebral_Cortex; Thalamus; Olfactory,5957,21610,5454,21107,503,27064
+regions_with_task_only_voxels,20,Parietal; Cerebellum; Temporal; Occipital; Frontal; Postcentral; Fusiform; Insula; Cingulate; Putamen; Precentral; Orbitofrontal; Supp_Motor_Area; ParaHippocampal; Paracentral_Lobule; Rolandic_Oper; Pallidum; Hippocampus; Cerebral_Cortex; Thalamus,5714,21610,5211,21107,503,26821
+regions_with_same_voxel_overlap,10,Parietal; Cerebellum; Temporal; Occipital; Postcentral; Fusiform; Putamen; Precentral; Supp_Motor_Area; Paracentral_Lobule,4218,18132,3715,17629,503,21847
+regions_with_both_maps_but_no_same_voxel_overlap,10,Frontal; Insula; Cingulate; Orbitofrontal; ParaHippocampal; Rolandic_Oper; Pallidum; Hippocampus; Cerebral_Cortex; Thalamus,1496,3478,1496,3478,0,4974
+regions_present_only_in_vigour_map,3,Caudate; Amygdala; Olfactory,243,0,243,0,0,243
+regions_present_only_in_task_activation_map,0,,0,0,0,0,0,0
