@@ -1,0 +1,14 @@
+{
+  "connectivity_metric": "pearson_fisher_z",
+  "voxel_selection": "weighted-vigour",
+  "roi_percentile": 90.0,
+  "weight_threshold": 0.00035733996281983593,
+  "n_rois": 38,
+  "n_weighted_vigour_rois": 38,
+  "n_run_sessions": 70,
+  "n_run_session_deltas": 35,
+  "n_complete_subjects": 17,
+  "run_baseline_definition": "0.5 * (abs(OFF_run2 - OFF_run1) + abs(ON_run2 - ON_run1))",
+  "primary_comparison": "run-level medication-effect magnitude minus run-to-run baseline",
+  "run_level_medication_effect_definition": "0.5 * (abs(ON_run1 - OFF_run1) + abs(ON_run2 - OFF_run2))"
+}

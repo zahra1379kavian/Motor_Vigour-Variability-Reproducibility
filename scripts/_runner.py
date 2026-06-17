@@ -20,12 +20,27 @@ def _ensure_paths() -> None:
             sys.path.insert(0, str(path))
 
 
-def run_module(module_name: str) -> int | None:
-    _ensure_paths()
-    module = importlib.import_module(module_name)
-    return module.main()
+def _with_argv(argv: list[str] | None):
+    class _ArgvContext:
+        def __enter__(self):
+            self.previous = sys.argv[:]
+            if argv is not None:
+                sys.argv = argv[:]
+
+        def __exit__(self, exc_type, exc, tb):
+            sys.argv = self.previous
+
+    return _ArgvContext()
 
 
-def run_script(relative_path: str) -> None:
+def run_module(module_name: str, argv: list[str] | None = None) -> int | None:
     _ensure_paths()
-    runpy.run_path(str(REPO_ROOT / relative_path), run_name="__main__")
+    with _with_argv(argv):
+        module = importlib.import_module(module_name)
+        return module.main()
+
+
+def run_script(relative_path: str, argv: list[str] | None = None) -> None:
+    _ensure_paths()
+    with _with_argv(argv):
+        runpy.run_path(str(REPO_ROOT / relative_path), run_name="__main__")

@@ -1,0 +1,339 @@
+{
+  "inputs": [
+    {
+      "method": "Standard GLM",
+      "path": "data/z_valu_standard_glm.nii.gz",
+      "kind": "z"
+    },
+    {
+      "method": "GLMsingle Type A",
+      "path": "data/z_value_typaA.nii.gz",
+      "kind": "z"
+    },
+    {
+      "method": "GLMsingle Type D",
+      "path": "data/z_value_typeD.nii.gz",
+      "kind": "z"
+    },
+    {
+      "method": "Optimization weights",
+      "path": "data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5.nii.gz",
+      "kind": "weight"
+    }
+  ],
+  "z_thresholds": {
+    "Standard GLM": 3.1,
+    "GLMsingle Type A": 1.96,
+    "GLMsingle Type D": 1.96
+  },
+  "weight_percentiles": [
+    80.0,
+    90.0
+  ],
+  "min_report_voxels": 25,
+  "analysis_mask": {
+    "definition": "union of nonzero GLMsingle Type A, GLMsingle Type D, and optimization-weight voxels",
+    "n_voxels": 91874
+  },
+  "atlas": {
+    "roi_definition": "aal3_bilateral_coarse_anatomical_groups",
+    "priority_order": [
+      "Precentral",
+      "Frontal",
+      "Rolandic_Oper",
+      "Supp_Motor_Area",
+      "Olfactory",
+      "Orbitofrontal",
+      "Insula",
+      "Cingulate",
+      "Hippocampus",
+      "ParaHippocampal",
+      "Amygdala",
+      "Occipital",
+      "Fusiform",
+      "Postcentral",
+      "Parietal",
+      "Paracentral_Lobule",
+      "Caudate",
+      "Putamen",
+      "Pallidum",
+      "Temporal",
+      "Cerebellum",
+      "Thalamus",
+      "N_Acc",
+      "VTA",
+      "SN_pc",
+      "SN_pr",
+      "Red_N",
+      "LC",
+      "Raphe",
+      "Unassigned Active Voxels"
+    ],
+    "atlas_info": {
+      "name": "AAL3v2 (Automated Anatomical Labeling 3)",
+      "description": "AAL3v2 (AAL3v1.nii)",
+      "version": "3v2",
+      "map": "/home/zkavian/nilearn_data/aal_3v2/AAL3/AAL3v1.nii",
+      "n_labels": 166,
+      "n_regions": 29,
+      "grouping": "Original AAL labels merged bilaterally into coarse anatomical groups; atlas map unchanged."
+    },
+    "roi_sources": {
+      "Precentral": "AAL3v2 (AAL3v1.nii)",
+      "Frontal": "AAL3v2 (AAL3v1.nii)",
+      "Rolandic_Oper": "AAL3v2 (AAL3v1.nii)",
+      "Supp_Motor_Area": "AAL3v2 (AAL3v1.nii)",
+      "Olfactory": "AAL3v2 (AAL3v1.nii)",
+      "Orbitofrontal": "AAL3v2 (AAL3v1.nii)",
+      "Insula": "AAL3v2 (AAL3v1.nii)",
+      "Cingulate": "AAL3v2 (AAL3v1.nii)",
+      "Hippocampus": "AAL3v2 (AAL3v1.nii)",
+      "ParaHippocampal": "AAL3v2 (AAL3v1.nii)",
+      "Amygdala": "AAL3v2 (AAL3v1.nii)",
+      "Occipital": "AAL3v2 (AAL3v1.nii)",
+      "Fusiform": "AAL3v2 (AAL3v1.nii)",
+      "Postcentral": "AAL3v2 (AAL3v1.nii)",
+      "Parietal": "AAL3v2 (AAL3v1.nii)",
+      "Paracentral_Lobule": "AAL3v2 (AAL3v1.nii)",
+      "Caudate": "AAL3v2 (AAL3v1.nii)",
+      "Putamen": "AAL3v2 (AAL3v1.nii)",
+      "Pallidum": "AAL3v2 (AAL3v1.nii)",
+      "Temporal": "AAL3v2 (AAL3v1.nii)",
+      "Cerebellum": "AAL3v2 (AAL3v1.nii)",
+      "Thalamus": "AAL3v2 (AAL3v1.nii)",
+      "N_Acc": "AAL3v2 (AAL3v1.nii)",
+      "VTA": "AAL3v2 (AAL3v1.nii)",
+      "SN_pc": "AAL3v2 (AAL3v1.nii)",
+      "SN_pr": "AAL3v2 (AAL3v1.nii)",
+      "Red_N": "AAL3v2 (AAL3v1.nii)",
+      "LC": "AAL3v2 (AAL3v1.nii)",
+      "Raphe": "AAL3v2 (AAL3v1.nii)"
+    },
+    "roi_matched_labels": {
+      "Precentral": [
+        "Precentral_L",
+        "Precentral_R"
+      ],
+      "Frontal": [
+        "Frontal_Sup_2_L",
+        "Frontal_Sup_2_R",
+        "Frontal_Mid_2_L",
+        "Frontal_Mid_2_R",
+        "Frontal_Inf_Oper_L",
+        "Frontal_Inf_Oper_R",
+        "Frontal_Inf_Tri_L",
+        "Frontal_Inf_Tri_R",
+        "Frontal_Inf_Orb_2_L",
+        "Frontal_Inf_Orb_2_R",
+        "Frontal_Sup_Medial_L",
+        "Frontal_Sup_Medial_R",
+        "Frontal_Med_Orb_L",
+        "Frontal_Med_Orb_R"
+      ],
+      "Rolandic_Oper": [
+        "Rolandic_Oper_L",
+        "Rolandic_Oper_R"
+      ],
+      "Supp_Motor_Area": [
+        "Supp_Motor_Area_L",
+        "Supp_Motor_Area_R"
+      ],
+      "Olfactory": [
+        "Olfactory_L",
+        "Olfactory_R"
+      ],
+      "Orbitofrontal": [
+        "Rectus_L",
+        "Rectus_R",
+        "OFCmed_L",
+        "OFCmed_R",
+        "OFCant_L",
+        "OFCant_R",
+        "OFCpost_L",
+        "OFCpost_R",
+        "OFClat_L",
+        "OFClat_R"
+      ],
+      "Insula": [
+        "Insula_L",
+        "Insula_R"
+      ],
+      "Cingulate": [
+        "Cingulate_Mid_L",
+        "Cingulate_Mid_R",
+        "Cingulate_Post_L",
+        "Cingulate_Post_R",
+        "ACC_sub_L",
+        "ACC_sub_R",
+        "ACC_pre_L",
+        "ACC_pre_R",
+        "ACC_sup_L",
+        "ACC_sup_R"
+      ],
+      "Hippocampus": [
+        "Hippocampus_L",
+        "Hippocampus_R"
+      ],
+      "ParaHippocampal": [
+        "ParaHippocampal_L",
+        "ParaHippocampal_R"
+      ],
+      "Amygdala": [
+        "Amygdala_L",
+        "Amygdala_R"
+      ],
+      "Occipital": [
+        "Calcarine_L",
+        "Calcarine_R",
+        "Cuneus_L",
+        "Cuneus_R",
+        "Lingual_L",
+        "Lingual_R",
+        "Occipital_Sup_L",
+        "Occipital_Sup_R",
+        "Occipital_Mid_L",
+        "Occipital_Mid_R",
+        "Occipital_Inf_L",
+        "Occipital_Inf_R"
+      ],
+      "Fusiform": [
+        "Fusiform_L",
+        "Fusiform_R"
+      ],
+      "Postcentral": [
+        "Postcentral_L",
+        "Postcentral_R"
+      ],
+      "Parietal": [
+        "Parietal_Sup_L",
+        "Parietal_Sup_R",
+        "Parietal_Inf_L",
+        "Parietal_Inf_R",
+        "SupraMarginal_L",
+        "SupraMarginal_R",
+        "Angular_L",
+        "Angular_R",
+        "Precuneus_L",
+        "Precuneus_R"
+      ],
+      "Paracentral_Lobule": [
+        "Paracentral_Lobule_L",
+        "Paracentral_Lobule_R"
+      ],
+      "Caudate": [
+        "Caudate_L",
+        "Caudate_R"
+      ],
+      "Putamen": [
+        "Putamen_L",
+        "Putamen_R"
+      ],
+      "Pallidum": [
+        "Pallidum_L",
+        "Pallidum_R"
+      ],
+      "Temporal": [
+        "Heschl_L",
+        "Heschl_R",
+        "Temporal_Sup_L",
+        "Temporal_Sup_R",
+        "Temporal_Pole_Sup_L",
+        "Temporal_Pole_Sup_R",
+        "Temporal_Mid_L",
+        "Temporal_Mid_R",
+        "Temporal_Pole_Mid_L",
+        "Temporal_Pole_Mid_R",
+        "Temporal_Inf_L",
+        "Temporal_Inf_R"
+      ],
+      "Cerebellum": [
+        "Cerebellum_Crus1_L",
+        "Cerebellum_Crus1_R",
+        "Cerebellum_Crus2_L",
+        "Cerebellum_Crus2_R",
+        "Cerebellum_3_L",
+        "Cerebellum_3_R",
+        "Cerebellum_4_5_L",
+        "Cerebellum_4_5_R",
+        "Cerebellum_6_L",
+        "Cerebellum_6_R",
+        "Cerebellum_7b_L",
+        "Cerebellum_7b_R",
+        "Cerebellum_8_L",
+        "Cerebellum_8_R",
+        "Cerebellum_9_L",
+        "Cerebellum_9_R",
+        "Cerebellum_10_L",
+        "Cerebellum_10_R",
+        "Vermis_1_2",
+        "Vermis_3",
+        "Vermis_4_5",
+        "Vermis_6",
+        "Vermis_7",
+        "Vermis_8",
+        "Vermis_9",
+        "Vermis_10"
+      ],
+      "Thalamus": [
+        "Thal_AV_L",
+        "Thal_AV_R",
+        "Thal_LP_L",
+        "Thal_LP_R",
+        "Thal_VA_L",
+        "Thal_VA_R",
+        "Thal_VL_L",
+        "Thal_VL_R",
+        "Thal_VPL_L",
+        "Thal_VPL_R",
+        "Thal_IL_L",
+        "Thal_IL_R",
+        "Thal_Re_L",
+        "Thal_Re_R",
+        "Thal_MDm_L",
+        "Thal_MDm_R",
+        "Thal_MDl_L",
+        "Thal_MDl_R",
+        "Thal_LGN_L",
+        "Thal_LGN_R",
+        "Thal_MGN_L",
+        "Thal_MGN_R",
+        "Thal_PuI_L",
+        "Thal_PuI_R",
+        "Thal_PuM_L",
+        "Thal_PuM_R",
+        "Thal_PuA_L",
+        "Thal_PuA_R",
+        "Thal_PuL_L",
+        "Thal_PuL_R"
+      ],
+      "N_Acc": [
+        "N_Acc_L",
+        "N_Acc_R"
+      ],
+      "VTA": [
+        "VTA_L",
+        "VTA_R"
+      ],
+      "SN_pc": [
+        "SN_pc_L",
+        "SN_pc_R"
+      ],
+      "SN_pr": [
+        "SN_pr_L",
+        "SN_pr_R"
+      ],
+      "Red_N": [
+        "Red_N_L",
+        "Red_N_R"
+      ],
+      "LC": [
+        "LC_L",
+        "LC_R"
+      ],
+      "Raphe": [
+        "Raphe_D",
+        "Raphe_M"
+      ]
+    }
+  }
+}

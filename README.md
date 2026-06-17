@@ -5,13 +5,16 @@ main figure exports for the motor-vigour variability paper. It is intentionally
 smaller than the original working thesis repository: exploratory analyses and
 large intermediate folders were left out.
 
-Supplementary figures have not been added yet.
+Supplementary figures are stored separately from the main figures.
 
 ## Repository Layout
 
 - `figures/main/`: publication-ready main figures as PNG and PDF.
+- `figures/supplementary/`: publication-ready supplementary figures as PNG and
+  PDF where available.
 - `results/main/`: machine-readable tables, JSON/NPZ summaries, and source
   figure exports grouped by paper figure.
+- `results/supplementary/`: companion outputs for supplementary figures.
 - `data/`: compact derived maps, ablation inputs, metadata, and processed GVS
   connectivity tables needed by the included analyses.
 - `analysis/modules/`: copied analysis modules from the working repository,
@@ -36,6 +39,10 @@ Supplementary figures have not been added yet.
 See `figures/main/figure_manifest.csv` for the source result directory for
 each panel.
 
+See `figures/supplementary/supplementary_figure_manifest.csv` for the
+supplementary figure inventory. Supplementary Figure 4 is documented as missing
+because the requested FEAT output was not present in this repository.
+
 ## Python Environment
 
 Create a local virtual environment and install the listed dependencies:
@@ -57,6 +64,7 @@ python scripts/figure_03_vigour_network_map.py
 python scripts/figure_04_ablation_anatomy.py
 python scripts/figure_05_ablation_roi_summary.py
 python scripts/figure_07a_gvs_vigour_connectogram.py
+python scripts/supp_figure_09_medication_fc_consistency.py
 ```
 
 Figures 2A, 2B, 6A, 6B, and parts of 7B require subject-level beta,
@@ -69,4 +77,3 @@ result tables are included under `figures/main/` and `results/main/`.
 External data requirements are documented in `data/external/README.md`. The
 packaged `data/` folder contains compact derived maps and processed tables, not
 the full raw/preprocessed subject-level dataset.
-

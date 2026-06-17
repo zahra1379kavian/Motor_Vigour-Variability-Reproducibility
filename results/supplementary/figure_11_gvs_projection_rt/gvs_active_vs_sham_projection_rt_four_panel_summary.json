@@ -1,0 +1,21 @@
+{
+  "inventory": "/home/zkavian/Master_thesis_final/figures/GVS_effects/common/run_condition_inventory.csv",
+  "run_metrics": "/home/zkavian/Master_thesis_final/figures/projected_RT/revised_behaviour_from_mat/projection_behavior_run_metrics.csv",
+  "weight_map": "/home/zkavian/Master_thesis_final/data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5.nii.gz",
+  "projection_source": "beta",
+  "behaviour_column_zero_based": 1,
+  "min_coupling_pairs": 4,
+  "n_trials": 6290,
+  "n_blocks": 630,
+  "n_run_metric_rows": 280,
+  "n_subject_metric_rows": 72,
+  "outputs": [
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_projection_rt_trial_table.csv",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_projection_rt_block_metrics.csv",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_active_vs_sham_run_paired_metrics.csv",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_active_vs_sham_subject_paired_metrics.csv",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_active_vs_sham_projection_rt_stats.csv",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_active_vs_sham_projection_rt_four_panel.png",
+    "/home/zkavian/Master_thesis_final/figures/GVS_effects/projected_RT/gvs_active_vs_sham_projection_rt_four_panel.pdf"
+  ]
+}

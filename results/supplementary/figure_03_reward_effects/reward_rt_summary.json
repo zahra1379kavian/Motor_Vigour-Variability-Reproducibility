@@ -1,0 +1,62 @@
+{
+  "behaviour_root": "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/PRECISIONSTIM_PD_Data_Results/Behaviour",
+  "out_dir": "/home/zkavian/Master_thesis_final/figures/reward_effects",
+  "n_subjects": 18,
+  "n_subject_medication_sessions": 35,
+  "n_trial_rows": 5393,
+  "low_reward_codes": [
+    0.0,
+    1.0
+  ],
+  "high_reward_codes": [
+    5.0
+  ],
+  "observed_included_reward_codes": [
+    0.0,
+    1.0,
+    5.0
+  ],
+  "excluded_reward_codes": [
+    -5.0
+  ],
+  "excluded_subject_sessions": [
+    {
+      "subject": "PSPD017",
+      "session": 1,
+      "medication": "ON"
+    }
+  ],
+  "analysis_metric": "inverse_rt",
+  "rt_column_one_based": 2,
+  "inverse_rt_definition": "inverse RT = 1.0 / behav_metrics{gvs}[:, rt_column]",
+  "output_files": [
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_gvs_delta.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_gvs_delta.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_medication_delta.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_medication_delta.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_paired_statistics.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_regression_statistics.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_report.md",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_bar_range.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_bar_range.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_bar_range_stats.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_gvs_summary.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_medication_gvs_summary.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_medication_summary.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_paired.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_paired.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_summary.csv",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_summary.json",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_trials.csv"
+  ],
+  "figures": [
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_paired.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_paired.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_bar_range.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_subject_bar_range.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_medication_delta.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_medication_delta.pdf",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_gvs_delta.png",
+    "/home/zkavian/Master_thesis_final/figures/reward_effects/reward_rt_gvs_delta.pdf"
+  ]
+}

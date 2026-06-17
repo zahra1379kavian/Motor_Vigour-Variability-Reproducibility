@@ -1,0 +1,14 @@
+{
+  "n_raw_trial_rows": 6480,
+  "n_included_valid_rt_trials": 5368,
+  "n_subjects_included": 18,
+  "excluded_subject_sessions": [
+    {
+      "subject": "PSPD017",
+      "session": 1,
+      "reason": "excluded: session 1 had one excessively noisy recording run"
+    }
+  ],
+  "non_dominant_task_hand_subject": null,
+  "outputs_directory": "/home/zkavian/Master_thesis_final/figures/Behav_supp"
+}

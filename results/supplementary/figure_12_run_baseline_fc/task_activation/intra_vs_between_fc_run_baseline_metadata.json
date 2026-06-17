@@ -1,0 +1,15 @@
+{
+  "connectivity_metric": "pearson_fisher_z",
+  "voxel_selection": "task-activation",
+  "voxel_weighting": "unit_weights",
+  "task_activation_map": "data/z_valu_standard_glm.nii.gz",
+  "task_activation_threshold": "z >= 3.1",
+  "task_activation_voxels": 49146,
+  "n_rois": 35,
+  "n_run_sessions": 70,
+  "n_run_session_deltas": 35,
+  "n_complete_subjects": 17,
+  "run_baseline_definition": "0.5 * (abs(OFF_run2 - OFF_run1) + abs(ON_run2 - ON_run1))",
+  "run_level_medication_effect_definition": "0.5 * (abs(ON_run1 - OFF_run1) + abs(ON_run2 - OFF_run2))",
+  "primary_comparison": "run-level medication-effect magnitude minus run-to-run baseline"
+}
