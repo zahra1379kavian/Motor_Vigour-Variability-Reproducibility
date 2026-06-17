@@ -19,40 +19,13 @@ from plot_fdr_significant_edge_connectograms import roi_group
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-DEFAULT_REPORTS = (
-    (
-        "main_result",
-        ROOT / "figures" / "GVS_effects" / "GPT" / "08_connectivity_coactivation" / "metric_sensitivity" / "fdr_significant_edge_connectivity_metric_sensitivity.csv",
-        ROOT / "figures" / "GVS_effects" / "main result" / "metric_sensitivity" / "connectogram_reports",
-    ),
-)
+DEFAULT_REPORTS = (("main_result", ROOT / "figures" / "GVS_effects" / "GPT" / "08_connectivity_coactivation" / "metric_sensitivity" / "fdr_significant_edge_connectivity_metric_sensitivity.csv", ROOT / "figures" / "GVS_effects" / "main result" / "metric_sensitivity" / "connectogram_reports"),)
 
-GROUP_ORDER = [
-    "Frontal-Parietal",
-    "Subcortical",
-    "Cingulate-Temporal",
-    "Visual",
-    "Limbic/MTL-Olfactory",
-    "Somatomotor/Cerebellar",
-]
+GROUP_ORDER = ["Frontal-Parietal", "Subcortical", "Cingulate-Temporal", "Visual", "Limbic/MTL-Olfactory", "Somatomotor/Cerebellar"]
 
-GROUP_LABELS = {
-    "Frontal-Parietal": "Frontal-Parietal",
-    "Subcortical": "Subcortical",
-    "Cingulate-Temporal": "Cingulate-Temporal",
-    "Visual": "Visual",
-    "Limbic/MTL-Olfactory": "Limbic-Olfactory",
-    "Somatomotor/Cerebellar": "Somatosensory-Cerebellum",
-}
+GROUP_LABELS = {"Frontal-Parietal": "Frontal-Parietal", "Subcortical": "Subcortical", "Cingulate-Temporal": "Cingulate-Temporal", "Visual": "Visual", "Limbic/MTL-Olfactory": "Limbic-Olfactory", "Somatomotor/Cerebellar": "Somatosensory-Cerebellum"}
 
-PLOT_LABELS = {
-    "Frontal-Parietal": "Frontal-\nParietal",
-    "Subcortical": "Subcortical",
-    "Cingulate-Temporal": "Cingulate-\nTemporal",
-    "Visual": "Visual",
-    "Limbic-Olfactory": "Limbic-\nOlfactory",
-    "Somatosensory-Cerebellum": "Somatosensory-\nCerebellum",
-}
+PLOT_LABELS = {"Frontal-Parietal": "Frontal-\nParietal", "Subcortical": "Subcortical", "Cingulate-Temporal": "Cingulate-\nTemporal", "Visual": "Visual", "Limbic-Olfactory": "Limbic-\nOlfactory", "Somatosensory-Cerebellum": "Somatosensory-\nCerebellum"}
 
 DIRECTIONS = ("increase", "decrease")
 
@@ -119,13 +92,7 @@ def pair_count_table(edges):
     rows = []
     for row in edges.itertuples(index=False):
         group_i, group_j = ordered_pair(roi_group(row.roi_i), roi_group(row.roi_j))
-        rows.append(
-            {
-                "group_i": GROUP_LABELS[group_i],
-                "group_j": GROUP_LABELS[group_j],
-                "mean": float(row.mean),
-            }
-        )
+        rows.append({"group_i": GROUP_LABELS[group_i], "group_j": GROUP_LABELS[group_j], "mean": float(row.mean)})
     edge_groups = pd.DataFrame(rows)
 
     pair_rows = []
@@ -139,15 +106,7 @@ def pair_count_table(edges):
                 pair_edges = edge_groups.loc[(edge_groups["group_i"] == label_i) & (edge_groups["group_j"] == label_j)]
             n_edges = int(pair_edges.shape[0])
             n_positive = int((pair_edges["mean"] > 0).sum()) if n_edges else 0
-            pair_rows.append(
-                {
-                    "group_i": label_i,
-                    "group_j": label_j,
-                    "n_edges": n_edges,
-                    "n_positive": n_positive,
-                    "n_negative": n_edges - n_positive,
-                }
-            )
+            pair_rows.append({"group_i": label_i, "group_j": label_j, "n_edges": n_edges, "n_positive": n_positive, "n_negative": n_edges - n_positive})
     pairs = pd.DataFrame(pair_rows)
 
     matrix = empty_matrix()
@@ -230,16 +189,7 @@ def process_report(label, source_csv, report_dir):
         metric = str(first["metric"])
         analysis_view = str(first["analysis_view"])
         fdr_scope = str(first["fdr_scope"])
-        metadata = {
-            "report": label,
-            "source_csv": str(source_csv),
-            "lollipop_png": str(spec.png_path),
-            "metric": metric,
-            "analysis_view": analysis_view,
-            "fdr_scope": fdr_scope,
-            "lollipop_top_n": spec.top_n,
-            "n_counted_edges": int(edges.shape[0]),
-        }
+        metadata = {"report": label, "source_csv": str(source_csv), "lollipop_png": str(spec.png_path), "metric": metric, "analysis_view": analysis_view, "fdr_scope": fdr_scope, "lollipop_top_n": spec.top_n, "n_counted_edges": int(edges.shape[0])}
 
         signed_matrices = []
         for direction in DIRECTIONS:
@@ -254,42 +204,16 @@ def process_report(label, source_csv, report_dir):
             signed_matrices.append(signed_matrix)
 
         paired_stem = f"{spec.metric_slug}__{spec.scope_slug}__all_significant_increase_decrease_group_edge_counts"
-        plot_heatmaps(
-            signed_matrices,
-            spec.png_path.with_name(f"{paired_stem}_heatmap"),
-        )
+        plot_heatmaps(signed_matrices, spec.png_path.with_name(f"{paired_stem}_heatmap"))
 
     output_df = pd.concat(output_pairs, ignore_index=True)
-    output_df = output_df[
-        [
-            "report",
-            "metric",
-            "analysis_view",
-            "fdr_scope",
-            "edge_direction",
-            "lollipop_top_n",
-            "n_counted_edges",
-            "group_i",
-            "group_j",
-            "n_edges",
-            "n_positive",
-            "n_negative",
-            "lollipop_png",
-            "source_csv",
-        ]
-    ]
+    output_df = output_df[["report", "metric", "analysis_view", "fdr_scope", "edge_direction", "lollipop_top_n", "n_counted_edges", "group_i", "group_j", "n_edges", "n_positive", "n_negative", "lollipop_png", "source_csv"]]
     return output_df
 
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--report",
-        action="append",
-        nargs=3,
-        metavar=("LABEL", "SOURCE_CSV", "REPORT_DIR"),
-        help="Report to quantify. May be repeated. Defaults quantify the main-result and task-activation lollipop folders.",
-    )
+    parser.add_argument("--report", action="append", nargs=3, metavar=("LABEL", "SOURCE_CSV", "REPORT_DIR"), help="Report to quantify. May be repeated. Defaults quantify the main-result and task-activation lollipop folders.")
     return parser
 
 

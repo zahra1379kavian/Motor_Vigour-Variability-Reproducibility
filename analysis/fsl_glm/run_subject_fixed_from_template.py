@@ -28,10 +28,7 @@ DEFAULT_FIRSTLEVEL_DIR = ROOT / "outputs/feat/firstlevel"
 DEFAULT_GROUP_DIR = ROOT / "outputs/feat/session_fixed.gfeat"
 DEFAULT_FSF_DIR = ROOT / "outputs/fsf/session_fixed"
 DEFAULT_LOG_DIR = ROOT / "outputs/logs/session_fixed"
-FALLBACK_TEMPLATE = Path(
-    "/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/"
-    "test_feat/2ndlevel_realdata.gfeat/design.fsf"
-)
+FALLBACK_TEMPLATE = Path("/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/" "test_feat/2ndlevel_realdata.gfeat/design.fsf")
 
 FEAT_DIR_RE = re.compile(r"sub-pd(?P<sub>\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.feat$")
 
@@ -53,41 +50,18 @@ class FixedPair:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate and optionally run run-pair fixed-effects FEAT FSFs."
-    )
+    parser = argparse.ArgumentParser(description="Generate and optionally run run-pair fixed-effects FEAT FSFs.")
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--firstlevel-dir", type=Path, default=DEFAULT_FIRSTLEVEL_DIR)
     parser.add_argument("--group-dir", type=Path, default=DEFAULT_GROUP_DIR)
     parser.add_argument("--fsf-dir", type=Path, default=DEFAULT_FSF_DIR)
     parser.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
     parser.add_argument("--feat-cmd", default="feat")
-    parser.add_argument(
-        "--run",
-        action="store_true",
-        help="Actually run feat for each generated FSF. Without this, only FSFs are written.",
-    )
-    parser.add_argument(
-        "--jobs",
-        type=int,
-        default=1,
-        help="Number of FEAT jobs to run at the same time when --run is used.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Regenerate and rerun existing outputs, setting fmri(overwrite_yn)=1.",
-    )
-    parser.add_argument(
-        "--subject",
-        action="append",
-        help="Only process this subject, e.g. --subject sub-pd011 or --subject 11. Can be repeated.",
-    )
-    parser.add_argument(
-        "--session",
-        action="append",
-        help="Only process this session, e.g. --session ses-1 or --session 1. Can be repeated.",
-    )
+    parser.add_argument("--run", action="store_true", help="Actually run feat for each generated FSF. Without this, only FSFs are written.")
+    parser.add_argument("--jobs", type=int, default=1, help="Number of FEAT jobs to run at the same time when --run is used.")
+    parser.add_argument("--overwrite", action="store_true", help="Regenerate and rerun existing outputs, setting fmri(overwrite_yn)=1.")
+    parser.add_argument("--subject", action="append", help="Only process this subject, e.g. --subject sub-pd011 or --subject 11. Can be repeated.")
+    parser.add_argument("--session", action="append", help="Only process this session, e.g. --session ses-1 or --session 1. Can be repeated.")
     return parser.parse_args()
 
 
@@ -119,9 +93,7 @@ def discover_pairs(firstlevel_dir):
         key = (sub, ses)
         by_run = runs.setdefault(key, {})
         if run in by_run:
-            duplicates.append(
-                f"Duplicate run {run} for sub-pd{sub:03d} ses-{ses}: {by_run[run]} and {feat_dir}"
-            )
+            duplicates.append(f"Duplicate run {run} for sub-pd{sub:03d} ses-{ses}: {by_run[run]} and {feat_dir}")
         by_run[run] = feat_dir
 
     pairs = []
@@ -129,9 +101,7 @@ def discover_pairs(firstlevel_dir):
     for (sub, ses), by_run in sorted(runs.items()):
         missing = [str(run) for run in (1, 2) if run not in by_run]
         if missing:
-            incomplete.append(
-                f"sub-pd{sub:03d}_ses-{ses}: missing run(s) {', '.join(missing)}; found {sorted(by_run)}"
-            )
+            incomplete.append(f"sub-pd{sub:03d}_ses-{ses}: missing run(s) {', '.join(missing)}; found {sorted(by_run)}")
             continue
         pairs.append(FixedPair(sub=sub, ses=ses, run1=by_run[1], run2=by_run[2]))
 
@@ -142,12 +112,7 @@ def filter_pairs(pairs, args):
     subjects = numeric_filter(args.subject, "subject")
     sessions = numeric_filter(args.session, "session")
 
-    return [
-        pair
-        for pair in pairs
-        if (not subjects or pair.sub in subjects)
-        and (not sessions or pair.ses in sessions)
-    ]
+    return [pair for pair in pairs if (not subjects or pair.sub in subjects) and (not sessions or pair.ses in sessions)]
 
 
 def replace_setting(text, key, value):
@@ -168,13 +133,7 @@ def resolve_template(path):
 
 def validate_pair(pair):
     errors = []
-    required = (
-        "report.html",
-        "stats/cope1.nii.gz",
-        "stats/varcope1.nii.gz",
-        "reg/example_func2standard.mat",
-        "reg/standard.nii.gz",
-    )
+    required = ("report.html", "stats/cope1.nii.gz", "stats/varcope1.nii.gz", "reg/example_func2standard.mat", "reg/standard.nii.gz")
     for feat_dir in (pair.run1, pair.run2):
         for rel_path in required:
             path = feat_dir / rel_path
@@ -228,12 +187,7 @@ def make_fsf(template, pair, output_dir, overwrite):
 def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
-        result = subprocess.run(
-            [feat_cmd, str(fsf)],
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
+        result = subprocess.run([feat_cmd, str(fsf)], stdout=log, stderr=subprocess.STDOUT, text=True)
     return fsf, result.returncode
 
 
@@ -326,10 +280,7 @@ def main():
     print(f"Starting FEAT jobs: {len(fsfs)} with --jobs {args.jobs}")
     failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {
-            pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf
-            for fsf in fsfs
-        }
+        futures = {pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf for fsf in fsfs}
         for future in as_completed(futures):
             fsf, returncode = future.result()
             if returncode == 0:

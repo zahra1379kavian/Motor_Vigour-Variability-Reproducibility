@@ -49,28 +49,10 @@ def _draw_metric_axis(ax, noise, summary, fc_metric, *, show_ylabel):
     for wi, bi in zip(within, between):
         ax.plot(X_POS, [wi, bi], color="0.72", lw=1.15, zorder=1)
 
-    within_points = ax.scatter(
-        np.full_like(within, X_POS[0], dtype=float),
-        within,
-        color="#2c7fb8",
-        s=38,
-        zorder=2,
-        label="within-state run 1 vs 2",
-    )
-    between_points = ax.scatter(
-        np.full_like(between, X_POS[1], dtype=float),
-        between,
-        color="#f03b20",
-        s=38,
-        zorder=2,
-        label="ON vs OFF",
-    )
+    within_points = ax.scatter(np.full_like(within, X_POS[0], dtype=float), within, color="#2c7fb8", s=38, zorder=2, label="within-state run 1 vs 2")
+    between_points = ax.scatter(np.full_like(between, X_POS[1], dtype=float), between, color="#f03b20", s=38, zorder=2, label="ON vs OFF")
 
-    ax.set_title(
-        f"d={g['excess_cohens_d']:.2f}, p={g['excess_p_signflip']:.3g}",
-        fontsize=14,
-        pad=8,
-    )
+    ax.set_title(f"d={g['excess_cohens_d']:.2f}, p={g['excess_p_signflip']:.3g}", fontsize=14, pad=8)
     ax.set_xticks(X_POS)
     ax.set_xticklabels(["run 1 vs run 2", "ON vs OFF"], fontsize=13)
     ax.set_xlim(X_POS[0] - 0.10, X_POS[1] + 0.10)
@@ -91,13 +73,7 @@ def make_figure(input_dir, output_stem):
 
     fig, axes = plt.subplots(1, len(FC_METRICS), figsize=(8.2, 4.2), squeeze=False)
     for idx, fc_metric in enumerate(FC_METRICS):
-        _draw_metric_axis(
-            axes[0, idx],
-            noise,
-            summary,
-            fc_metric,
-            show_ylabel=(idx == 0),
-        )
+        _draw_metric_axis(axes[0, idx], noise, summary, fc_metric, show_ylabel=(idx == 0))
 
     output_stem.parent.mkdir(parents=True, exist_ok=True)
     fig.subplots_adjust(left=0.10, right=0.99, bottom=0.12, top=0.91, wspace=0.16)

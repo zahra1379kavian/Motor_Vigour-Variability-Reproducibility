@@ -23,9 +23,7 @@ from scipy import ndimage
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MAP = ROOT / "data" / "derived_maps" / "vigour_network_weights.nii.gz"
 DEFAULT_REFERENCE_HTML = ROOT / "data" / "derived_maps" / "vigour_network_p90_overlay.html"
-DEFAULT_OUT_BASE = Path(
-    ROOT / "results" / "main" / "figure_03_vigour_network_map" / "vigour_network_threshold_robustness"
-)
+DEFAULT_OUT_BASE = Path(ROOT / "results" / "main" / "figure_03_vigour_network_map" / "vigour_network_threshold_robustness")
 DEFAULT_THRESHOLDS = (80.0, 85.0, 90.0, 95.0, 97.5)
 MAIN_THRESHOLDS = (85.0, 90.0, 95.0)
 REFERENCE_THRESHOLD = 90.0
@@ -64,21 +62,8 @@ HIGH_CONTRAST_REGION_COLORS = {
     "Thalamus": "#E6AB02",
     "Cingulate": "#A50F15",
 }
-FALLBACK_REGION_COLORS = (
-    "#000000",
-    "#56B4E9",
-    "#009E73",
-    "#F0E442",
-    "#0072B2",
-    "#D55E00",
-    "#CC79A7",
-    "#999999",
-)
-FULL_REGION_LABELS = {
-    "Supp_Motor_Area": "Supplementary Motor Area",
-    "ParaHippocampal": "Parahippocampal",
-    "Paracentral_Lobule": "Paracentral Lobule",
-}
+FALLBACK_REGION_COLORS = ("#000000", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
+FULL_REGION_LABELS = {"Supp_Motor_Area": "Supplementary Motor Area", "ParaHippocampal": "Parahippocampal", "Paracentral_Lobule": "Paracentral Lobule"}
 COARSE_AAL_GROUPS = (
     ("Cerebellum", ("Cerebellum", "Vermis"), ()),
     ("Temporal", ("Temporal",), ("Heschl",)),
@@ -120,13 +105,7 @@ def _coarse_aal_group_name(label_name):
 def _resample_label_img(label_img, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
-    resampled = image.resample_to_img(
-        label_img,
-        reference_img,
-        interpolation="nearest",
-        force_resample=True,
-        copy_header=True,
-    )
+    resampled = image.resample_to_img(label_img, reference_img, interpolation="nearest", force_resample=True, copy_header=True)
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
@@ -136,11 +115,7 @@ def _build_roi_groups(reference_img, aal_version, cache_dir):
     atlas_img = atlas.maps if isinstance(atlas.maps, nib.Nifti1Image) else nib.load(atlas.maps)
     atlas_data = _resample_label_img(atlas_img, reference_img)
     atlas_source = f"AAL3v2 ({Path(str(atlas.maps)).name})" if aal_version == "3v2" else f"AAL {aal_version}"
-    label_pairs = [
-        (int(label_value), str(label_name))
-        for label_value, label_name in zip(atlas.indices, atlas.labels)
-        if int(label_value) != 0 and str(label_name).lower() != "background"
-    ]
+    label_pairs = [(int(label_value), str(label_name)) for label_value, label_name in zip(atlas.indices, atlas.labels) if int(label_value) != 0 and str(label_name).lower() != "background"]
     group_masks = {}
     group_labels = {}
     for label_value, name in label_pairs:
@@ -154,28 +129,12 @@ def _build_roi_groups(reference_img, aal_version, cache_dir):
         else:
             group_masks[group_name] = mask.copy()
             group_labels[group_name] = [name]
-    groups = [
-        ROIGroup(
-            name=name,
-            source=atlas_source,
-            mask=group_masks[name],
-            matched_labels=tuple(group_labels[name]),
-        )
-        for name in group_masks
-    ]
+    groups = [ROIGroup(name=name, source=atlas_source, mask=group_masks[name], matched_labels=tuple(group_labels[name])) for name in group_masks]
 
     metadata = {
         "roi_definition": "aal3_bilateral_coarse_anatomical_groups",
         "priority_order": [group.name for group in groups] + [UNASSIGNED_ROI],
-        "atlas_info": {
-            "name": DEFAULT_ATLAS_NAME if aal_version == "3v2" else f"AAL {aal_version}",
-            "description": atlas_source,
-            "version": aal_version,
-            "map": str(atlas.maps),
-            "n_labels": len(label_pairs),
-            "n_regions": len(groups),
-            "grouping": "Original AAL labels merged bilaterally into coarse anatomical groups; atlas map unchanged.",
-        },
+        "atlas_info": {"name": DEFAULT_ATLAS_NAME if aal_version == "3v2" else f"AAL {aal_version}", "description": atlas_source, "version": aal_version, "map": str(atlas.maps), "n_labels": len(label_pairs), "n_regions": len(groups), "grouping": "Original AAL labels merged bilaterally into coarse anatomical groups; atlas map unchanged."},
         "roi_sources": {group.name: group.source for group in groups},
         "roi_matched_labels": {group.name: group.matched_labels for group in groups},
     }
@@ -284,10 +243,7 @@ def _reference_display_mask(reference_html, reference_img):
 
     _, selected_mask, html_affine = _html_sprite_volumes(reference_html)
     if selected_mask.shape != reference_img.shape[:3]:
-        raise ValueError(
-            f"{reference_html} overlay shape {selected_mask.shape} does not match "
-            f"reference image shape {reference_img.shape[:3]}."
-        )
+        raise ValueError(f"{reference_html} overlay shape {selected_mask.shape} does not match " f"reference image shape {reference_img.shape[:3]}.")
 
     motor_display_mask, shared_motor_mask = motor_overlap_masks(selected_mask, html_affine)
     display_mask = selected_mask | motor_display_mask
@@ -338,14 +294,7 @@ def _orient_panel(data, x_values, y_values):
 
 def _plot_projection(ax, data, x_values, y_values, title, cmap, norm, square_span_mm=None):
     oriented, x, y = _orient_panel(data, x_values, y_values)
-    ax.imshow(
-        oriented.T,
-        origin="lower",
-        extent=[float(x[0]), float(x[-1]), float(y[0]), float(y[-1])],
-        cmap=cmap,
-        norm=norm,
-        interpolation="nearest",
-    )
+    ax.imshow(oriented.T, origin="lower", extent=[float(x[0]), float(x[-1]), float(y[0]), float(y[-1])], cmap=cmap, norm=norm, interpolation="nearest")
     if square_span_mm is not None:
         span = max(square_span_mm, abs(float(x[-1] - x[0])), abs(float(y[-1] - y[0])))
         x_mid = float((x[0] + x[-1]) / 2.0)
@@ -367,11 +316,7 @@ def _display_region_name(name):
 
 
 def _reference_region_counts(region_df, min_report_voxels):
-    rows = region_df[
-        np.isclose(region_df["percentile"], REFERENCE_THRESHOLD)
-        & (region_df["n_voxels"] >= min_report_voxels)
-        & ~region_df["roi_name"].eq(UNASSIGNED_ROI)
-    ].sort_values("n_voxels", ascending=False)
+    rows = region_df[np.isclose(region_df["percentile"], REFERENCE_THRESHOLD) & (region_df["n_voxels"] >= min_report_voxels) & ~region_df["roi_name"].eq(UNASSIGNED_ROI)].sort_values("n_voxels", ascending=False)
     return {str(row.roi_name): int(row.n_voxels) for row in rows.itertuples(index=False)}
 
 
@@ -403,16 +348,9 @@ def _plot_atlas_regions(groups, reference_img, metadata, out_base, region_df, mi
     x_values = _axis_values_mm(reference_img.affine, shape, 0)
     y_values = _axis_values_mm(reference_img.affine, shape, 1)
     z_values = _axis_values_mm(reference_img.affine, shape, 2)
-    projections = [
-        ("Axial projection", (_mode_projection(label_data, axis=2), x_values, y_values)),
-        ("Coronal projection", (_mode_projection(label_data, axis=1), x_values, z_values)),
-        ("Sagittal projection", (_mode_projection(label_data, axis=0), y_values, z_values)),
-    ]
+    projections = [("Axial projection", (_mode_projection(label_data, axis=2), x_values, y_values)), ("Coronal projection", (_mode_projection(label_data, axis=1), x_values, z_values)), ("Sagittal projection", (_mode_projection(label_data, axis=0), y_values, z_values))]
 
-    projection_spans = [
-        max(abs(float(x_axis[-1] - x_axis[0])), abs(float(y_axis[-1] - y_axis[0])))
-        for _, (_, x_axis, y_axis) in projections
-    ]
+    projection_spans = [max(abs(float(x_axis[-1] - x_axis[0])), abs(float(y_axis[-1] - y_axis[0]))) for _, (_, x_axis, y_axis) in projections]
     square_span_mm = max(projection_spans)
 
     fig = plt.figure(figsize=(12.8, 5.55), facecolor="white")
@@ -450,24 +388,10 @@ def _plot_robustness(summary_df, region_df, out_base, min_report_voxels):
     ever_reportable_nodes = set(assigned_regions.loc[assigned_regions["n_voxels"] >= min_report_voxels, "node_name"])
     assigned_regions = assigned_regions.loc[assigned_regions["node_name"].isin(ever_reportable_nodes)]
     assigned_regions = assigned_regions.loc[~assigned_regions["node_name"].isin(EXCLUDED_MAIN_PLOT_REGIONS)]
-    p90_counts = (
-        assigned_regions.loc[np.isclose(assigned_regions["percentile"], REFERENCE_THRESHOLD), ["node_name", "n_voxels"]]
-        .set_index("node_name")["n_voxels"]
-        .to_dict()
-    )
-    order_df = (
-        assigned_regions.groupby("node_name", as_index=False)["n_voxels"]
-        .max()
-        .assign(p90_count=lambda df: df["node_name"].map(p90_counts).fillna(0))
-        .sort_values(["p90_count", "n_voxels", "node_name"], ascending=[False, False, True])
-    )
+    p90_counts = (assigned_regions.loc[np.isclose(assigned_regions["percentile"], REFERENCE_THRESHOLD), ["node_name", "n_voxels"]] .set_index("node_name")["n_voxels"] .to_dict())
+    order_df = (assigned_regions.groupby("node_name", as_index=False)["n_voxels"] .max() .assign(p90_count=lambda df: df["node_name"].map(p90_counts).fillna(0)) .sort_values(["p90_count", "n_voxels", "node_name"], ascending=[False, False, True]))
     node_order = order_df["node_name"].tolist()
-    pivot = (
-        assigned_regions.pivot_table(index="node_name", columns="threshold_label", values="n_voxels", aggfunc="sum", fill_value=0)
-        .reindex(index=node_order, columns=[_pct_label(p) for p in summary_df["percentile"]])
-        .fillna(0)
-        .astype(int)
-    )
+    pivot = (assigned_regions.pivot_table(index="node_name", columns="threshold_label", values="n_voxels", aggfunc="sum", fill_value=0) .reindex(index=node_order, columns=[_pct_label(p) for p in summary_df["percentile"]]) .fillna(0) .astype(int))
     reportable = pivot >= min_report_voxels
 
     with plt.rc_context(
@@ -488,14 +412,7 @@ def _plot_robustness(summary_df, region_df, out_base, min_report_voxels):
         }
     ):
         fig = plt.figure(figsize=(13.6, max(10.0, 0.42 * max(1, len(node_order)) + 3.2)), facecolor="white")
-        gs = fig.add_gridspec(
-            2,
-            3,
-            width_ratios=[1.0, 1.0, 0.030],
-            height_ratios=[1.25, max(3.0, 0.38 * max(1, len(node_order)))],
-            hspace=0.20,
-            wspace=0.018,
-        )
+        gs = fig.add_gridspec(2, 3, width_ratios=[1.0, 1.0, 0.030], height_ratios=[1.25, max(3.0, 0.38 * max(1, len(node_order)))], hspace=0.20, wspace=0.018)
         ax_vox = fig.add_subplot(gs[0, 0])
         ax_stable = fig.add_subplot(gs[0, 1])
         ax_heat = fig.add_subplot(gs[1, :2])
@@ -538,16 +455,7 @@ def _plot_robustness(summary_df, region_df, out_base, min_report_voxels):
         for row_idx in range(pivot.shape[0]):
             for col_idx in range(pivot.shape[1]):
                 value = int(pivot.iat[row_idx, col_idx])
-                ax_heat.text(
-                    col_idx,
-                    row_idx,
-                    str(value),
-                    ha="center",
-                    va="center",
-                    fontsize=PAPER_CELL_COLORBAR_FONT_SIZE,
-                    fontweight="bold",
-                    color="black",
-                )
+                ax_heat.text(col_idx, row_idx, str(value), ha="center", va="center", fontsize=PAPER_CELL_COLORBAR_FONT_SIZE, fontweight="bold", color="black")
         cbar = fig.colorbar(im, cax=cax)
         cbar.set_label("log10(voxels + 1)", fontsize=PAPER_CELL_COLORBAR_FONT_SIZE, fontweight="bold")
         cbar.ax.tick_params(labelsize=PAPER_CELL_COLORBAR_FONT_SIZE)
@@ -559,11 +467,7 @@ def _plot_robustness(summary_df, region_df, out_base, min_report_voxels):
 
 
 def _node_set(region_df, percentile, min_report_voxels):
-    rows = region_df[
-        np.isclose(region_df["percentile"], percentile)
-        & (region_df["n_voxels"] >= min_report_voxels)
-        & ~region_df["roi_name"].eq(UNASSIGNED_ROI)
-    ]
+    rows = region_df[np.isclose(region_df["percentile"], percentile) & (region_df["n_voxels"] >= min_report_voxels) & ~region_df["roi_name"].eq(UNASSIGNED_ROI)]
     return set(rows["node_name"].astype(str))
 
 
@@ -582,14 +486,7 @@ def _write_report(out_base, map_path, summary_df, region_df, metadata, min_repor
     stable_nodes = sorted(p85_nodes & p90_nodes & p95_nodes)
     relaxed_only = sorted(p85_nodes - p90_nodes)
     lost_when_tightened = sorted(p90_nodes - p95_nodes)
-    p90_region_counts = (
-        region_df[
-            np.isclose(region_df["percentile"], REFERENCE_THRESHOLD)
-            & (region_df["n_voxels"] >= min_report_voxels)
-            & ~region_df["roi_name"].eq(UNASSIGNED_ROI)
-        ]
-        .sort_values("n_voxels", ascending=False)
-    )
+    p90_region_counts = (region_df[np.isclose(region_df["percentile"], REFERENCE_THRESHOLD) & (region_df["n_voxels"] >= min_report_voxels) & ~region_df["roi_name"].eq(UNASSIGNED_ROI)] .sort_values("n_voxels", ascending=False))
     top_p90 = [f"{row.node_name} ({int(row.n_voxels)})" for row in p90_region_counts.itertuples(index=False)]
     ref = summary_df[np.isclose(summary_df["percentile"], REFERENCE_THRESHOLD)].iloc[0]
     p95 = summary_df[np.isclose(summary_df["percentile"], 95.0)].iloc[0]
@@ -599,17 +496,9 @@ def _write_report(out_base, map_path, summary_df, region_df, metadata, min_repor
     reference_display = metadata.get("reference_display_mask", {})
     reference_display_text = ""
     if isinstance(reference_display, dict) and reference_display.get("enabled"):
-        reference_display_text = (
-            f"- The displayed p90 montage from `{reference_display.get('html')}` contains "
-            f"{int(reference_display.get('display_voxels')):,} voxels; this is shown separately from the raw percentile sweep.\n"
-        )
+        reference_display_text = (f"- The displayed p90 montage from `{reference_display.get('html')}` contains " f"{int(reference_display.get('display_voxels')):,} voxels; this is shown separately from the raw percentile sweep.\n")
 
-    verdict = (
-        "The main network is robust at the anatomical-group level across p85-p95: most p90 groups remain reportable "
-        "after tightening to p95, while relaxing to p85 mainly expands already-present nodes."
-        if float(p95["p90_nodes_retained"]) >= 0.75
-        else "The main network has a stable core, but several p90 anatomical groups are threshold-sensitive when tightened to p95."
-    )
+    verdict = ("The main network is robust at the anatomical-group level across p85-p95: most p90 groups remain reportable " "after tightening to p95, while relaxing to p85 mainly expands already-present nodes." if float(p95["p90_nodes_retained"]) >= 0.75 else "The main network has a stable core, but several p90 anatomical groups are threshold-sensitive when tightened to p95.")
 
     report = f"""# Threshold-Robustness Analysis
 
@@ -664,37 +553,12 @@ Then list the stable core and the threshold-sensitive nodes from the bullets abo
 def build_parser():
     parser = argparse.ArgumentParser(description="Analyze threshold robustness of the final voxel-weight network.")
     parser.add_argument("--map", type=Path, default=DEFAULT_MAP, help="Input unthresholded voxel-weight NIfTI map.")
-    parser.add_argument(
-        "--reference-html",
-        type=Path,
-        default=DEFAULT_REFERENCE_HTML,
-        help="Displayed p90 HTML map used to match the p90 voxel count in the weights figure.",
-    )
-    parser.add_argument(
-        "--use-reference-display-mask",
-        action="store_true",
-        help="Use the displayed p90 HTML mask instead of the raw p90 percentile mask.",
-    )
+    parser.add_argument("--reference-html", type=Path, default=DEFAULT_REFERENCE_HTML, help="Displayed p90 HTML map used to match the p90 voxel count in the weights figure.")
+    parser.add_argument("--use-reference-display-mask", action="store_true", help="Use the displayed p90 HTML mask instead of the raw p90 percentile mask.")
     parser.add_argument("--out-base", type=Path, default=DEFAULT_OUT_BASE, help="Output path stem.")
-    parser.add_argument(
-        "--thresholds",
-        type=float,
-        nargs="+",
-        default=list(DEFAULT_THRESHOLDS),
-        help="Percentile thresholds over nonzero finite weights.",
-    )
-    parser.add_argument(
-        "--min-report-voxels",
-        type=int,
-        default=DEFAULT_MIN_REPORT_VOXELS,
-        help="Minimum voxels required for a region node to be considered reportable.",
-    )
-    parser.add_argument(
-        "--midline-band-mm",
-        type=float,
-        default=DEFAULT_MIDLINE_BAND_MM,
-        help="Retained for compatibility; AAL labels are merged bilaterally in the current grouping.",
-    )
+    parser.add_argument("--thresholds", type=float, nargs="+", default=list(DEFAULT_THRESHOLDS), help="Percentile thresholds over nonzero finite weights.")
+    parser.add_argument("--min-report-voxels", type=int, default=DEFAULT_MIN_REPORT_VOXELS, help="Minimum voxels required for a region node to be considered reportable.")
+    parser.add_argument("--midline-band-mm", type=float, default=DEFAULT_MIDLINE_BAND_MM, help="Retained for compatibility; AAL labels are merged bilaterally in the current grouping.")
     parser.add_argument("--aal-version", default=DEFAULT_AAL_VERSION, help="AAL atlas version passed to nilearn.")
     parser.add_argument("--atlas-cache-dir", type=Path, default=None, help="Optional nilearn atlas cache directory.")
     return parser
@@ -722,48 +586,15 @@ def main():
     else:
         display_metadata["used_for_threshold_masks"] = False
     groups, metadata = _build_roi_groups(img, args.aal_version, args.atlas_cache_dir)
-    metadata.update(
-        {
-            "map": str(args.map),
-            "reference_display_mask": display_metadata,
-            "threshold_percentiles": percentiles,
-            "reference_threshold": REFERENCE_THRESHOLD,
-            "main_threshold_range": MAIN_THRESHOLDS,
-            "min_report_voxels": int(args.min_report_voxels),
-            "midline_band_mm": float(args.midline_band_mm),
-        }
-    )
+    metadata.update({"map": str(args.map), "reference_display_mask": display_metadata, "threshold_percentiles": percentiles, "reference_threshold": REFERENCE_THRESHOLD, "main_threshold_range": MAIN_THRESHOLDS, "min_report_voxels": int(args.min_report_voxels), "midline_band_mm": float(args.midline_band_mm)})
 
     region_frames = []
     for percentile in percentiles:
-        region_frames.append(
-            _assign_threshold_regions(
-                weights=weights,
-                affine=img.affine,
-                mask=threshold_masks[percentile],
-                groups=groups,
-                percentile=percentile,
-                threshold_value=threshold_values[percentile],
-                min_report_voxels=args.min_report_voxels,
-            )
-        )
+        region_frames.append(_assign_threshold_regions(weights=weights, affine=img.affine, mask=threshold_masks[percentile], groups=groups, percentile=percentile, threshold_value=threshold_values[percentile], min_report_voxels=args.min_report_voxels))
     region_df = pd.concat(region_frames, ignore_index=True)
     reference_regions = _node_set(region_df, REFERENCE_THRESHOLD, args.min_report_voxels)
     region_df.attrs["reference_regions"] = reference_regions
-    summary_df = pd.DataFrame(
-        [
-            _summarize_threshold(
-                threshold_masks[percentile],
-                threshold_masks,
-                region_df[region_df["percentile"].eq(percentile)],
-                percentile,
-                threshold_values[percentile],
-                args.min_report_voxels,
-                reference_regions,
-            )
-            for percentile in percentiles
-        ]
-    )
+    summary_df = pd.DataFrame([_summarize_threshold(threshold_masks[percentile], threshold_masks, region_df[region_df["percentile"].eq(percentile)], percentile, threshold_values[percentile], args.min_report_voxels, reference_regions) for percentile in percentiles])
 
     args.out_base.parent.mkdir(parents=True, exist_ok=True)
     summary_path = Path(f"{args.out_base}_summary.csv")

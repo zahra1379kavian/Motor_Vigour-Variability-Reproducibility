@@ -37,14 +37,7 @@ TITLE_FONTSIZE = 15.0
 SUBTITLE_FONTSIZE = 11.0
 LEGEND_FONTSIZE = 10.0
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 
 
 def clean_slug(text):
@@ -83,11 +76,7 @@ def load_edges(path):
 
 
 def selected_edges(df, metric, analysis_view, fdr_scope, top_n):
-    mask = (
-        (df["metric"].astype(str) == metric)
-        & (df["analysis_view"].astype(str) == analysis_view)
-        & (df["fdr_scope"].astype(str) == fdr_scope)
-    )
+    mask = ((df["metric"].astype(str) == metric) & (df["analysis_view"].astype(str) == analysis_view) & (df["fdr_scope"].astype(str) == fdr_scope))
     out = df.loc[mask].copy()
     if out.empty:
         raise ValueError(f"No FDR-significant edges found for {metric} | {analysis_view} | {fdr_scope}")
@@ -123,13 +112,7 @@ def plot_lollipop(df, path_base, title, subtitle, *, label_axis="y", show_title=
             ax.text(xi, y, f"{value:+.3f}", va=va, ha="center", fontsize=VALUE_FONTSIZE, color="#222222")
 
         ax.set_xticks(x)
-        ax.set_xticklabels(
-            plot_df["display_edge"],
-            rotation=62,
-            ha="right",
-            rotation_mode="anchor",
-            fontsize=EDGE_LABEL_FONTSIZE,
-        )
+        ax.set_xticklabels(plot_df["display_edge"], rotation=62, ha="right", rotation_mode="anchor", fontsize=EDGE_LABEL_FONTSIZE)
         for tick_label, color in zip(ax.get_xticklabels(), colors, strict=True):
             tick_label.set_color(color)
         ax.set_ylabel("Active GVS - sham edge change", fontsize=AXIS_LABEL_FONTSIZE)
@@ -145,10 +128,7 @@ def plot_lollipop(df, path_base, title, subtitle, *, label_axis="y", show_title=
             fig.text(0.02, 0.985, title, ha="left", va="top", fontsize=TITLE_FONTSIZE, fontweight="bold")
             fig.text(0.02, 0.953, subtitle, ha="left", va="top", fontsize=SUBTITLE_FONTSIZE, color="#555555")
 
-        legend_handles = [
-            Line2D([0], [0], marker="o", color=POSITIVE_COLOR, label="Active GVS > sham", markersize=6, linewidth=2),
-            Line2D([0], [0], marker="o", color=NEGATIVE_COLOR, label="Active GVS < sham", markersize=6, linewidth=2),
-        ]
+        legend_handles = [Line2D([0], [0], marker="o", color=POSITIVE_COLOR, label="Active GVS > sham", markersize=6, linewidth=2), Line2D([0], [0], marker="o", color=NEGATIVE_COLOR, label="Active GVS < sham", markersize=6, linewidth=2)]
         ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=LEGEND_FONTSIZE)
         fig.subplots_adjust(left=0.07, right=0.99, top=0.97 if not show_title else 0.88, bottom=0.42)
         fig.savefig(path_base.with_suffix(".png"), dpi=300, bbox_inches="tight")
@@ -195,10 +175,7 @@ def plot_lollipop(df, path_base, title, subtitle, *, label_axis="y", show_title=
         fig.text(0.02, 0.985, title, ha="left", va="top", fontsize=TITLE_FONTSIZE, fontweight="bold")
         fig.text(0.02, 0.953, subtitle, ha="left", va="top", fontsize=SUBTITLE_FONTSIZE, color="#555555")
 
-    legend_handles = [
-        Line2D([0], [0], marker="o", color=POSITIVE_COLOR, label="Active GVS > sham", markersize=6, linewidth=2),
-        Line2D([0], [0], marker="o", color=NEGATIVE_COLOR, label="Active GVS < sham", markersize=6, linewidth=2),
-    ]
+    legend_handles = [Line2D([0], [0], marker="o", color=POSITIVE_COLOR, label="Active GVS > sham", markersize=6, linewidth=2), Line2D([0], [0], marker="o", color=NEGATIVE_COLOR, label="Active GVS < sham", markersize=6, linewidth=2)]
     ax.legend(handles=legend_handles, loc="lower right", frameon=False, fontsize=LEGEND_FONTSIZE)
     fig.subplots_adjust(left=0.39, right=0.98, top=0.98 if not show_title else 0.90, bottom=0.08)
     fig.savefig(path_base.with_suffix(".png"), dpi=300, bbox_inches="tight")
@@ -230,18 +207,8 @@ def main():
     path_base = output_base(args.out_dir, args.metric, args.analysis_view, args.fdr_scope, int(selected.shape[0]))
 
     title = f"{pretty_label(args.metric)}: top FDR-significant edge changes"
-    subtitle = (
-        f"{pretty_label(args.analysis_view)} | {pretty_label(args.fdr_scope)} | "
-        f"top {selected.shape[0]} ranked by absolute delta"
-    )
-    plot_lollipop(
-        selected,
-        path_base,
-        title,
-        subtitle,
-        label_axis=args.label_axis,
-        show_title=not args.hide_title,
-    )
+    subtitle = (f"{pretty_label(args.analysis_view)} | {pretty_label(args.fdr_scope)} | " f"top {selected.shape[0]} ranked by absolute delta")
+    plot_lollipop(selected, path_base, title, subtitle, label_axis=args.label_axis, show_title=not args.hide_title)
 
     selected.to_csv(path_base.with_suffix(".csv"), index=False)
     print(path_base.with_suffix(".png"))

@@ -39,64 +39,28 @@ except ImportError:  # pragma: no cover
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "results" / "supplementary" / "figure_01_02_behavior"
-DEFAULT_SOURCE_ROOT = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "AllDressed_WorkOnData/Sepideh"
-)
-DEFAULT_BEHAVIOUR_ROOT = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "PRECISIONSTIM_PD_Data_Results/Behaviour"
-)
+DEFAULT_SOURCE_ROOT = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "AllDressed_WorkOnData/Sepideh")
+DEFAULT_BEHAVIOUR_ROOT = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "PRECISIONSTIM_PD_Data_Results/Behaviour")
 DEFAULT_METRICS_DIR = DEFAULT_BEHAVIOUR_ROOT / "Behaviour_metrics_revised"
 DEFAULT_CONSOLIDATED_DIR = DEFAULT_BEHAVIOUR_ROOT / "Consolidated_behav_data"
 DEFAULT_GVS_ORDER = ROOT / "data" / "metadata" / "gvs_order_by_subject_session_run.tsv"
 DEFAULT_GVS_PARAMS = DEFAULT_SOURCE_ROOT / "PredictiveModel" / "gvs_params.csv"
-DEFAULT_DOMINANT_HAND = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "Zahra-Thesis-Data/fsl_gl-temporary/analysis_qc/"
-    "mixed_model_responder_summary_with_dominant_hand.tsv"
-)
+DEFAULT_DOMINANT_HAND = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "Zahra-Thesis-Data/fsl_gl-temporary/analysis_qc/" "mixed_model_responder_summary_with_dominant_hand.tsv")
 DEFAULT_PRIOR_GVS_DIR = ROOT / "results" / "supplementary" / "figure_11_gvs_projection_rt"
 DEFAULT_PRIOR_REWARD_DIR = ROOT / "results" / "supplementary" / "figure_03_reward_effects"
 DEFAULT_NEURAL_MEAN = ROOT / "data" / "external" / "B_projected_signal_raw.csv"
-DEFAULT_NEURAL_VARIABILITY = (
-    ROOT / "data" / "external" / "B_projected_signal_consecutive_diff_subject_session.csv"
-)
+DEFAULT_NEURAL_VARIABILITY = (ROOT / "data" / "external" / "B_projected_signal_consecutive_diff_subject_session.csv")
 
 SESSION_BY_MEDICATION = {"OFF": 1, "ON": 2}
-EXCLUDED_SUBJECT_SESSIONS = {
-    ("PSPD017", 1): "excluded: session 1 had one excessively noisy recording run",
-}
+EXCLUDED_SUBJECT_SESSIONS = {("PSPD017", 1): "excluded: session 1 had one excessively noisy recording run"}
 LOW_REWARD_CODES = {0, 1}
 HIGH_REWARD_CODES = {5}
 CATCH_REWARD_CODE = -5
 REST_AFTER_BLOCKS = {3, 6}
 
-PAPER_STYLE = {
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-    "axes.grid": True,
-    "grid.color": "#E5E7EB",
-    "grid.linewidth": 0.7,
-    "grid.alpha": 0.8,
-}
+PAPER_STYLE = {"font.family": "sans-serif", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42, "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.color": "#E5E7EB", "grid.linewidth": 0.7, "grid.alpha": 0.8}
 
-BOLD_PAPER_STYLE = {
-    **PAPER_STYLE,
-    "font.size": 16,
-    "font.weight": "bold",
-    "axes.labelsize": 18,
-    "axes.labelweight": "bold",
-    "axes.titlesize": 18,
-    "axes.titleweight": "bold",
-    "xtick.labelsize": 15,
-    "ytick.labelsize": 15,
-    "legend.fontsize": 16,
-}
+BOLD_PAPER_STYLE = {**PAPER_STYLE, "font.size": 16, "font.weight": "bold", "axes.labelsize": 18, "axes.labelweight": "bold", "axes.titlesize": 18, "axes.titleweight": "bold", "xtick.labelsize": 15, "ytick.labelsize": 15, "legend.fontsize": 16}
 
 
 def _bold_figure_text(fig):
@@ -124,17 +88,7 @@ MEASURES = [
     Measure("Pmax", 5, "Pmax", "Pmax", "raw feature units", "raw", "Pmax (raw units)"),
 ]
 
-STIM_SHORT = {
-    1: "Sham",
-    2: "Pink noise",
-    3: "DC+1",
-    4: "DC-1",
-    5: "Delta",
-    6: "Theta",
-    7: "Alpha",
-    8: "Beta",
-    9: "Gamma",
-}
+STIM_SHORT = {1: "Sham", 2: "Pink noise", 3: "DC+1", 4: "DC-1", 5: "Delta", 6: "Theta", 7: "Alpha", 8: "Beta", 9: "Gamma"}
 
 
 def _parse_args():
@@ -149,14 +103,7 @@ def _parse_args():
     parser.add_argument("--neural-mean-table", type=Path, default=DEFAULT_NEURAL_MEAN)
     parser.add_argument("--neural-variability-table", type=Path, default=DEFAULT_NEURAL_VARIABILITY)
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
-    parser.add_argument(
-        "--non-dominant-task-hand-subject",
-        default=None,
-        help=(
-            "Optional subject ID, for example PSPD001, if the right-handed "
-            "participant who used the left hand is known outside the local files."
-        ),
-    )
+    parser.add_argument("--non-dominant-task-hand-subject", default=None, help=("Optional subject ID, for example PSPD001, if the right-handed " "participant who used the left hand is known outside the local files."))
     parser.add_argument("--skip-models", action="store_true", help="Build data/figures but skip model fitting.")
     return parser.parse_args()
 
@@ -220,30 +167,11 @@ def _bh_fdr(p_values):
 def _safe_ttest_1samp(values):
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
-    row = {
-        "n": int(values.size),
-        "mean": float(np.mean(values)) if values.size else np.nan,
-        "median": float(np.median(values)) if values.size else np.nan,
-        "sd": float(np.std(values, ddof=1)) if values.size > 1 else np.nan,
-        "sem": float(stats.sem(values)) if values.size > 1 else np.nan,
-        "ci95_low": np.nan,
-        "ci95_high": np.nan,
-        "t": np.nan,
-        "p": np.nan,
-        "cohen_dz": np.nan,
-    }
+    row = {"n": int(values.size), "mean": float(np.mean(values)) if values.size else np.nan, "median": float(np.median(values)) if values.size else np.nan, "sd": float(np.std(values, ddof=1)) if values.size > 1 else np.nan, "sem": float(stats.sem(values)) if values.size > 1 else np.nan, "ci95_low": np.nan, "ci95_high": np.nan, "t": np.nan, "p": np.nan, "cohen_dz": np.nan}
     if values.size > 1:
         t_res = stats.ttest_1samp(values, 0.0)
         ci_low, ci_high = stats.t.interval(0.95, values.size - 1, loc=row["mean"], scale=row["sem"])
-        row.update(
-            {
-                "ci95_low": float(ci_low),
-                "ci95_high": float(ci_high),
-                "t": float(t_res.statistic),
-                "p": float(t_res.pvalue),
-                "cohen_dz": float(row["mean"] / row["sd"]) if row["sd"] and row["sd"] > 0 else np.nan,
-            }
-        )
+        row.update({"ci95_low": float(ci_low), "ci95_high": float(ci_high), "t": float(t_res.statistic), "p": float(t_res.pvalue), "cohen_dz": float(row["mean"] / row["sd"]) if row["sd"] and row["sd"] > 0 else np.nan})
     return row
 
 
@@ -318,21 +246,7 @@ def _load_gvs_params(path):
             params[col] = np.nan
     params["gvs_condition"] = params["stim_id"].map(lambda x: f"gvs-{int(x):02d}")
     params["gvs_label"] = params["stim_id"].map(STIM_SHORT).fillna(params["stim_label"].astype(str))
-    return params[
-        [
-            "stim_id",
-            "gvs_condition",
-            "gvs_label",
-            "stim_label",
-            "family",
-            "main_freq_hz",
-            "carrier_hz",
-            "env_hz",
-            "band",
-            "phase_band",
-            "amp_band",
-        ]
-    ].copy()
+    return params[["stim_id", "gvs_condition", "gvs_label", "stim_label", "family", "main_freq_hz", "carrier_hz", "env_hz", "band", "phase_band", "amp_band"]].copy()
 
 
 def _load_dominant_hand(path, non_dominant_subject):
@@ -348,24 +262,12 @@ def _load_dominant_hand(path, non_dominant_subject):
     hand["non_dominant_task_hand"] = False
     if non_dominant_subject:
         if non_dominant_subject not in set(hand["subject"]):
-            hand = pd.concat(
-                [
-                    hand,
-                    pd.DataFrame(
-                        [{"subject": non_dominant_subject, "dominant_hand": "", "task_hand": "L"}]
-                    ),
-                ],
-                ignore_index=True,
-            )
+            hand = pd.concat([hand, pd.DataFrame([{"subject": non_dominant_subject, "dominant_hand": "", "task_hand": "L"}])], ignore_index=True)
         mask = hand["subject"].eq(non_dominant_subject)
         hand.loc[mask, "task_hand"] = hand.loc[mask, "dominant_hand"].map(_opposite_hand)
         hand.loc[mask & hand["task_hand"].eq(""), "task_hand"] = "L"
         hand.loc[mask, "non_dominant_task_hand"] = True
-    hand["hand_note"] = np.where(
-        hand["non_dominant_task_hand"],
-        "right-handed participant used the left hand because dominant-hand tremor was severe",
-        "",
-    )
+    hand["hand_note"] = np.where(hand["non_dominant_task_hand"], "right-handed participant used the left hand because dominant-hand tremor was severe", "")
     return hand
 
 
@@ -403,18 +305,7 @@ def _load_res_fields(path):
         raise ValueError(f"{path} does not contain res")
     res = mat["res"][0, 0]
     fields = {}
-    for name in [
-        "catchtrials",
-        "goodtrials",
-        "man_rej",
-        "others",
-        "reward",
-        "sqrwd_nosq",
-        "sqrwd_prem",
-        "sqrwd_success",
-        "sqrwd_vlate",
-        "sqtype",
-    ]:
+    for name in ["catchtrials", "goodtrials", "man_rej", "others", "reward", "sqrwd_nosq", "sqrwd_prem", "sqrwd_success", "sqrwd_vlate", "sqtype"]:
         fields[name] = np.asarray(getattr(res, name), dtype=float) if hasattr(res, name) else np.full((20, 9), np.nan)
     return fields
 
@@ -553,15 +444,11 @@ def build_trial_table(metrics_dir, consolidated_dir, gvs_params, order_map, hand
                     source_value = float(metric[idx, measure.source_column])
                     record[f"source_{measure.source_label}"] = source_value
                     record[measure.output_column] = _source_to_value(source_value, measure)
-                    record[f"valid_{measure.name.replace('+', '_plus_')}"] = bool(
-                        go_trial and _valid_source_value(source_value, measure)
-                    )
+                    record[f"valid_{measure.name.replace('+', '_plus_')}"] = bool(go_trial and _valid_source_value(source_value, measure))
                 rows.append(record)
 
     trials = pd.DataFrame(rows)
-    trials = trials.sort_values(
-        ["subject_number", "session", "run", "block_position", "trial_in_run", "stim_id"]
-    ).reset_index(drop=True)
+    trials = trials.sort_values(["subject_number", "session", "run", "block_position", "trial_in_run", "stim_id"]).reset_index(drop=True)
     return trials
 
 
@@ -569,12 +456,7 @@ def build_trial_flow(trials):
     rows = []
     for key, group in trials.groupby(["subject", "session", "medication", "run"], sort=True):
         subject, session, medication, run = key
-        notes = _combine_notes(
-            [
-                str(group["exclusion_reason"].dropna().iloc[0]) if group["excluded_session"].any() else "",
-                str(group["hand_note"].dropna().iloc[0]) if group["non_dominant_task_hand"].any() else "",
-            ]
-        )
+        notes = _combine_notes([str(group["exclusion_reason"].dropna().iloc[0]) if group["excluded_session"].any() else "", str(group["hand_note"].dropna().iloc[0]) if group["non_dominant_task_hand"].any() else ""])
         rows.append(
             {
                 "Subject": subject,
@@ -596,25 +478,7 @@ def build_trial_flow(trials):
 
 def build_measure_long(trials):
     pieces = []
-    base_cols = [
-        "subject",
-        "subject_label",
-        "subject_number",
-        "session",
-        "medication",
-        "run",
-        "stim_id",
-        "gvs_condition",
-        "gvs_label",
-        "block_position",
-        "trial_in_run",
-        "run_trial_index",
-        "reward_level",
-        "reward_high",
-        "go_trial",
-        "catch_trial",
-        "excluded_session",
-    ]
+    base_cols = ["subject", "subject_label", "subject_number", "session", "medication", "run", "stim_id", "gvs_condition", "gvs_label", "block_position", "trial_in_run", "run_trial_index", "reward_level", "reward_high", "go_trial", "catch_trial", "excluded_session"]
     for measure in MEASURES:
         valid_col = f"valid_{measure.name.replace('+', '_plus_')}"
         piece = trials.loc[:, base_cols + [measure.output_column, valid_col]].copy()
@@ -664,18 +528,7 @@ def _lag_autocorr_from_block(group, value_col, lag):
 
 def build_rt_block_metrics(trials):
     rows = []
-    group_cols = [
-        "subject",
-        "subject_label",
-        "session",
-        "medication",
-        "run",
-        "stim_id",
-        "gvs_condition",
-        "gvs_label",
-        "block_position",
-        "excluded_session",
-    ]
+    group_cols = ["subject", "subject_label", "session", "medication", "run", "stim_id", "gvs_condition", "gvs_label", "block_position", "excluded_session"]
     for key, group in trials.groupby(group_cols, sort=True):
         record = dict(zip(group_cols, key))
         go = group.loc[group["go_trial"]].copy()
@@ -715,16 +568,7 @@ def _measure_block_rmssd(trials, measure):
     for key, group in trials.groupby(group_cols, sort=True):
         diffs = _successive_pairs(group.loc[group["go_trial"]], measure.output_column)
         rmssd, mssd, n_pairs = _rmssd_from_diffs(diffs)
-        rows.append(
-            {
-                **dict(zip(group_cols, key)),
-                "measure": measure.name,
-                "rmssd": rmssd,
-                "mssd": mssd,
-                "n_pairs": n_pairs,
-                "unit": measure.unit,
-            }
-        )
+        rows.append({**dict(zip(group_cols, key)), "measure": measure.name, "rmssd": rmssd, "mssd": mssd, "n_pairs": n_pairs, "unit": measure.unit})
     return pd.DataFrame(rows)
 
 
@@ -736,12 +580,8 @@ def build_feature_summary(trials, measure_long):
         valid = df.loc[df["valid_measure"] & np.isfinite(df["value"])].copy()
         missing_rate = 1.0 - (len(valid) / len(df)) if len(df) else np.nan
 
-        run_summary = (
-            valid.groupby(["subject", "session", "medication", "stim_id", "run"], as_index=False)["value"].mean()
-        )
-        run_pivot = run_summary.pivot_table(
-            index=["subject", "session", "medication", "stim_id"], columns="run", values="value"
-        )
+        run_summary = (valid.groupby(["subject", "session", "medication", "stim_id", "run"], as_index=False)["value"].mean())
+        run_pivot = run_summary.pivot_table(index=["subject", "session", "medication", "stim_id"], columns="run", values="value")
         rel = _safe_pearson(run_pivot.get(1, pd.Series(dtype=float)), run_pivot.get(2, pd.Series(dtype=float)))
 
         med_summary = valid.groupby(["subject", "medication"], as_index=False)["value"].mean()
@@ -749,17 +589,9 @@ def build_feature_summary(trials, measure_long):
         med_delta = med_pivot["ON"] - med_pivot["OFF"] if {"OFF", "ON"}.issubset(med_pivot.columns) else pd.Series(dtype=float)
         med_stats = _safe_ttest_1samp(med_delta.to_numpy(dtype=float))
 
-        reward_summary = (
-            valid.loc[valid["reward_level"].isin(["low", "high"])]
-            .groupby(["subject", "reward_level"], as_index=False)["value"]
-            .mean()
-        )
+        reward_summary = (valid.loc[valid["reward_level"].isin(["low", "high"])] .groupby(["subject", "reward_level"], as_index=False)["value"] .mean())
         reward_pivot = reward_summary.pivot(index="subject", columns="reward_level", values="value")
-        reward_delta = (
-            reward_pivot["high"] - reward_pivot["low"]
-            if {"low", "high"}.issubset(reward_pivot.columns)
-            else pd.Series(dtype=float)
-        )
+        reward_delta = (reward_pivot["high"] - reward_pivot["low"] if {"low", "high"}.issubset(reward_pivot.columns) else pd.Series(dtype=float))
         reward_stats = _safe_ttest_1samp(reward_delta.to_numpy(dtype=float))
 
         stability = _measure_block_rmssd(trials, measure)
@@ -767,10 +599,7 @@ def build_feature_summary(trials, measure_long):
         stability_value = float(stability["rmssd"].mean()) if not stability.empty else np.nan
 
         if measure.name == "RT":
-            reason = (
-                "Kept: direct response-initiation latency, interpretable millisecond scale, "
-                "available for most go trials, and compatible with neural trial timing."
-            )
+            reason = ("Kept: direct response-initiation latency, interpretable millisecond scale, " "available for most go trials, and compatible with neural trial timing.")
         elif measure.name == "PT":
             reason = "Excluded as primary: reflects pre-threshold pressure timing rather than response initiation."
         elif measure.name == "MT":
@@ -787,14 +616,8 @@ def build_feature_summary(trials, measure_long):
                 "Measure": measure.name,
                 "Missing rate": missing_rate,
                 "Test-retest reliability": f"run1-run2 r={_format_num(rel['r'], 2)} (n={rel['n']})",
-                "Medication sensitivity": (
-                    f"ON-OFF={_format_num(med_stats['mean'], 2)} {measure.unit}; "
-                    f"{_format_p(float(med_stats['p']))}; n={med_stats['n']}"
-                ),
-                "Reward sensitivity": (
-                    f"high-low={_format_num(reward_stats['mean'], 2)} {measure.unit}; "
-                    f"{_format_p(float(reward_stats['p']))}; n={reward_stats['n']}"
-                ),
+                "Medication sensitivity": (f"ON-OFF={_format_num(med_stats['mean'], 2)} {measure.unit}; " f"{_format_p(float(med_stats['p']))}; n={med_stats['n']}"),
+                "Reward sensitivity": (f"high-low={_format_num(reward_stats['mean'], 2)} {measure.unit}; " f"{_format_p(float(reward_stats['p']))}; n={reward_stats['n']}"),
                 "Trial-wise stability": f"mean within-block RMSSD={_format_num(stability_value, 2)} {measure.unit}",
                 "Reason kept/excluded": reason,
             }
@@ -815,9 +638,7 @@ def _fit_model(formula, data, group_col, model_name):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    fit = smf.mixedlm(formula, data=model_data, groups=model_data[group_col], re_formula="1").fit(
-                        reml=False, method=method, maxiter=300, disp=False
-                    )
+                    fit = smf.mixedlm(formula, data=model_data, groups=model_data[group_col], re_formula="1").fit(reml=False, method=method, maxiter=300, disp=False)
                 cov_re = float(fit.cov_re.iloc[0, 0]) if getattr(fit, "cov_re", pd.DataFrame()).size else np.nan
                 finite_core = np.isfinite(getattr(fit, "llf", np.nan)) and np.all(np.isfinite(fit.params.to_numpy(dtype=float)))
                 finite_key_bse = np.isfinite(float(fit.bse.iloc[0])) if len(fit.bse) else False
@@ -831,9 +652,7 @@ def _fit_model(formula, data, group_col, model_name):
                 fit = None
     if fit is None:
         try:
-            fit = smf.ols(formula, data=model_data).fit(
-                cov_type="cluster", cov_kwds={"groups": model_data[group_col]}
-            )
+            fit = smf.ols(formula, data=model_data).fit(cov_type="cluster", cov_kwds={"groups": model_data[group_col]})
             fit_kind = "ols_cluster_robust_by_subject_fallback"
         except Exception as exc:
             return pd.DataFrame([{"model": model_name, "status": "failed", "reason": reason or str(exc), "formula": formula}])
@@ -865,10 +684,7 @@ def build_model_tables(trials, block_metrics):
     rt_df = rt_df.loc[rt_df["reward_level"].isin(["low", "high"])].copy()
     rt_df["medication_on"] = (rt_df["medication"] == "ON").astype(int)
     rt_df["run"] = rt_df["run"].astype("category")
-    rt_formula = (
-        "RT_ms ~ medication_on * reward_high + medication_on * C(gvs_condition) "
-        "+ C(run) + block_position + trial_in_run"
-    )
+    rt_formula = ("RT_ms ~ medication_on * reward_high + medication_on * C(gvs_condition) " "+ C(run) + block_position + trial_in_run")
 
     var_df = block_metrics.loc[~block_metrics["excluded_session"] & np.isfinite(block_metrics["rt_rmssd_ms"])].copy()
     var_df["medication_on"] = (var_df["medication"] == "ON").astype(int)
@@ -888,25 +704,13 @@ def build_model_tables(trials, block_metrics):
         table["unit"] = measure.unit
         reward_rows.append(table)
 
-    return {
-        "mean_rt_mixed_model": _fit_model(rt_formula, rt_df, "subject", "mean_rt_mixed_model"),
-        "rt_variability_mixed_model": _fit_model(var_formula, var_df, "subject", "rt_variability_mixed_model"),
-        "reward_mixed_models": pd.concat(reward_rows, ignore_index=True),
-    }
+    return {"mean_rt_mixed_model": _fit_model(rt_formula, rt_df, "subject", "mean_rt_mixed_model"), "rt_variability_mixed_model": _fit_model(var_formula, var_df, "subject", "rt_variability_mixed_model"), "reward_mixed_models": pd.concat(reward_rows, ignore_index=True)}
 
 
 def build_medication_deltas(trials, block_metrics):
-    rt = (
-        trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]]
-        .groupby(["subject", "medication"], as_index=False)["RT_ms"]
-        .mean()
-    )
+    rt = (trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]] .groupby(["subject", "medication"], as_index=False)["RT_ms"] .mean())
     rt_pivot = rt.pivot(index="subject", columns="medication", values="RT_ms")
-    var = (
-        block_metrics.loc[~block_metrics["excluded_session"]]
-        .groupby(["subject", "medication"], as_index=False)["rt_rmssd_ms"]
-        .mean()
-    )
+    var = (block_metrics.loc[~block_metrics["excluded_session"]] .groupby(["subject", "medication"], as_index=False)["rt_rmssd_ms"] .mean())
     var_pivot = var.pivot(index="subject", columns="medication", values="rt_rmssd_ms")
     subjects = sorted(set(rt_pivot.index) | set(var_pivot.index), key=_subject_number)
     rows = []
@@ -915,19 +719,7 @@ def build_medication_deltas(trials, block_metrics):
         on_rt = rt_pivot.loc[subject, "ON"] if subject in rt_pivot.index and "ON" in rt_pivot else np.nan
         off_var = var_pivot.loc[subject, "OFF"] if subject in var_pivot.index and "OFF" in var_pivot else np.nan
         on_var = var_pivot.loc[subject, "ON"] if subject in var_pivot.index and "ON" in var_pivot else np.nan
-        rows.append(
-            {
-                "subject": subject,
-                "mean_rt_off_ms": off_rt,
-                "mean_rt_on_ms": on_rt,
-                "delta_rt_on_minus_off_ms": on_rt - off_rt if np.isfinite(off_rt) and np.isfinite(on_rt) else np.nan,
-                "rt_rmssd_off_ms": off_var,
-                "rt_rmssd_on_ms": on_var,
-                "delta_rt_rmssd_on_minus_off_ms": on_var - off_var
-                if np.isfinite(off_var) and np.isfinite(on_var)
-                else np.nan,
-            }
-        )
+        rows.append({"subject": subject, "mean_rt_off_ms": off_rt, "mean_rt_on_ms": on_rt, "delta_rt_on_minus_off_ms": on_rt - off_rt if np.isfinite(off_rt) and np.isfinite(on_rt) else np.nan, "rt_rmssd_off_ms": off_var, "rt_rmssd_on_ms": on_var, "delta_rt_rmssd_on_minus_off_ms": on_var - off_var if np.isfinite(off_var) and np.isfinite(on_var) else np.nan})
     return pd.DataFrame(rows)
 
 
@@ -935,17 +727,8 @@ def build_reward_tables(trials, block_metrics):
     summary_rows = []
     for measure in [MEASURES[1], MEASURES[4], MEASURES[5]]:
         valid_col = f"valid_{measure.name.replace('+', '_plus_')}"
-        df = trials.loc[
-            ~trials["excluded_session"]
-            & trials["go_trial"]
-            & trials[valid_col]
-            & trials["reward_level"].isin(["low", "high"])
-        ].copy()
-        grouped = (
-            df.groupby(["subject", "medication", "reward_level"], as_index=False)[measure.output_column]
-            .mean()
-            .rename(columns={measure.output_column: "value"})
-        )
+        df = trials.loc[~trials["excluded_session"] & trials["go_trial"] & trials[valid_col] & trials["reward_level"].isin(["low", "high"])].copy()
+        grouped = (df.groupby(["subject", "medication", "reward_level"], as_index=False)[measure.output_column] .mean() .rename(columns={measure.output_column: "value"}))
         pivot = grouped.pivot_table(index=["subject", "medication"], columns="reward_level", values="value")
         pivot = pivot.reset_index()
         if {"low", "high"}.issubset(pivot.columns):
@@ -955,29 +738,15 @@ def build_reward_tables(trials, block_metrics):
         summary_rows.append(pivot)
 
     reward_var = block_metrics.loc[~block_metrics["excluded_session"] & np.isfinite(block_metrics["rt_rmssd_ms"])].copy()
-    reward_var_summary = (
-        reward_var.assign(reward_bin=pd.cut(reward_var["reward_high_fraction"], bins=[-0.01, 0.34, 0.67, 1.01]))
-        .groupby(["subject", "medication", "reward_bin"], observed=False, as_index=False)["rt_rmssd_ms"]
-        .mean()
-    )
-    return {
-        "reward_subject_session_summary": pd.concat(summary_rows, ignore_index=True),
-        "reward_variability_by_high_reward_fraction": reward_var_summary,
-    }
+    reward_var_summary = (reward_var.assign(reward_bin=pd.cut(reward_var["reward_high_fraction"], bins=[-0.01, 0.34, 0.67, 1.01])) .groupby(["subject", "medication", "reward_bin"], observed=False, as_index=False)["rt_rmssd_ms"] .mean())
+    return {"reward_subject_session_summary": pd.concat(summary_rows, ignore_index=True), "reward_variability_by_high_reward_fraction": reward_var_summary}
 
 
 def build_gvs_tables(trials, block_metrics, gvs_params):
-    session_condition = (
-        trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]]
-        .groupby(["subject", "session", "medication", "stim_id", "gvs_condition", "gvs_label"], as_index=False)["RT_ms"]
-        .mean()
-        .rename(columns={"RT_ms": "mean_rt_ms"})
-    )
+    session_condition = (trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]] .groupby(["subject", "session", "medication", "stim_id", "gvs_condition", "gvs_label"], as_index=False)["RT_ms"] .mean() .rename(columns={"RT_ms": "mean_rt_ms"}))
     sham = session_condition.loc[session_condition["stim_id"].eq(1), ["subject", "session", "medication", "mean_rt_ms"]]
     sham = sham.rename(columns={"mean_rt_ms": "sham_rt_ms"})
-    deltas = session_condition.loc[~session_condition["stim_id"].eq(1)].merge(
-        sham, on=["subject", "session", "medication"], how="inner"
-    )
+    deltas = session_condition.loc[~session_condition["stim_id"].eq(1)].merge(sham, on=["subject", "session", "medication"], how="inner")
     deltas["delta_rt_ms_active_minus_sham"] = deltas["mean_rt_ms"] - deltas["sham_rt_ms"]
 
     rows = []
@@ -988,41 +757,16 @@ def build_gvs_tables(trials, block_metrics, gvs_params):
         off_mean = group.loc[group["medication"].eq("OFF"), "delta_rt_ms_active_minus_sham"].mean()
         on_mean = group.loc[group["medication"].eq("ON"), "delta_rt_ms_active_minus_sham"].mean()
         param = params.loc[stim_id] if stim_id in params.index else pd.Series(dtype=object)
-        rows.append(
-            {
-                "GVS condition": STIM_SHORT.get(int(stim_id), f"GVS{stim_id}"),
-                "stim_id": int(stim_id),
-                "Carrier": param.get("carrier_hz", np.nan),
-                "Envelope": param.get("env_hz", np.nan),
-                "family": param.get("family", ""),
-                "main_freq_hz": param.get("main_freq_hz", np.nan),
-                "RT change vs sham OFF": off_mean,
-                "RT change vs sham ON": on_mean,
-                "p-value": test["p"],
-                "n_subjects": test["n"],
-            }
-        )
+        rows.append({"GVS condition": STIM_SHORT.get(int(stim_id), f"GVS{stim_id}"), "stim_id": int(stim_id), "Carrier": param.get("carrier_hz", np.nan), "Envelope": param.get("env_hz", np.nan), "family": param.get("family", ""), "main_freq_hz": param.get("main_freq_hz", np.nan), "RT change vs sham OFF": off_mean, "RT change vs sham ON": on_mean, "p-value": test["p"], "n_subjects": test["n"]})
     gvs_table = pd.DataFrame(rows)
     gvs_table["qFDR"] = _bh_fdr(gvs_table["p-value"].to_numpy(dtype=float))
 
-    var_condition = (
-        block_metrics.loc[~block_metrics["excluded_session"]]
-        .groupby(["subject", "session", "medication", "stim_id", "gvs_condition", "gvs_label"], as_index=False)[
-            "rt_rmssd_ms"
-        ]
-        .mean()
-    )
+    var_condition = (block_metrics.loc[~block_metrics["excluded_session"]] .groupby(["subject", "session", "medication", "stim_id", "gvs_condition", "gvs_label"], as_index=False)["rt_rmssd_ms"] .mean())
     var_sham = var_condition.loc[var_condition["stim_id"].eq(1), ["subject", "session", "medication", "rt_rmssd_ms"]]
     var_sham = var_sham.rename(columns={"rt_rmssd_ms": "sham_rt_rmssd_ms"})
-    var_deltas = var_condition.loc[~var_condition["stim_id"].eq(1)].merge(
-        var_sham, on=["subject", "session", "medication"], how="inner"
-    )
+    var_deltas = var_condition.loc[~var_condition["stim_id"].eq(1)].merge(var_sham, on=["subject", "session", "medication"], how="inner")
     var_deltas["delta_rt_rmssd_ms_active_minus_sham"] = var_deltas["rt_rmssd_ms"] - var_deltas["sham_rt_rmssd_ms"]
-    return {
-        "gvs_rt_session_deltas": deltas,
-        "gvs_rt_variability_session_deltas": var_deltas,
-        "gvs_effect_summary_table": gvs_table,
-    }
+    return {"gvs_rt_session_deltas": deltas, "gvs_rt_variability_session_deltas": var_deltas, "gvs_effect_summary_table": gvs_table}
 
 
 def build_temporal_tables(trials, block_metrics):
@@ -1048,21 +792,10 @@ def build_temporal_tables(trials, block_metrics):
     acf_rows = []
     for lag in range(1, 6):
         values = []
-        for _, group in trials.loc[~trials["excluded_session"] & trials["go_trial"]].groupby(
-            ["subject", "session", "run", "stim_id"], sort=False
-        ):
+        for _, group in trials.loc[~trials["excluded_session"] & trials["go_trial"]].groupby(["subject", "session", "run", "stim_id"], sort=False):
             values.append(_lag_autocorr_from_block(group, "RT_ms", lag))
         values = np.asarray(values, dtype=float)
-        acf_rows.append(
-            {
-                "lag": lag,
-                "mean_autocorrelation": float(np.nanmean(values)),
-                "sem_autocorrelation": float(stats.sem(values[np.isfinite(values)]))
-                if np.count_nonzero(np.isfinite(values)) > 1
-                else np.nan,
-                "n_blocks": int(np.count_nonzero(np.isfinite(values))),
-            }
-        )
+        acf_rows.append({"lag": lag, "mean_autocorrelation": float(np.nanmean(values)), "sem_autocorrelation": float(stats.sem(values[np.isfinite(values)])) if np.count_nonzero(np.isfinite(values)) > 1 else np.nan, "n_blocks": int(np.count_nonzero(np.isfinite(values)))})
     acf_table = pd.DataFrame(acf_rows)
     return {"temporal_structure_summary": temporal_summary, "rt_acf_by_lag": acf_table}
 
@@ -1076,126 +809,36 @@ def build_neural_residual_sensitivity(trials, neural_mean_path, neural_variabili
     formula = "RT_ms ~ reward_high + C(medication) + C(gvs_condition) + C(run) + block_position"
     fit = smf.ols(formula, data=valid).fit()
     valid["RT_residual_ms"] = fit.resid
-    residual_trials = valid.loc[
-        :,
-        [
-            "subject",
-            "subject_label",
-            "session",
-            "medication",
-            "run",
-            "stim_id",
-            "gvs_label",
-            "block_position",
-            "trial_in_run",
-            "RT_ms",
-            "RT_residual_ms",
-            "reward_high",
-        ],
-    ].copy()
+    residual_trials = valid.loc[:, ["subject", "subject_label", "session", "medication", "run", "stim_id", "gvs_label", "block_position", "trial_in_run", "RT_ms", "RT_residual_ms", "reward_high"]].copy()
 
     residual_block_rows = []
-    for key, group in residual_trials.groupby(
-        ["subject_label", "subject", "session", "medication", "run", "stim_id", "gvs_label"], sort=True
-    ):
+    for key, group in residual_trials.groupby(["subject_label", "subject", "session", "medication", "run", "stim_id", "gvs_label"], sort=True):
         diffs = _successive_pairs(group, "RT_residual_ms")
         rmssd, mssd, n_pairs = _rmssd_from_diffs(diffs)
-        residual_block_rows.append(
-            {
-                "subject_label": key[0],
-                "subject": key[1],
-                "session": key[2],
-                "medication": key[3],
-                "run": key[4],
-                "stim_id": key[5],
-                "gvs_label": key[6],
-                "mean_rt_residual_ms": float(group["RT_residual_ms"].mean()),
-                "rt_residual_rmssd_ms": rmssd,
-                "rt_residual_mssd_ms2": mssd,
-                "n_residual_pairs": n_pairs,
-            }
-        )
+        residual_block_rows.append({"subject_label": key[0], "subject": key[1], "session": key[2], "medication": key[3], "run": key[4], "stim_id": key[5], "gvs_label": key[6], "mean_rt_residual_ms": float(group["RT_residual_ms"].mean()), "rt_residual_rmssd_ms": rmssd, "rt_residual_mssd_ms2": mssd, "n_residual_pairs": n_pairs})
     residual_block = pd.DataFrame(residual_block_rows)
-    residual_session = (
-        residual_block.groupby(["subject_label", "subject", "session", "medication", "stim_id", "gvs_label"], as_index=False)
-        .agg(
-            mean_rt_residual_ms=("mean_rt_residual_ms", "mean"),
-            rt_residual_rmssd_ms=("rt_residual_rmssd_ms", "mean"),
-            n_residual_pairs=("n_residual_pairs", "sum"),
-        )
-    )
-    sham = residual_session.loc[
-        residual_session["stim_id"].eq(1),
-        ["subject_label", "session", "medication", "mean_rt_residual_ms", "rt_residual_rmssd_ms"],
-    ].rename(
-        columns={
-            "mean_rt_residual_ms": "sham_mean_rt_residual_ms",
-            "rt_residual_rmssd_ms": "sham_rt_residual_rmssd_ms",
-        }
-    )
-    residual_delta = residual_session.loc[~residual_session["stim_id"].eq(1)].merge(
-        sham, on=["subject_label", "session", "medication"], how="inner"
-    )
-    residual_delta["delta_mean_rt_residual_ms"] = (
-        residual_delta["mean_rt_residual_ms"] - residual_delta["sham_mean_rt_residual_ms"]
-    )
-    residual_delta["delta_rt_residual_rmssd_ms"] = (
-        residual_delta["rt_residual_rmssd_ms"] - residual_delta["sham_rt_residual_rmssd_ms"]
-    )
+    residual_session = (residual_block.groupby(["subject_label", "subject", "session", "medication", "stim_id", "gvs_label"], as_index=False) .agg(mean_rt_residual_ms=("mean_rt_residual_ms", "mean"), rt_residual_rmssd_ms=("rt_residual_rmssd_ms", "mean"), n_residual_pairs=("n_residual_pairs", "sum")))
+    sham = residual_session.loc[residual_session["stim_id"].eq(1), ["subject_label", "session", "medication", "mean_rt_residual_ms", "rt_residual_rmssd_ms"]].rename(columns={"mean_rt_residual_ms": "sham_mean_rt_residual_ms", "rt_residual_rmssd_ms": "sham_rt_residual_rmssd_ms"})
+    residual_delta = residual_session.loc[~residual_session["stim_id"].eq(1)].merge(sham, on=["subject_label", "session", "medication"], how="inner")
+    residual_delta["delta_mean_rt_residual_ms"] = (residual_delta["mean_rt_residual_ms"] - residual_delta["sham_mean_rt_residual_ms"])
+    residual_delta["delta_rt_residual_rmssd_ms"] = (residual_delta["rt_residual_rmssd_ms"] - residual_delta["sham_rt_residual_rmssd_ms"])
 
     sensitivity_rows = []
     if neural_mean_path.exists():
         neural_mean = pd.read_csv(neural_mean_path)
-        neural_session = (
-            neural_mean.groupby(["subject", "session", "medication", "stim_id", "stim_short"], as_index=False)["mean_proj"]
-            .mean()
-        )
-        neural_sham = neural_session.loc[
-            neural_session["stim_id"].eq(1), ["subject", "session", "medication", "mean_proj"]
-        ].rename(columns={"mean_proj": "sham_mean_proj"})
-        neural_delta = neural_session.loc[~neural_session["stim_id"].eq(1)].merge(
-            neural_sham, on=["subject", "session", "medication"], how="inner"
-        )
+        neural_session = (neural_mean.groupby(["subject", "session", "medication", "stim_id", "stim_short"], as_index=False)["mean_proj"] .mean())
+        neural_sham = neural_session.loc[neural_session["stim_id"].eq(1), ["subject", "session", "medication", "mean_proj"]].rename(columns={"mean_proj": "sham_mean_proj"})
+        neural_delta = neural_session.loc[~neural_session["stim_id"].eq(1)].merge(neural_sham, on=["subject", "session", "medication"], how="inner")
         neural_delta["delta_mean_proj"] = neural_delta["mean_proj"] - neural_delta["sham_mean_proj"]
-        merged = neural_delta.merge(
-            residual_delta,
-            left_on=["subject", "session", "medication", "stim_id"],
-            right_on=["subject_label", "session", "medication", "stim_id"],
-            how="inner",
-        )
+        merged = neural_delta.merge(residual_delta, left_on=["subject", "session", "medication", "stim_id"], right_on=["subject_label", "session", "medication", "stim_id"], how="inner")
         corr = _safe_pearson(merged["delta_mean_proj"], merged["delta_mean_rt_residual_ms"])
-        sensitivity_rows.append(
-            {
-                "analysis": "mean_projection_delta_vs_reward_residualized_mean_rt_delta",
-                "n": corr["n"],
-                "r": corr["r"],
-                "p_value": corr["p"],
-                "interpretation": "tests whether sham-referenced neural projection mean is explained by residual RT",
-            }
-        )
+        sensitivity_rows.append({"analysis": "mean_projection_delta_vs_reward_residualized_mean_rt_delta", "n": corr["n"], "r": corr["r"], "p_value": corr["p"], "interpretation": "tests whether sham-referenced neural projection mean is explained by residual RT"})
     if neural_variability_path.exists():
         neural_var = pd.read_csv(neural_variability_path)
-        merged = neural_var.loc[~neural_var["stim_id"].eq(1)].merge(
-            residual_delta,
-            left_on=["subject", "session", "medication", "stim_id"],
-            right_on=["subject_label", "session", "medication", "stim_id"],
-            how="inner",
-        )
+        merged = neural_var.loc[~neural_var["stim_id"].eq(1)].merge(residual_delta, left_on=["subject", "session", "medication", "stim_id"], right_on=["subject_label", "session", "medication", "stim_id"], how="inner")
         corr = _safe_pearson(merged["delta_consecutive_diff2"], merged["delta_rt_residual_rmssd_ms"])
-        sensitivity_rows.append(
-            {
-                "analysis": "projection_variability_delta_vs_reward_residualized_rt_rmssd_delta",
-                "n": corr["n"],
-                "r": corr["r"],
-                "p_value": corr["p"],
-                "interpretation": "tests whether sham-referenced neural projection variability tracks residual RT variability",
-            }
-        )
-    return {
-        "reward_residualized_rt_trials": residual_trials,
-        "reward_residualized_rt_session_deltas": residual_delta,
-        "neural_residual_sensitivity": pd.DataFrame(sensitivity_rows),
-    }
+        sensitivity_rows.append({"analysis": "projection_variability_delta_vs_reward_residualized_rt_rmssd_delta", "n": corr["n"], "r": corr["r"], "p_value": corr["p"], "interpretation": "tests whether sham-referenced neural projection variability tracks residual RT variability"})
+    return {"reward_residualized_rt_trials": residual_trials, "reward_residualized_rt_session_deltas": residual_delta, "neural_residual_sensitivity": pd.DataFrame(sensitivity_rows)}
 
 
 def build_subject_summary(trials, block_metrics, reward_tables, gvs_tables, hand_table):
@@ -1203,28 +846,15 @@ def build_subject_summary(trials, block_metrics, reward_tables, gvs_tables, hand
     reward = reward_tables["reward_subject_session_summary"]
     reward_rt = reward.loc[reward["measure"].eq("RT")].groupby("subject", as_index=False)["high_minus_low"].mean()
     reward_rt = reward_rt.rename(columns={"high_minus_low": "reward_effect_high_minus_low_rt_ms"})
-    gvs = gvs_tables["gvs_rt_session_deltas"].groupby("subject", as_index=False)[
-        "delta_rt_ms_active_minus_sham"
-    ].mean()
+    gvs = gvs_tables["gvs_rt_session_deltas"].groupby("subject", as_index=False)["delta_rt_ms_active_minus_sham"].mean()
     gvs = gvs.rename(columns={"delta_rt_ms_active_minus_sham": "gvs_sensitivity_active_minus_sham_rt_ms"})
     summary = med.merge(reward_rt, on="subject", how="outer").merge(gvs, on="subject", how="outer")
     summary = summary.merge(hand_table, on="subject", how="left")
-    flow_status = (
-        trials.groupby(["subject", "session"], as_index=False)["excluded_session"]
-        .any()
-        .query("excluded_session")
-        .groupby("subject")["session"]
-        .apply(lambda x: ",".join(str(int(v)) for v in sorted(x)))
-        .reset_index(name="excluded_sessions")
-    )
+    flow_status = (trials.groupby(["subject", "session"], as_index=False)["excluded_session"] .any() .query("excluded_session") .groupby("subject")["session"] .apply(lambda x: ", ".join(str(int(v)) for v in sorted(x))) .reset_index(name="excluded_sessions"))
     summary = summary.merge(flow_status, on="subject", how="left")
     summary["notes"] = ""
-    summary.loc[summary["excluded_sessions"].notna(), "notes"] = (
-        "session " + summary.loc[summary["excluded_sessions"].notna(), "excluded_sessions"].astype(str) + " excluded"
-    )
-    summary.loc[summary["non_dominant_task_hand"].fillna(False), "notes"] = summary.loc[
-        summary["non_dominant_task_hand"].fillna(False), "notes"
-    ].map(lambda x: _combine_notes([x, "non-dominant task hand"]))
+    summary.loc[summary["excluded_sessions"].notna(), "notes"] = ("session " + summary.loc[summary["excluded_sessions"].notna(), "excluded_sessions"].astype(str) + " excluded")
+    summary.loc[summary["non_dominant_task_hand"].fillna(False), "notes"] = summary.loc[summary["non_dominant_task_hand"].fillna(False), "notes"].map(lambda x: _combine_notes([x, "non-dominant task hand"]))
     summary["_sort"] = summary["subject"].map(_subject_number)
     summary = summary.sort_values("_sort").drop(columns="_sort").reset_index(drop=True)
     return summary
@@ -1233,14 +863,7 @@ def build_subject_summary(trials, block_metrics, reward_tables, gvs_tables, hand
 def build_distribution_summary(trials):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     rows = []
-    groups = [
-        ("overall", []),
-        ("medication", ["medication"]),
-        ("run", ["run"]),
-        ("block", ["block_position"]),
-        ("trial_position", ["trial_in_run"]),
-        ("subject", ["subject"]),
-    ]
+    groups = [("overall", []), ("medication", ["medication"]), ("run", ["run"]), ("block", ["block_position"]), ("trial_position", ["trial_in_run"]), ("subject", ["subject"])]
     for label, cols in groups:
         if not cols:
             iterable = [(("overall",), valid)]
@@ -1253,16 +876,7 @@ def build_distribution_summary(trials):
             for col, value in zip(cols, key_tuple):
                 record[col] = value
             values = group["RT_ms"].to_numpy(dtype=float)
-            record.update(
-                {
-                    "n": int(values.size),
-                    "mean_rt_ms": float(np.mean(values)),
-                    "median_rt_ms": float(np.median(values)),
-                    "sd_rt_ms": float(np.std(values, ddof=1)) if values.size > 1 else np.nan,
-                    "q25_rt_ms": float(np.quantile(values, 0.25)),
-                    "q75_rt_ms": float(np.quantile(values, 0.75)),
-                }
-            )
+            record.update({"n": int(values.size), "mean_rt_ms": float(np.mean(values)), "median_rt_ms": float(np.median(values)), "sd_rt_ms": float(np.std(values, ddof=1)) if values.size > 1 else np.nan, "q25_rt_ms": float(np.quantile(values, 0.25)), "q75_rt_ms": float(np.quantile(values, 0.75))})
             rows.append(record)
     return pd.DataFrame(rows)
 
@@ -1341,17 +955,8 @@ def plot_rt_paired_medication(subject_summary, out_dir):
 def plot_rt_run_block_trial(trials, out_dir):
     valid = trials.loc[~trials["excluded_session"] & trials["valid_rt_trial"]].copy()
     with plt.rc_context(BOLD_PAPER_STYLE):
-        fig, axes = plt.subplots(
-            1,
-            3,
-            figsize=(14.6, 4.35),
-            gridspec_kw={"width_ratios": [0.65, 1.2, 1.35]},
-        )
-        panels = [
-            ("run", "Run", [1, 2], "#0072B2"),
-            ("block_position", "Block position in run", list(range(1, 10)), "#009E73"),
-            ("trial_in_run", "Trial position within block", list(range(1, 11)), "#D55E00"),
-        ]
+        fig, axes = plt.subplots(1, 3, figsize=(14.6, 4.35), gridspec_kw={"width_ratios": [0.65, 1.2, 1.35]})
+        panels = [("run", "Run", [1, 2], "#0072B2"), ("block_position", "Block position in run", list(range(1, 10)), "#009E73"), ("trial_in_run", "Trial position within block", list(range(1, 11)), "#D55E00")]
         for ax, (col, xlabel, order, color) in zip(axes, panels):
             summary = valid.groupby(col)["RT_ms"].agg(["mean", "count", "std"]).reindex(order).reset_index()
             sem = summary["std"] / np.sqrt(summary["count"])
@@ -1393,33 +998,10 @@ def plot_trial_flow_qc_stacked_bar(trial_flow, out_dir):
                 missed = run_df["Missed trials"].fillna(0).to_numpy(dtype=float)
                 invalid = run_df["Invalid RT"].fillna(0).to_numpy(dtype=float)
                 ax.bar(xpos[included], valid[included], width=width, color=colors["Valid RT"], edgecolor="white", linewidth=0.5)
-                ax.bar(
-                    xpos[included],
-                    missed[included],
-                    width=width,
-                    bottom=valid[included],
-                    color=colors["Missed"],
-                    edgecolor="white",
-                    linewidth=0.5,
-                )
-                ax.bar(
-                    xpos[included],
-                    invalid[included],
-                    width=width,
-                    bottom=valid[included] + missed[included],
-                    color=colors["Invalid RT"],
-                    edgecolor="white",
-                    linewidth=0.5,
-                )
+                ax.bar(xpos[included], missed[included], width=width, bottom=valid[included], color=colors["Missed"], edgecolor="white", linewidth=0.5)
+                ax.bar(xpos[included], invalid[included], width=width, bottom=valid[included] + missed[included], color=colors["Invalid RT"], edgecolor="white", linewidth=0.5)
                 excluded = ~included & run_df["Go trials"].notna().to_numpy()
-                ax.bar(
-                    xpos[excluded],
-                    run_df["Go trials"].fillna(0).to_numpy(dtype=float)[excluded],
-                    width=width,
-                    color=colors["Excluded"],
-                    edgecolor="white",
-                    linewidth=0.5,
-                )
+                ax.bar(xpos[excluded], run_df["Go trials"].fillna(0).to_numpy(dtype=float)[excluded], width=width, color=colors["Excluded"], edgecolor="white", linewidth=0.5)
             ax.axhline(81, color="#111827", linestyle=(0, (4, 3)), linewidth=2.2)
             ax.set_ylim(0, 86)
             ax.set_yticks([0, 20, 40, 60, 80])
@@ -1428,11 +1010,7 @@ def plot_trial_flow_qc_stacked_bar(trial_flow, out_dir):
         axes[-1].set_xticklabels(subject_labels, rotation=45, ha="right")
         fig.supxlabel("Subject", fontsize=20, fontweight="bold", y=0.02)
         fig.supylabel("Number of trials", fontsize=20, fontweight="bold", x=0.02)
-        legend_handles = [
-            Patch(facecolor=colors["Valid RT"], label="Valid RT"),
-            Patch(facecolor=colors["Missed"], label="Missed"),
-            Patch(facecolor=colors["Invalid RT"], label="Invalid RT"),
-        ]
+        legend_handles = [Patch(facecolor=colors["Valid RT"], label="Valid RT"), Patch(facecolor=colors["Missed"], label="Missed"), Patch(facecolor=colors["Invalid RT"], label="Invalid RT")]
         fig.legend(handles=legend_handles, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.0))
         _bold_figure_text(fig)
         fig.tight_layout(rect=(0.04, 0.04, 1.0, 0.94), h_pad=1.6)
@@ -1442,10 +1020,7 @@ def plot_trial_flow_qc_stacked_bar(trial_flow, out_dir):
 def plot_medication_delta(subject_summary, out_dir):
     with plt.rc_context(PAPER_STYLE):
         fig, axes = plt.subplots(1, 2, figsize=(8.8, 4.2))
-        specs = [
-            ("delta_rt_on_minus_off_ms", "Delta RT = ON - OFF (ms)"),
-            ("delta_rt_rmssd_on_minus_off_ms", "Delta RT RMSSD = ON - OFF (ms)"),
-        ]
+        specs = [("delta_rt_on_minus_off_ms", "Delta RT=ON - OFF (ms)"), ("delta_rt_rmssd_on_minus_off_ms", "Delta RT RMSSD=ON - OFF (ms)")]
         for ax, (col, label) in zip(axes, specs):
             df = subject_summary.loc[np.isfinite(subject_summary[col])].copy()
             x = np.arange(len(df))
@@ -1467,27 +1042,14 @@ def plot_reward(reward_tables, block_metrics, out_dir):
         fig, axes = plt.subplots(2, 2, figsize=(10.4, 7.0))
         for ax, measure in zip(axes.flat[:3], ["RT", "Vmax", "Pmax"]):
             df = reward.loc[reward["measure"].eq(measure)].copy()
-            long = df.melt(
-                id_vars=["subject", "medication", "measure", "unit"],
-                value_vars=["low", "high"],
-                var_name="reward_level",
-                value_name="value",
-            )
+            long = df.melt(id_vars=["subject", "medication", "measure", "unit"], value_vars=["low", "high"], var_name="reward_level", value_name="value")
             x_base = {"low": 0.0, "high": 1.0}
             for med, offset, color in [("OFF", -0.08, "#4C78A8"), ("ON", 0.08, "#D55E00")]:
                 med_df = long.loc[long["medication"].eq(med)]
                 means = med_df.groupby("reward_level")["value"].mean()
                 sems = med_df.groupby("reward_level")["value"].sem()
                 xs = np.array([x_base["low"] + offset, x_base["high"] + offset])
-                ax.errorbar(
-                    xs,
-                    [means.get("low", np.nan), means.get("high", np.nan)],
-                    yerr=[sems.get("low", np.nan), sems.get("high", np.nan)],
-                    marker="o",
-                    color=color,
-                    capsize=3,
-                    label=med,
-                )
+                ax.errorbar(xs, [means.get("low", np.nan), means.get("high", np.nan)], yerr=[sems.get("low", np.nan), sems.get("high", np.nan)], marker="o", color=color, capsize=3, label=med)
             ax.set_xticks([0, 1])
             ax.set_xticklabels(["Low", "High"])
             ax.set_title(measure)
@@ -1517,41 +1079,23 @@ def plot_gvs(gvs_tables, block_metrics, out_dir):
     var_deltas = gvs_tables["gvs_rt_variability_session_deltas"]
     with plt.rc_context(PAPER_STYLE):
         fig, axes = plt.subplots(2, 2, figsize=(11.0, 7.2))
-        rt_summary = (
-            block_metrics.loc[~block_metrics["excluded_session"]]
-            .groupby(["stim_id", "gvs_label"], as_index=False)["mean_rt_ms"]
-            .agg(["mean", "sem"])
-            .reset_index()
-        )
+        rt_summary = (block_metrics.loc[~block_metrics["excluded_session"]] .groupby(["stim_id", "gvs_label"], as_index=False)["mean_rt_ms"] .agg(["mean", "sem"]) .reset_index())
         axes[0, 0].errorbar(rt_summary["stim_id"], rt_summary["mean"], yerr=rt_summary["sem"], marker="o", color="#4C78A8")
         axes[0, 0].set_xticks(rt_summary["stim_id"])
         axes[0, 0].set_xticklabels(rt_summary["gvs_label"], rotation=35, ha="right")
         axes[0, 0].set_ylabel("Mean RT (ms)")
         axes[0, 0].set_title("RT by GVS")
 
-        var_summary = (
-            block_metrics.loc[~block_metrics["excluded_session"]]
-            .groupby(["stim_id", "gvs_label"], as_index=False)["rt_rmssd_ms"]
-            .agg(["mean", "sem"])
-            .reset_index()
-        )
+        var_summary = (block_metrics.loc[~block_metrics["excluded_session"]] .groupby(["stim_id", "gvs_label"], as_index=False)["rt_rmssd_ms"] .agg(["mean", "sem"]) .reset_index())
         axes[0, 1].errorbar(var_summary["stim_id"], var_summary["mean"], yerr=var_summary["sem"], marker="o", color="#009E73")
         axes[0, 1].set_xticks(var_summary["stim_id"])
         axes[0, 1].set_xticklabels(var_summary["gvs_label"], rotation=35, ha="right")
         axes[0, 1].set_ylabel("RT RMSSD (ms)")
         axes[0, 1].set_title("RT variability by GVS")
 
-        rt_delta_summary = deltas.groupby(["stim_id", "gvs_label"], as_index=False)["delta_rt_ms_active_minus_sham"].agg(
-            ["mean", "sem"]
-        ).reset_index()
+        rt_delta_summary = deltas.groupby(["stim_id", "gvs_label"], as_index=False)["delta_rt_ms_active_minus_sham"].agg(["mean", "sem"]).reset_index()
         axes[1, 0].axhline(0, color="0.35", linestyle="--", linewidth=0.9)
-        axes[1, 0].errorbar(
-            rt_delta_summary["stim_id"],
-            rt_delta_summary["mean"],
-            yerr=rt_delta_summary["sem"],
-            marker="o",
-            color="#D55E00",
-        )
+        axes[1, 0].errorbar(rt_delta_summary["stim_id"], rt_delta_summary["mean"], yerr=rt_delta_summary["sem"], marker="o", color="#D55E00")
         axes[1, 0].set_xticks(rt_delta_summary["stim_id"])
         axes[1, 0].set_xticklabels(rt_delta_summary["gvs_label"], rotation=35, ha="right")
         axes[1, 0].set_ylabel("Active - sham RT (ms)")
@@ -1559,9 +1103,7 @@ def plot_gvs(gvs_tables, block_metrics, out_dir):
 
         for med, color in [("OFF", "#4C78A8"), ("ON", "#D55E00")]:
             med_df = deltas.loc[deltas["medication"].eq(med)]
-            summary = med_df.groupby(["stim_id", "gvs_label"], as_index=False)["delta_rt_ms_active_minus_sham"].agg(
-                ["mean", "sem"]
-            ).reset_index()
+            summary = med_df.groupby(["stim_id", "gvs_label"], as_index=False)["delta_rt_ms_active_minus_sham"].agg(["mean", "sem"]).reset_index()
             axes[1, 1].errorbar(summary["stim_id"], summary["mean"], yerr=summary["sem"], marker="o", color=color, label=med)
         axes[1, 1].axhline(0, color="0.35", linestyle="--", linewidth=0.9)
         axes[1, 1].set_xticks(rt_delta_summary["stim_id"])
@@ -1574,9 +1116,7 @@ def plot_gvs(gvs_tables, block_metrics, out_dir):
         _save_figure(fig, out_dir / "gvs_behaviour_summary")
 
         fig, ax = plt.subplots(figsize=(6.5, 4.0))
-        var_summary = var_deltas.groupby(["stim_id", "gvs_label"], as_index=False)[
-            "delta_rt_rmssd_ms_active_minus_sham"
-        ].agg(["mean", "sem"]).reset_index()
+        var_summary = var_deltas.groupby(["stim_id", "gvs_label"], as_index=False)["delta_rt_rmssd_ms_active_minus_sham"].agg(["mean", "sem"]).reset_index()
         ax.axhline(0, color="0.35", linestyle="--", linewidth=0.9)
         ax.errorbar(var_summary["stim_id"], var_summary["mean"], yerr=var_summary["sem"], marker="o", color="#009E73")
         ax.set_xticks(var_summary["stim_id"])
@@ -1720,39 +1260,17 @@ def write_methods_results(out_dir, trials, trial_flow, feature_summary, med_delt
         "",
         "## Methods",
         "",
-        (
-            "Behavioural analyses used the first six columns of each revised metrics file: "
-            "1/PT, 1/RT, 1/MT, 1/(RT+MT), Vmax, and Pmax. The first four columns were "
-            "reciprocal time measures and were converted to milliseconds for reporting. "
-            "Vmax and Pmax were kept on their raw feature scales."
-        ),
+        ("Behavioural analyses used the first six columns of each revised metrics file: " "1/PT, 1/RT, 1/MT, 1/(RT+MT), Vmax, and Pmax. The first four columns were " "reciprocal time measures and were converted to milliseconds for reporting. " "Vmax and Pmax were kept on their raw feature scales."),
         "",
-        (
-            "Each GVS condition contributed 20 trials per session. Trials 1-10 were assigned "
-            "to run 1 and trials 11-20 to run 2. Actual block position within each run was "
-            "read from `data/gvs_order_by_subject_session_run.tsv`."
-        ),
+        ("Each GVS condition contributed 20 trials per session. Trials 1-10 were assigned " "to run 1 and trials 11-20 to run 2. Actual block position within each run was " "read from `data/gvs_order_by_subject_session_run.tsv`."),
         "",
-        (
-            "Catch trials were identified from `res.catchtrials` and verified against reward code -5. "
-            "Go trials were non-catch trials. Missed trials were go trials marked as no-squeeze "
-            "in `res.sqrwd_nosq`. Valid RT trials were go trials with finite positive source 1/RT; "
-            "invalid RT trials were non-missed go trials without finite positive 1/RT."
-        ),
+        ("Catch trials were identified from `res.catchtrials` and verified against reward code -5. " "Go trials were non-catch trials. Missed trials were go trials marked as no-squeeze " "in `res.sqrwd_nosq`. Valid RT trials were go trials with finite positive source 1/RT; " "invalid RT trials were non-missed go trials without finite positive 1/RT."),
         "",
-        (
-            "RT variability was defined as RMSSD in milliseconds, computed from adjacent valid "
-            "RT pairs within subject-session-run-GVS blocks. This excludes transitions across "
-            "GVS blocks, rest gaps, and run boundaries."
-        ),
+        ("RT variability was defined as RMSSD in milliseconds, computed from adjacent valid " "RT pairs within subject-session-run-GVS blocks. This excludes transitions across " "GVS blocks, rest gaps, and run boundaries."),
         "",
         "## Results",
         "",
-        (
-            f"After excluding PSPD017 session 1, the analysis retained {n_valid} valid RT trials "
-            f"from {n_sessions} sessions and {n_subjects} subjects. Mean RT was {rt_mean:.1f} ms "
-            f"(SD across trials {rt_sd:.1f} ms)."
-        ),
+        (f"After excluding PSPD017 session 1, the analysis retained {n_valid} valid RT trials " f"from {n_sessions} sessions and {n_subjects} subjects. Mean RT was {rt_mean:.1f} ms " f"(SD across trials {rt_sd:.1f} ms)."),
         "",
         (
             "RT was retained as the primary behavioural vigour measure because it is a direct, "
@@ -1762,67 +1280,26 @@ def write_methods_results(out_dir, trials, trial_flow, feature_summary, med_delt
             "Force features were retained as manipulation checks rather than the primary vigour outcome."
         ),
         "",
-        (
-            f"Medication changed mean RT by ON-OFF={med_rt['mean']:.1f} ms "
-            f"(95% CI {med_rt['ci95_low']:.1f}, {med_rt['ci95_high']:.1f}; "
-            f"{_format_p(float(med_rt['p']))}; n={med_rt['n']}). "
-            f"Medication changed RT RMSSD by ON-OFF={med_var['mean']:.1f} ms "
-            f"(95% CI {med_var['ci95_low']:.1f}, {med_var['ci95_high']:.1f}; "
-            f"{_format_p(float(med_var['p']))}; n={med_var['n']})."
-        ),
+        (f"Medication changed mean RT by ON-OFF={med_rt['mean']:.1f} ms " f"(95% CI {med_rt['ci95_low']:.1f}, {med_rt['ci95_high']:.1f}; " f"{_format_p(float(med_rt['p']))}; n={med_rt['n']}). " f"Medication changed RT RMSSD by ON-OFF={med_var['mean']:.1f} ms " f"(95% CI {med_var['ci95_low']:.1f}, {med_var['ci95_high']:.1f}; " f"{_format_p(float(med_var['p']))}; n={med_var['n']})."),
     ]
     if gvs_min is not None:
-        lines.extend(
-            [
-                "",
-                (
-                    f"GVS effects on RT were small. The smallest FDR-adjusted condition-level "
-                    f"RT effect was {gvs_min['GVS condition']} with q={gvs_min['qFDR']:.3f} "
-                    f"and {_format_p(float(gvs_min['p-value']))}."
-                ),
-            ]
-        )
-    lines.extend(
-        [
-            "",
-            (
-                f"Across blocks, mean RT RMSSD was {temporal['mean_rt_rmssd_ms']:.1f} ms, "
-                f"mean lag-1 autocorrelation was {temporal['mean_lag1_autocorrelation']:.3f}, "
-                f"and mean linear drift was {temporal['mean_drift_slope_ms_per_trial']:.2f} ms/trial."
-            ),
-        ]
-    )
+        lines.extend(["", (f"GVS effects on RT were small. The smallest FDR-adjusted condition-level " f"RT effect was {gvs_min['GVS condition']} with q={gvs_min['qFDR']:.3f} " f"and {_format_p(float(gvs_min['p-value']))}.")])
+    lines.extend(["", (f"Across blocks, mean RT RMSSD was {temporal['mean_rt_rmssd_ms']:.1f} ms, " f"mean lag-1 autocorrelation was {temporal['mean_lag1_autocorrelation']:.3f}, " f"and mean linear drift was {temporal['mean_drift_slope_ms_per_trial']:.2f} ms/trial.")])
     if not neural_sensitivity.empty:
         lines.append("")
         for row in neural_sensitivity.itertuples(index=False):
-            lines.append(
-                f"Reward-residualized neural sensitivity ({row.analysis}) gave r={_format_num(row.r, 3)}, "
-                f"{_format_p(float(row.p_value))}, n={int(row.n)}."
-            )
-    lines.extend(
-        [
-            "",
-            "The generated CSV tables contain the full trial flow, feature comparison, model coefficients, GVS condition tests, temporal structure, and subject-level heterogeneity summaries.",
-        ]
-    )
+            lines.append(f"Reward-residualized neural sensitivity ({row.analysis}) gave r={_format_num(row.r, 3)}, " f"{_format_p(float(row.p_value))}, n={int(row.n)}.")
+    lines.extend(["", "The generated CSV tables contain the full trial flow, feature comparison, model coefficients, GVS condition tests, temporal structure, and subject-level heterogeneity summaries."])
     (out_dir / "supplementary_methods_results_behaviour.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def copy_reused_manifest(args, out_dir):
     rows = []
-    for label, path in [
-        ("prior_gvs_behaviour", args.prior_gvs_dir),
-        ("prior_reward_behaviour", args.prior_reward_dir),
-        ("neural_mean_projection", args.neural_mean_table),
-        ("neural_projection_variability", args.neural_variability_table),
-    ]:
+    for label, path in [("prior_gvs_behaviour", args.prior_gvs_dir), ("prior_reward_behaviour", args.prior_reward_dir), ("neural_mean_projection", args.neural_mean_table), ("neural_projection_variability", args.neural_variability_table)]:
         rows.append({"resource": label, "path": str(path), "exists": path.exists(), "use": "read for context/sensitivity"})
     manifest = pd.DataFrame(rows)
     _write_csv(manifest, out_dir / "reused_outputs_manifest.csv")
-    for source in [
-        args.prior_gvs_dir / "gvs_behaviour_report.md",
-        args.prior_reward_dir / "reward_rt_report.md",
-    ]:
+    for source in [args.prior_gvs_dir / "gvs_behaviour_report.md", args.prior_reward_dir / "reward_rt_report.md"]:
         if source.exists():
             shutil.copy2(source, out_dir / f"legacy_{source.name}")
     return manifest
@@ -1862,10 +1339,7 @@ def main():
     _write_markdown_table(feature_summary, out_dir / "table_behaviour_feature_comparison.md")
     _write_csv(med_deltas, out_dir / "medication_subject_deltas.csv")
     _write_csv(reward_tables["reward_subject_session_summary"], out_dir / "reward_subject_session_summary.csv")
-    _write_csv(
-        reward_tables["reward_variability_by_high_reward_fraction"],
-        out_dir / "reward_variability_by_high_reward_fraction.csv",
-    )
+    _write_csv(reward_tables["reward_variability_by_high_reward_fraction"], out_dir / "reward_variability_by_high_reward_fraction.csv")
     for name, df in gvs_tables.items():
         _write_csv(df, out_dir / f"{name}.csv")
     for name, df in temporal_tables.items():
@@ -1895,25 +1369,13 @@ def main():
     plot_subject_summary(subject_summary, out_dir)
 
     write_definitions(out_dir, args, unresolved_hand)
-    write_methods_results(
-        out_dir,
-        trials,
-        trial_flow,
-        feature_summary,
-        med_deltas,
-        gvs_tables["gvs_effect_summary_table"],
-        temporal_tables["temporal_structure_summary"],
-        neural_tables["neural_residual_sensitivity"],
-    )
+    write_methods_results(out_dir, trials, trial_flow, feature_summary, med_deltas, gvs_tables["gvs_effect_summary_table"], temporal_tables["temporal_structure_summary"], neural_tables["neural_residual_sensitivity"])
 
     manifest = {
         "n_raw_trial_rows": int(trials.shape[0]),
         "n_included_valid_rt_trials": int((~trials["excluded_session"] & trials["valid_rt_trial"]).sum()),
         "n_subjects_included": int(trials.loc[~trials["excluded_session"], "subject"].nunique()),
-        "excluded_subject_sessions": [
-            {"subject": subject, "session": session, "reason": reason}
-            for (subject, session), reason in EXCLUDED_SUBJECT_SESSIONS.items()
-        ],
+        "excluded_subject_sessions": [{"subject": subject, "session": session, "reason": reason} for (subject, session), reason in EXCLUDED_SUBJECT_SESSIONS.items()],
         "non_dominant_task_hand_subject": non_dom_subject,
         "outputs_directory": str(out_dir),
     }

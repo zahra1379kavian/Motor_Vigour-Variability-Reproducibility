@@ -17,44 +17,12 @@ from motor_overlap_overlay import motor_overlap_masks
 
 ROOT = Path(__file__).resolve().parents[2]
 src = ROOT / "data" / "derived_maps" / "vigour_network_p90_overlay.html"
-base = (
-    ROOT
-    / "results"
-    / "supplementary"
-    / "figure_08_multiplane_region_contours"
-    / "vigour_network_multiplane_region_contours"
-)
-plt.rcParams.update(
-    {
-        "font.family": "Liberation Sans",
-        "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-        "font.weight": "bold",
-        "axes.labelweight": "bold",
-        "axes.titleweight": "bold",
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+base = (ROOT / "results" / "supplementary" / "figure_08_multiplane_region_contours" / "vigour_network_multiplane_region_contours")
+plt.rcParams.update({"font.family": "Liberation Sans", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "font.weight": "bold", "axes.labelweight": "bold", "axes.titleweight": "bold", "pdf.fonttype": 42, "ps.fonttype": 42})
 atlas_cache_dir = Path("/home/zkavian/nilearn_data")
 atlas_version = "3v2"
-region_order = (
-    "Sensorimotor cortex",
-    "Frontal cortex",
-    "Parietal cortex",
-    "Temporal cortex",
-    "Occipital cortex",
-    "Cerebellum",
-    "Limbic/subcortical",
-)
-region_colors = {
-    "Sensorimotor cortex": "#0066CC",
-    "Frontal cortex": "#CC0000",
-    "Parietal cortex": "#008000",
-    "Temporal cortex": "#8B4513",
-    "Occipital cortex": "#D4A017",
-    "Cerebellum": "#800080",
-    "Limbic/subcortical": "#008C8C",
-}
+region_order = ("Sensorimotor cortex", "Frontal cortex", "Parietal cortex", "Temporal cortex", "Occipital cortex", "Cerebellum", "Limbic/subcortical")
+region_colors = {"Sensorimotor cortex": "#0066CC", "Frontal cortex": "#CC0000", "Parietal cortex": "#008000", "Temporal cortex": "#8B4513", "Occipital cortex": "#D4A017", "Cerebellum": "#800080", "Limbic/subcortical": "#008C8C"}
 s = src.read_text()
 imgs = [np.asarray(Image.open(BytesIO(base64.b64decode(x))).convert("RGBA")) for x in re.findall(r'src="data:image/png;base64,([^"]+)"', s)]
 cfg = json.loads(re.search(r"brainsprite\((\{.*?\})\);", s).group(1))
@@ -126,21 +94,7 @@ def atlas_category(label_name):
         return "Occipital cortex"
     if name.startswith(("Cerebellum", "Vermis")):
         return "Cerebellum"
-    if name.startswith(("Cingulate", "ACC", "Thal", "SN")) or name in {
-        "Insula",
-        "Hippocampus",
-        "ParaHippocampal",
-        "Amygdala",
-        "Caudate",
-        "Putamen",
-        "Pallidum",
-        "N_Acc",
-        "VTA",
-        "Red_N",
-        "LC",
-        "Raphe_D",
-        "Raphe_M",
-    }:
+    if name.startswith(("Cingulate", "ACC", "Thal", "SN")) or name in {"Insula", "Hippocampus", "ParaHippocampal", "Amygdala", "Caudate", "Putamen", "Pallidum", "N_Acc", "VTA", "Red_N", "LC", "Raphe_D", "Raphe_M"}:
         return "Limbic/subcortical"
     return "Unassigned"
 def resample_aal_to_mask():
@@ -150,15 +104,7 @@ def resample_aal_to_mask():
     if atlas_img.shape[:3] == reference_img.shape[:3] and np.allclose(atlas_img.affine, reference_img.affine):
         atlas_data = np.rint(atlas_img.get_fdata()).astype(np.int32, copy=False)
     else:
-        atlas_data = np.rint(
-            image.resample_to_img(
-                atlas_img,
-                reference_img,
-                interpolation="nearest",
-                force_resample=True,
-                copy_header=True,
-            ).get_fdata()
-        ).astype(np.int32, copy=False)
+        atlas_data = np.rint(image.resample_to_img(atlas_img, reference_img, interpolation="nearest", force_resample=True, copy_header=True).get_fdata()).astype(np.int32, copy=False)
     return atlas_data, atlas
 def region_label_data():
     atlas_data, atlas = resample_aal_to_mask()
@@ -179,10 +125,7 @@ def region_label_data():
 motor_overlap_display, _ = motor_overlap_masks(mask, aff)
 display_mask = mask | motor_overlap_display
 region_labels = region_label_data()
-region_counts = {
-    name: int(np.count_nonzero(region_labels == idx + 1))
-    for idx, name in enumerate(region_order)
-}
+region_counts = {name: int(np.count_nonzero(region_labels == idx + 1)) for idx, name in enumerate(region_order)}
 def overlay(ax, labels, m):
     rgba = np.zeros(labels.shape + (4,), dtype=float)
     for idx, name in enumerate(region_order, start=1):
@@ -211,11 +154,7 @@ for row, (mode, plane_label) in enumerate(plane_specs):
             ax.set_axis_off()
             continue
         cut = cuts[mode][col]
-        a, m, label_slice = crop(
-            plane(bg, mode, cut),
-            plane(display_mask, mode, cut),
-            plane(region_labels, mode, cut),
-        )
+        a, m, label_slice = crop(plane(bg, mode, cut), plane(display_mask, mode, cut), plane(region_labels, mode, cut))
         ax.imshow(anat(a), interpolation="nearest")
         overlay(ax, label_slice, m)
         height, width = a.shape[:2]
@@ -230,11 +169,7 @@ for row, (mode, plane_label) in enumerate(plane_specs):
             ax.text(brain_x.min() + 2, orient_y, "L", ha="center", va="bottom", fontsize=17, fontweight="bold", color="0.15")
             ax.text(brain_x.max() - 2, orient_y, "R", ha="center", va="bottom", fontsize=17, fontweight="bold", color="0.15")
         ax.set_axis_off()
-legend = [
-    Patch(facecolor=region_colors[name], edgecolor="0.2", alpha=0.90, label=name)
-    for name in region_order
-    if region_counts[name] > 0
-]
+legend = [Patch(facecolor=region_colors[name], edgecolor="0.2", alpha=0.90, label=name) for name in region_order if region_counts[name] > 0]
 fig.legend(handles=legend, loc="lower center", ncol=4, frameon=False, prop={"size": 15, "weight": "bold"}, bbox_to_anchor=(0.5, 0.055))
 bold_figure_text(fig)
 fig.subplots_adjust(left=0.015, right=0.995, bottom=0.20, top=0.985, wspace=0.015, hspace=0.06)

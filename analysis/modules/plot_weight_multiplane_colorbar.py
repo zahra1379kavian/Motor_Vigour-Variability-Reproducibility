@@ -22,61 +22,28 @@ from motor_overlap_overlay import fill_from_nearest_selected, motor_overlap_mask
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_HTML = ROOT / "data" / "derived_maps" / "vigour_network_p90_overlay.html"
 DEFAULT_WEIGHT_MAP = ROOT / "data" / "derived_maps" / "vigour_network_weights.nii.gz"
-DEFAULT_OUTPUT_BASE = (
-    ROOT
-    / "results"
-    / "main"
-    / "figure_03_vigour_network_map"
-    / "vigour_network_voxel_weights"
-)
+DEFAULT_OUTPUT_BASE = (ROOT / "results" / "main" / "figure_03_vigour_network_map" / "vigour_network_voxel_weights")
 DEFAULT_REQUIRED_Z_CUTS = (64, 66)
 AXIS_LABEL_FONTSIZE = 13
 COLORBAR_FONTSIZE = 12
 
-plt.rcParams.update(
-    {
-        "font.family": "Liberation Sans",
-        "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "Liberation Sans", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Plot thresholded voxel weights as a multiplane brain montage with a continuous colorbar."
-    )
+    parser = argparse.ArgumentParser(description="Plot thresholded voxel weights as a multiplane brain montage with a continuous colorbar.")
     parser.add_argument("--html", type=Path, default=DEFAULT_HTML, help="Thresholded HTML map used for background/mask.")
     parser.add_argument("--weight-map", type=Path, default=DEFAULT_WEIGHT_MAP, help="NIfTI map containing voxel weights.")
     parser.add_argument("--output-base", type=Path, default=DEFAULT_OUTPUT_BASE, help="Output path without extension.")
     parser.add_argument("--n-cuts", type=int, default=8, help="Number of cuts per plane.")
     parser.add_argument("--gap", type=int, default=4, help="Minimum voxel gap between selected cuts.")
-    parser.add_argument(
-        "--required-z-cuts",
-        type=int,
-        nargs="*",
-        default=DEFAULT_REQUIRED_Z_CUTS,
-        help="Axial z coordinates that must be included in the montage.",
-    )
+    parser.add_argument("--required-z-cuts", type=int, nargs="*", default=DEFAULT_REQUIRED_Z_CUTS, help="Axial z coordinates that must be included in the montage.")
     parser.add_argument("--scale", type=float, default=1000.0, help="Multiplier applied before color mapping.")
-    parser.add_argument(
-        "--colorbar-label",
-        default="Voxel weight\n($\\times 10^{-3}$)",
-        help="Colorbar label after applying --scale.",
-    )
-    parser.add_argument(
-        "--cmap",
-        default="YlOrRd",
-        help="Matplotlib colormap. The default is a bright sequential map for positive weights.",
-    )
+    parser.add_argument("--colorbar-label", default="Voxel weight\n($\\times 10^{-3}$)", help="Colorbar label after applying --scale.")
+    parser.add_argument("--cmap", default="YlOrRd", help="Matplotlib colormap. The default is a bright sequential map for positive weights.")
     parser.add_argument("--cmap-min", type=float, default=0.18, help="Lower fraction used when truncating --cmap.")
     parser.add_argument("--cmap-max", type=float, default=0.98, help="Upper fraction used when truncating --cmap.")
-    parser.add_argument(
-        "--include-weight-map-mask",
-        action="store_true",
-        help="Display nonzero voxels from --weight-map in addition to the thresholded HTML mask.",
-    )
+    parser.add_argument("--include-weight-map-mask", action="store_true", help="Display nonzero voxels from --weight-map in addition to the thresholded HTML mask.")
     parser.add_argument("--dpi", type=int, default=300, help="PNG output resolution.")
     return parser.parse_args()
 
@@ -93,10 +60,7 @@ def sprite_volume(sprite, nx, ny, nz):
 
 def load_html_display(html_path):
     html = html_path.read_text()
-    images = [
-        np.asarray(Image.open(BytesIO(base64.b64decode(encoded))).convert("RGBA"))
-        for encoded in re.findall(r'src="data:image/png;base64,([^"]+)"', html)
-    ]
+    images = [np.asarray(Image.open(BytesIO(base64.b64decode(encoded))).convert("RGBA")) for encoded in re.findall(r'src="data:image/png;base64, ([^"]+)"', html)]
     cfg = json.loads(re.search(r"brainsprite\((\{.*?\})\);", html).group(1))
     nx, ny, nz = [cfg["nbSlice"][axis] for axis in "XYZ"]
     affine = np.asarray(cfg["affine"], dtype=float)
@@ -108,9 +72,7 @@ def load_html_display(html_path):
 def align_weights_to_display(weight_img, target_shape, target_affine):
     weights = np.asarray(weight_img.get_fdata(), dtype=float)
     if weights.shape != target_shape:
-        raise ValueError(
-            f"Weight map shape {weights.shape} does not match HTML sprite shape {target_shape}."
-        )
+        raise ValueError(f"Weight map shape {weights.shape} does not match HTML sprite shape {target_shape}.")
 
     aligned = weights
     source_affine = np.asarray(weight_img.affine, dtype=float)
@@ -176,11 +138,7 @@ def crop(background, mask, weights, *extra_masks):
     y, x = np.where(crop_mask)
     y0, y1 = max(y.min() - 4, 0), min(y.max() + 5, background.shape[0])
     x0, x1 = max(x.min() - 4, 0), min(x.max() + 5, background.shape[1])
-    cropped = (
-        pad(background[y0:y1, x0:x1]),
-        pad(mask[y0:y1, x0:x1], False),
-        pad(weights[y0:y1, x0:x1], np.nan),
-    )
+    cropped = (pad(background[y0:y1, x0:x1]), pad(mask[y0:y1, x0:x1], False), pad(weights[y0:y1, x0:x1], np.nan))
     return cropped + tuple(pad(extra_mask[y0:y1, x0:x1], False) for extra_mask in extra_masks)
 
 
@@ -240,19 +198,8 @@ def main():
     n_cols = max(len(mode_cuts) for mode_cuts in cuts.values())
 
     fig = plt.figure(figsize=(15.1, 5.35), facecolor="white")
-    grid = fig.add_gridspec(
-        len(plane_specs),
-        n_cols,
-        left=0.008,
-        right=0.925,
-        bottom=0.065,
-        top=0.955,
-        wspace=0.012,
-        hspace=0.07,
-    )
-    axes = np.asarray(
-        [[fig.add_subplot(grid[row, col]) for col in range(n_cols)] for row in range(len(plane_specs))]
-    )
+    grid = fig.add_gridspec(len(plane_specs), n_cols, left=0.008, right=0.925, bottom=0.065, top=0.955, wspace=0.012, hspace=0.07)
+    axes = np.asarray([[fig.add_subplot(grid[row, col]) for col in range(n_cols)] for row in range(len(plane_specs))])
     for row, (mode, _) in enumerate(plane_specs):
         for col in range(n_cols):
             ax = axes[row, col]
@@ -262,55 +209,22 @@ def main():
                 ax.set_axis_off()
                 continue
             cut = cuts[mode][col]
-            bg_slice, mask_slice, weight_slice = crop(
-                plane(background, display_affine, mode, cut),
-                plane(display_mask, display_affine, mode, cut),
-                plane(weights, display_affine, mode, cut),
-            )
+            bg_slice, mask_slice, weight_slice = crop(plane(background, display_affine, mode, cut), plane(display_mask, display_affine, mode, cut), plane(weights, display_affine, mode, cut))
             ax.imshow(anatomical_rgba(bg_slice, max_intensity), interpolation="nearest")
             draw_overlay(ax, weight_slice, mask_slice, cmap, norm)
             height, width = bg_slice.shape[:2]
             brain_y, brain_x = np.where(binary_fill_holes(bg_slice > 0))
             if row == 0:
                 label_y = max(float(brain_y.min()) - 2.5, -1.0) if brain_y.size else 0.0
-                ax.text(
-                    width * 0.14,
-                    label_y,
-                    "L",
-                    ha="center",
-                    va="bottom",
-                    fontsize=AXIS_LABEL_FONTSIZE,
-                    fontweight="bold",
-                    color="0.15",
-                    clip_on=False,
-                )
-                ax.text(
-                    width * 0.86,
-                    label_y,
-                    "R",
-                    ha="center",
-                    va="bottom",
-                    fontsize=AXIS_LABEL_FONTSIZE,
-                    fontweight="bold",
-                    color="0.15",
-                    clip_on=False,
-                )
+                ax.text(width * 0.14, label_y, "L", ha="center", va="bottom", fontsize=AXIS_LABEL_FONTSIZE, fontweight="bold", color="0.15", clip_on=False)
+                ax.text(width * 0.86, label_y, "R", ha="center", va="bottom", fontsize=AXIS_LABEL_FONTSIZE, fontweight="bold", color="0.15", clip_on=False)
             if brain_y.size and brain_x.size:
                 slice_label_x = (brain_x.min() + brain_x.max()) / 2
                 slice_label_y = brain_y.max() + 3
             else:
                 slice_label_x = width / 2
                 slice_label_y = height + 3
-            ax.text(
-                slice_label_x,
-                slice_label_y,
-                f"{mode} = {cut:g}",
-                ha="center",
-                va="top",
-                fontsize=AXIS_LABEL_FONTSIZE,
-                fontweight="bold",
-                color="0.15",
-            )
+            ax.text(slice_label_x, slice_label_y, f"{mode}={cut:g}", ha="center", va="top", fontsize=AXIS_LABEL_FONTSIZE, fontweight="bold", color="0.15")
             ax.set_axis_off()
 
     cax = fig.add_axes([0.948, 0.13, 0.012, 0.74])

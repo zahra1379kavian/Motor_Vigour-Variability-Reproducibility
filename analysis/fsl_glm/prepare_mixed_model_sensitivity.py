@@ -55,10 +55,7 @@ def replace_setting(text, key, value):
 
 
 def mm_to_vox(coord):
-    out = run(
-        ["std2imgcoord", "-img", str(REF_IMG), "-std", str(REF_IMG), "-vox"],
-        stdin=f"{coord[0]} {coord[1]} {coord[2]}\n",
-    )
+    out = run(["std2imgcoord", "-img", str(REF_IMG), "-std", str(REF_IMG), "-vox"], stdin=f"{coord[0]} {coord[1]} {coord[2]}\n")
     return tuple(int(round(float(v))) for v in out.split()[:3])
 
 
@@ -66,42 +63,8 @@ def make_sphere(point_name, sphere_name, coord):
     vx, vy, vz = mm_to_vox(coord)
     point = QC_DIR / point_name
     sphere = QC_DIR / sphere_name
-    subprocess.run(
-        [
-            "fslmaths",
-            str(REF_IMG),
-            "-mul",
-            "0",
-            "-add",
-            "1",
-            "-roi",
-            str(vx),
-            "1",
-            str(vy),
-            "1",
-            str(vz),
-            "1",
-            "0",
-            "1",
-            str(point),
-            "-odt",
-            "char",
-        ],
-        check=True,
-    )
-    subprocess.run(
-        [
-            "fslmaths",
-            str(point),
-            "-kernel",
-            "sphere",
-            str(ROI_RADIUS_MM),
-            "-fmean",
-            "-bin",
-            str(sphere),
-        ],
-        check=True,
-    )
+    subprocess.run(["fslmaths", str(REF_IMG), "-mul", "0", "-add", "1", "-roi", str(vx), "1", str(vy), "1", str(vz), "1", "0", "1", str(point), "-odt", "char"], check=True)
+    subprocess.run(["fslmaths", str(point), "-kernel", "sphere", str(ROI_RADIUS_MM), "-fmean", "-bin", str(sphere)], check=True)
     return sphere.with_suffix(".nii.gz")
 
 
@@ -126,14 +89,7 @@ def parse_inputs(fsf):
         label_match = re.search(r"sub(\d+)-ses(\d+)", label)
         if not label_match:
             raise ValueError(f"Could not parse subject/session from {path}")
-        inputs.append(
-            InputFeat(
-                index=index,
-                subject=int(label_match.group(1)),
-                session=int(label_match.group(2)),
-                path=path,
-            )
-        )
+        inputs.append(InputFeat(index=index, subject=int(label_match.group(1)), session=int(label_match.group(2)), path=path))
     return inputs
 
 
@@ -151,12 +107,7 @@ def classify_responders(inputs, left_roi, right_roi):
     responses = {}
     for subject, rows in sorted(by_subject.items()):
         n_sessions = len(rows)
-        responses[subject] = SubjectResponse(
-            subject=subject,
-            n_sessions=n_sessions,
-            mean_z_left=sum(row[0] for row in rows) / n_sessions,
-            mean_z_right=sum(row[1] for row in rows) / n_sessions,
-        )
+        responses[subject] = SubjectResponse(subject=subject, n_sessions=n_sessions, mean_z_left=sum(row[0] for row in rows) / n_sessions, mean_z_right=sum(row[1] for row in rows) / n_sessions)
     return responses
 
 
@@ -187,11 +138,7 @@ def write_summary(inputs, responses):
     with summary.open("w") as f:
         f.write("subject\tn_sessions\tmean_z_left_m1\tmean_z_right_m1\tresponder\n")
         for subject, response in sorted(responses.items()):
-            f.write(
-                f"sub{subject:02d}\t{response.n_sessions}\t"
-                f"{response.mean_z_left:.6f}\t{response.mean_z_right:.6f}\t"
-                f"{int(response.responder)}\n"
-            )
+            f.write(f"sub{subject:02d}\t{response.n_sessions}\t" f"{response.mean_z_left:.6f}\t{response.mean_z_right:.6f}\t" f"{int(response.responder)}\n")
 
     included = QC_DIR / "mixed_model_responder_included_inputs.txt"
     with included.open("w") as f:
@@ -204,12 +151,7 @@ def write_summary(inputs, responses):
         f.write("Derivative analyses from outputs/feat/mixed_model.gfeat/design.fsf\n")
         f.write(f"Robust FLAME output base: {ROBUST_OUTPUT}\n")
         f.write(f"Responder-only output base: {RESPONDER_OUTPUT}\n")
-        f.write(
-            "Responder rule: subject-average mean zstat1 > 0 in either 8 mm sphere "
-            "centered at left M1 (-38,-24,56) or right M1 (38,-24,56), computed from "
-            "the original session-level inputs. This is circular and should be treated "
-            "as descriptive/sensitivity only.\n"
-        )
+        f.write("Responder rule: subject-average mean zstat1 > 0 in either 8 mm sphere " "centered at left M1 (-38, -24, 56) or right M1 (38, -24, 56), computed from " "the original session-level inputs. This is circular and should be treated " "as descriptive/sensitivity only.\n")
 
 
 def main():

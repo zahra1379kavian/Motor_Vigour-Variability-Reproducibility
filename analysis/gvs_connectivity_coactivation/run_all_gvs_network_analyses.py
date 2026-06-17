@@ -53,15 +53,7 @@ BEHAVIOUR_PAIRED = ROOT / "results" / "main" / "figure_06a_medication_vigour_net
 RUN_INVENTORY = ROOT / "data" / "processed" / "gvs_connectivity" / "common" / "run_condition_inventory.csv"
 WEIGHT_MAP = ROOT / "data" / "derived_maps" / "vigour_network_weights.nii.gz"
 
-META_COLS = {
-    "subject",
-    "session",
-    "medication",
-    "run",
-    "condition_code",
-    "condition_label",
-    "trial_in_condition",
-}
+META_COLS = {"subject", "session", "medication", "run", "condition_code", "condition_label", "trial_in_condition"}
 SHAM_CODE = "gvs-01"
 ACTIVE_LABELS = [f"GVS{i}" for i in range(1, 9)]
 RNG_SEED = 20260602
@@ -162,19 +154,7 @@ def one_sample_summary(values, *, label, alternative="two-sided", rng=None):
     vals = np.asarray(values, dtype=float)
     vals = vals[np.isfinite(vals)]
     n = int(vals.size)
-    out = {
-        "label": label,
-        "n": n,
-        "mean": float(np.mean(vals)) if n else float("nan"),
-        "sd": float(np.std(vals, ddof=1)) if n > 1 else float("nan"),
-        "sem": float(stats.sem(vals)) if n > 1 else float("nan"),
-        "cohens_d": cohen_d(vals),
-        "t_stat": float("nan"),
-        "p_ttest": float("nan"),
-        "p_signflip": float("nan"),
-        "ci95_lo": float("nan"),
-        "ci95_hi": float("nan"),
-    }
+    out = {"label": label, "n": n, "mean": float(np.mean(vals)) if n else float("nan"), "sd": float(np.std(vals, ddof=1)) if n > 1 else float("nan"), "sem": float(stats.sem(vals)) if n > 1 else float("nan"), "cohens_d": cohen_d(vals), "t_stat": float("nan"), "p_ttest": float("nan"), "p_signflip": float("nan"), "ci95_lo": float("nan"), "ci95_hi": float("nan")}
     if n > 1:
         test = stats.ttest_1samp(vals, 0.0, alternative=alternative)
         out["t_stat"] = float(test.statistic)
@@ -297,22 +277,7 @@ def one_sample_matrix_summary(matrix, *, label, alternative="two-sided", rng=Non
         ci95_hi[valid_sd] = means[valid_sd] + tcrit * sem[valid_sd]
 
     p_signflip = matrix_signflip_pvalues(arr, means, alternative=alternative, rng=rng)
-    out = pd.DataFrame(
-        {
-            "label": label,
-            "n": n,
-            "mean": means,
-            "sd": sds,
-            "sem": sem,
-            "cohens_d": cohens,
-            "t_stat": t_stat,
-            "p_ttest": p_ttest,
-            "p_signflip": p_signflip,
-            "ci95_lo": ci95_lo,
-            "ci95_hi": ci95_hi,
-        },
-        index=matrix.columns,
-    )
+    out = pd.DataFrame({"label": label, "n": n, "mean": means, "sd": sds, "sem": sem, "cohens_d": cohens, "t_stat": t_stat, "p_ttest": p_ttest, "p_signflip": p_signflip, "ci95_lo": ci95_lo, "ci95_hi": ci95_hi}, index=matrix.columns)
     return out.reset_index()
 
 
@@ -338,13 +303,7 @@ def load_and_prepare():
     trial["medication"] = trial["medication"].astype(str).str.upper()
     trial["active"] = trial["condition_code"].astype(str).ne(SHAM_CODE).astype(int)
     trial["med_on"] = trial["medication"].eq("ON").astype(int)
-    trial["run_id"] = (
-        trial["subject"].astype(str)
-        + "_ses-"
-        + trial["session"].astype(str)
-        + "_run-"
-        + trial["run"].astype(str)
-    )
+    trial["run_id"] = (trial["subject"].astype(str) + "_ses-" + trial["session"].astype(str) + "_run-" + trial["run"].astype(str))
 
     values = trial[roi_cols].to_numpy(dtype=float)
     weights = roi_weights.to_numpy(dtype=float)
@@ -353,98 +312,32 @@ def load_and_prepare():
     trial = trial.loc[np.isfinite(trial["network_score"])].reset_index(drop=True)
 
     group_cols = ["subject", "session", "medication", "run", "run_id", "condition_code", "condition_label", "active"]
-    block = (
-        trial.groupby(group_cols, dropna=False)
-        .agg(
-            network_score=("network_score", "mean"),
-            network_var=("network_score", "var"),
-            roi_dispersion=("roi_dispersion", "mean"),
-            n_trials=("network_score", "count"),
-        )
-        .reset_index()
-    )
+    block = (trial.groupby(group_cols, dropna=False) .agg(network_score=("network_score", "mean"), network_var=("network_score", "var"), roi_dispersion=("roi_dispersion", "mean"), n_trials=("network_score", "count")) .reset_index())
     block["network_var"] = block["network_var"].fillna(0.0)
     block["med_on"] = block["medication"].eq("ON").astype(int)
 
-    sham = block.loc[block["condition_code"].eq(SHAM_CODE)].rename(
-        columns={
-            "network_score": "sham_network_score",
-            "network_var": "sham_network_var",
-            "roi_dispersion": "sham_roi_dispersion",
-            "n_trials": "sham_n_trials",
-        }
-    )
-    sham = sham[
-        [
-            "subject",
-            "session",
-            "run",
-            "run_id",
-            "sham_network_score",
-            "sham_network_var",
-            "sham_roi_dispersion",
-            "sham_n_trials",
-        ]
-    ]
+    sham = block.loc[block["condition_code"].eq(SHAM_CODE)].rename(columns={"network_score": "sham_network_score", "network_var": "sham_network_var", "roi_dispersion": "sham_roi_dispersion", "n_trials": "sham_n_trials"})
+    sham = sham[["subject", "session", "run", "run_id", "sham_network_score", "sham_network_var", "sham_roi_dispersion", "sham_n_trials"]]
     block_delta = block.loc[block["active"].eq(1)].merge(sham, on=["subject", "session", "run", "run_id"], how="inner")
     block_delta["network_delta"] = block_delta["network_score"] - block_delta["sham_network_score"]
     block_delta["network_var_delta"] = block_delta["network_var"] - block_delta["sham_network_var"]
     block_delta["roi_dispersion_delta"] = block_delta["roi_dispersion"] - block_delta["sham_roi_dispersion"]
 
     roi_block = trial.groupby(group_cols, dropna=False)[roi_cols].mean().reset_index()
-    roi_long = roi_block.melt(
-        id_vars=group_cols,
-        value_vars=roi_cols,
-        var_name="roi_label",
-        value_name="roi_mean",
-    )
+    roi_long = roi_block.melt(id_vars=group_cols, value_vars=roi_cols, var_name="roi_label", value_name="roi_mean")
     roi_sham = roi_long.loc[roi_long["condition_code"].eq(SHAM_CODE)].rename(columns={"roi_mean": "sham_roi_mean"})
     roi_sham = roi_sham[["subject", "session", "run", "run_id", "roi_label", "sham_roi_mean"]]
-    roi_block_delta = (
-        roi_long.loc[roi_long["active"].eq(1)]
-        .merge(roi_sham, on=["subject", "session", "run", "run_id", "roi_label"], how="inner")
-        .copy()
-    )
+    roi_block_delta = (roi_long.loc[roi_long["active"].eq(1)] .merge(roi_sham, on=["subject", "session", "run", "run_id", "roi_label"], how="inner") .copy())
     roi_block_delta["roi_delta"] = roi_block_delta["roi_mean"] - roi_block_delta["sham_roi_mean"]
     roi_block_delta["med_on"] = roi_block_delta["medication"].eq("ON").astype(int)
 
-    subject_network_any = (
-        block_delta.groupby(["subject", "session", "medication", "med_on"], dropna=False)
-        .agg(
-            network_delta=("network_delta", "mean"),
-            network_var_delta=("network_var_delta", "mean"),
-            roi_dispersion_delta=("roi_dispersion_delta", "mean"),
-            n_active_blocks=("network_delta", "count"),
-        )
-        .reset_index()
-    )
+    subject_network_any = (block_delta.groupby(["subject", "session", "medication", "med_on"], dropna=False) .agg(network_delta=("network_delta", "mean"), network_var_delta=("network_var_delta", "mean"), roi_dispersion_delta=("roi_dispersion_delta", "mean"), n_active_blocks=("network_delta", "count")) .reset_index())
 
-    subject_roi_any = (
-        roi_block_delta.groupby(["subject", "session", "medication", "med_on", "roi_label"], dropna=False)
-        .agg(roi_delta=("roi_delta", "mean"), n_active_blocks=("roi_delta", "count"))
-        .reset_index()
-    )
+    subject_roi_any = (roi_block_delta.groupby(["subject", "session", "medication", "med_on", "roi_label"], dropna=False) .agg(roi_delta=("roi_delta", "mean"), n_active_blocks=("roi_delta", "count")) .reset_index())
 
-    subject_roi_condition = (
-        roi_block_delta.groupby(
-            ["subject", "session", "medication", "med_on", "condition_label", "roi_label"],
-            dropna=False,
-        )
-        .agg(roi_delta=("roi_delta", "mean"), n_runs=("roi_delta", "count"))
-        .reset_index()
-    )
+    subject_roi_condition = (roi_block_delta.groupby(["subject", "session", "medication", "med_on", "condition_label", "roi_label"], dropna=False) .agg(roi_delta=("roi_delta", "mean"), n_runs=("roi_delta", "count")) .reset_index())
 
-    return PreparedData(
-        trial=trial,
-        block=block,
-        block_delta=block_delta,
-        roi_block_delta=roi_block_delta,
-        subject_network_any=subject_network_any,
-        subject_roi_any=subject_roi_any,
-        subject_roi_condition=subject_roi_condition,
-        roi_cols=roi_cols,
-        roi_weights=roi_weights,
-    )
+    return PreparedData(trial=trial, block=block, block_delta=block_delta, roi_block_delta=roi_block_delta, subject_network_any=subject_network_any, subject_roi_any=subject_roi_any, subject_roi_condition=subject_roi_condition, roi_cols=roi_cols, roi_weights=roi_weights)
 
 
 def fit_mixedlm(formula, data, group_col, vc_formula=None):
@@ -459,29 +352,10 @@ def fit_mixedlm(formula, data, group_col, vc_formula=None):
             model = smf.mixedlm(formula, fit_data, groups=fit_data[group_col])
             result = model.fit(reml=False, method="lbfgs", maxiter=400, disp=False)
         except Exception as second_error:
-            return pd.DataFrame(
-                [
-                    {
-                        "status": "failed",
-                        "first_error": str(first_error),
-                        "fallback_error": str(second_error),
-                    }
-                ]
-            )
+            return pd.DataFrame([{"status": "failed", "first_error": str(first_error), "fallback_error": str(second_error)}])
     rows = []
     for name in result.params.index:
-        rows.append(
-            {
-                "status": "ok",
-                "term": str(name),
-                "coef": float(result.params[name]),
-                "se": float(result.bse.get(name, np.nan)),
-                "z_stat": float(result.tvalues.get(name, np.nan)),
-                "p_value": float(result.pvalues.get(name, np.nan)),
-                "converged": bool(getattr(result, "converged", False)),
-                "aic": float(getattr(result, "aic", np.nan)),
-            }
-        )
+        rows.append({"status": "ok", "term": str(name), "coef": float(result.params[name]), "se": float(result.bse.get(name, np.nan)), "z_stat": float(result.tvalues.get(name, np.nan)), "p_value": float(result.pvalues.get(name, np.nan)), "converged": bool(getattr(result, "converged", False)), "aic": float(getattr(result, "aic", np.nan))})
     return pd.DataFrame(rows)
 
 
@@ -509,54 +383,25 @@ def plot_subject_deltas(df, value_col, title, path):
 
 def analysis_01_collapsed_projection(data, rng):
     out = ensure_dir(OUT_DIR / "01_collapsed_network_projection")
-    model_df = fit_mixedlm(
-        "network_score ~ active + med_on + active:med_on",
-        data.trial,
-        "subject",
-        vc_formula={"run": "0 + C(run_id)"},
-    )
+    model_df = fit_mixedlm("network_score ~ active + med_on + active:med_on", data.trial, "subject", vc_formula={"run": "0 + C(run_id)"})
     model_df.to_csv(out / "mixedlm_trial_network_score.csv", index=False)
 
-    means = (
-        data.trial.groupby(["medication", "active"], dropna=False)
-        .agg(mean_network_score=("network_score", "mean"), sd=("network_score", "std"), n=("network_score", "count"))
-        .reset_index()
-    )
+    means = (data.trial.groupby(["medication", "active"], dropna=False) .agg(mean_network_score=("network_score", "mean"), sd=("network_score", "std"), n=("network_score", "count")) .reset_index())
     means.to_csv(out / "active_vs_sham_trial_means.csv", index=False)
 
-    stats_rows = [
-        one_sample_summary(g["network_delta"].to_numpy(), label=med, rng=rng)
-        for med, g in data.subject_network_any.groupby("medication", sort=False)
-    ]
+    stats_rows = [one_sample_summary(g["network_delta"].to_numpy(), label=med, rng=rng) for med, g in data.subject_network_any.groupby("medication", sort=False)]
     stats_df = pd.DataFrame(stats_rows)
     stats_df.to_csv(out / "subject_any_gvs_network_delta_stats.csv", index=False)
     data.subject_network_any.to_csv(out / "subject_any_gvs_network_delta_values.csv", index=False)
-    plot_subject_deltas(
-        data.subject_network_any,
-        "network_delta",
-        "Collapsed network projection: active GVS - sham",
-        out / "subject_any_gvs_network_delta.png",
-    )
+    plot_subject_deltas(data.subject_network_any, "network_delta", "Collapsed network projection: active GVS - sham", out / "subject_any_gvs_network_delta.png")
 
     best_p = float(np.nanmin(stats_df["p_signflip"])) if not stats_df.empty else float("nan")
-    return {
-        "analysis_id": "01",
-        "analysis": "Collapsed network projection",
-        "primary_metric": "subject mean active-GVS network delta",
-        "best_p": best_p,
-        "effect": float(stats_df.loc[stats_df["p_signflip"].idxmin(), "mean"]) if stats_df["p_signflip"].notna().any() else np.nan,
-        "result_file": str(out / "subject_any_gvs_network_delta_stats.csv"),
-    }
+    return {"analysis_id": "01", "analysis": "Collapsed network projection", "primary_metric": "subject mean active-GVS network delta", "best_p": best_p, "effect": float(stats_df.loc[stats_df["p_signflip"].idxmin(), "mean"]) if stats_df["p_signflip"].notna().any() else np.nan, "result_file": str(out / "subject_any_gvs_network_delta_stats.csv")}
 
 
 def analysis_02_block_mixedlm(data, rng):
     out = ensure_dir(OUT_DIR / "02_block_level_mixedlm")
-    model_df = fit_mixedlm(
-        "network_delta ~ med_on",
-        data.block_delta,
-        "subject",
-        vc_formula={"condition": "0 + C(condition_label)", "run": "0 + C(run_id)"},
-    )
+    model_df = fit_mixedlm("network_delta ~ med_on", data.block_delta, "subject", vc_formula={"condition": "0 + C(condition_label)", "run": "0 + C(run_id)"})
     model_df.to_csv(out / "mixedlm_block_network_delta.csv", index=False)
     condition_stats = []
     for (med, condition), g in data.block_delta.groupby(["medication", "condition_label"], sort=False):
@@ -581,14 +426,7 @@ def analysis_02_block_mixedlm(data, rng):
     fixed = model_df.loc[~model_df.get("term", pd.Series(dtype=str)).astype(str).str.contains(" Var", regex=False)].copy()
     pvals = pd.to_numeric(fixed.get("p_value", pd.Series(dtype=float)), errors="coerce")
     best_p = float(np.nanmin(pvals)) if pvals.notna().any() else float("nan")
-    return {
-        "analysis_id": "02",
-        "analysis": "Block-level mixed-effects model",
-        "primary_metric": "block network delta",
-        "best_p": best_p,
-        "effect": float(condition_df["mean"].mean()) if not condition_df.empty else np.nan,
-        "result_file": str(out / "mixedlm_block_network_delta.csv"),
-    }
+    return {"analysis_id": "02", "analysis": "Block-level mixed-effects model", "primary_metric": "block network delta", "best_p": best_p, "effect": float(condition_df["mean"].mean()) if not condition_df.empty else np.nan, "result_file": str(out / "mixedlm_block_network_delta.csv")}
 
 
 def analysis_03_subject_any_gvs(data, rng):
@@ -606,14 +444,7 @@ def analysis_03_subject_any_gvs(data, rng):
     data.subject_network_any.to_csv(out / "subject_any_gvs_vs_sham_values.csv", index=False)
     plot_subject_deltas(data.subject_network_any, "network_delta", "Any active GVS vs sham, all ROIs", out / "subject_any_gvs_vs_sham.png")
     best = stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "03",
-        "analysis": "Subject-level any-GVS vs sham summary",
-        "primary_metric": "subject-session mean active-GVS network delta",
-        "best_p": float(best["p_signflip"]),
-        "effect": float(best["mean"]),
-        "result_file": str(out / "subject_any_gvs_vs_sham_stats.csv"),
-    }
+    return {"analysis_id": "03", "analysis": "Subject-level any-GVS vs sham summary", "primary_metric": "subject-session mean active-GVS network delta", "best_p": float(best["p_signflip"]), "effect": float(best["mean"]), "result_file": str(out / "subject_any_gvs_vs_sham_stats.csv")}
 
 
 def vector_norm_permutation(matrix, rng, n_permutations=N_PERMUTATIONS):
@@ -666,14 +497,7 @@ def analysis_04_multivariate_network(data, rng):
     ax.legend()
     save_fig(fig, out / "top_roi_vector_contributors.png")
     best = stats_df.loc[stats_df["p_value"].idxmin()]
-    return {
-        "analysis_id": "04",
-        "analysis": "Multivariate network perturbation permutation",
-        "primary_metric": "norm of group mean 38-ROI delta vector",
-        "best_p": float(best["p_value"]),
-        "effect": float(best["norm"]),
-        "result_file": str(out / "multivariate_vector_norm_permutation_stats.csv"),
-    }
+    return {"analysis_id": "04", "analysis": "Multivariate network perturbation permutation", "primary_metric": "norm of group mean 38-ROI delta vector", "best_p": float(best["p_value"]), "effect": float(best["norm"]), "result_file": str(out / "multivariate_vector_norm_permutation_stats.csv")}
 
 
 def analysis_05_medication_interaction(data, rng):
@@ -681,9 +505,7 @@ def analysis_05_medication_interaction(data, rng):
     wide = data.subject_network_any.pivot(index="subject", columns="medication", values="network_delta")
     wide = wide.dropna(subset=["OFF", "ON"])
     wide["on_minus_off_network_delta"] = wide["ON"] - wide["OFF"]
-    stats_df = pd.DataFrame(
-        [one_sample_summary(wide["on_minus_off_network_delta"].to_numpy(), label="ON_minus_OFF", rng=rng)]
-    )
+    stats_df = pd.DataFrame([one_sample_summary(wide["on_minus_off_network_delta"].to_numpy(), label="ON_minus_OFF", rng=rng)])
     stats_df.to_csv(out / "network_delta_medication_interaction_stats.csv", index=False)
     wide.to_csv(out / "network_delta_medication_interaction_values.csv")
 
@@ -709,14 +531,7 @@ def analysis_05_medication_interaction(data, rng):
     ax.set_ylabel("Network GVS delta interaction")
     ax.set_title("Medication interaction")
     save_fig(fig, out / "network_delta_medication_interaction.png")
-    return {
-        "analysis_id": "05",
-        "analysis": "Medication interaction",
-        "primary_metric": "(active GVS - sham) ON minus OFF",
-        "best_p": float(stats_df.loc[0, "p_signflip"]),
-        "effect": float(stats_df.loc[0, "mean"]),
-        "result_file": str(out / "network_delta_medication_interaction_stats.csv"),
-    }
+    return {"analysis_id": "05", "analysis": "Medication interaction", "primary_metric": "(active GVS - sham) ON minus OFF", "best_p": float(stats_df.loc[0, "p_signflip"]), "effect": float(stats_df.loc[0, "mean"]), "result_file": str(out / "network_delta_medication_interaction_stats.csv")}
 
 
 def resample_row(row, target_trials=10):
@@ -769,12 +584,7 @@ def matrix_similarity_metrics(target_trials_by_roi, sham_trials_by_roi):
     yr = sham_r[raw_valid]
     denom = float(np.linalg.norm(xr) * np.linalg.norm(yr))
     cosine = float(np.dot(xr, yr) / denom) if denom > 0 else np.nan
-    return {
-        "flat_pearson_r": pearson,
-        "flat_cosine_similarity": cosine,
-        "zscore_rmse": rmse,
-        "cosine_perturbation": float(1.0 - cosine) if np.isfinite(cosine) else np.nan,
-    }
+    return {"flat_pearson_r": pearson, "flat_cosine_similarity": cosine, "zscore_rmse": rmse, "cosine_perturbation": float(1.0 - cosine) if np.isfinite(cosine) else np.nan}
 
 
 def analysis_06_similarity_to_sham(data, rng):
@@ -790,59 +600,24 @@ def analysis_06_similarity_to_sham(data, rng):
             if target.shape[0] < 3:
                 continue
             metrics = matrix_similarity_metrics(target, sham)
-            metrics.update(
-                {
-                    "subject": subject,
-                    "session": int(session),
-                    "medication": medication,
-                    "run": int(run),
-                    "run_id": run_id,
-                    "condition_label": condition,
-                }
-            )
+            metrics.update({"subject": subject, "session": int(session), "medication": medication, "run": int(run), "run_id": run_id, "condition_label": condition})
             rows.append(metrics)
     sim = pd.DataFrame(rows)
     sim.to_csv(out / "active_gvs_to_sham_similarity_by_block.csv", index=False)
-    subject_sim = (
-        sim.groupby(["subject", "session", "medication"], dropna=False)
-        .agg(
-            mean_cosine_similarity=("flat_cosine_similarity", "mean"),
-            mean_cosine_perturbation=("cosine_perturbation", "mean"),
-            mean_zscore_rmse=("zscore_rmse", "mean"),
-            n_blocks=("condition_label", "count"),
-        )
-        .reset_index()
-    )
+    subject_sim = (sim.groupby(["subject", "session", "medication"], dropna=False) .agg(mean_cosine_similarity=("flat_cosine_similarity", "mean"), mean_cosine_perturbation=("cosine_perturbation", "mean"), mean_zscore_rmse=("zscore_rmse", "mean"), n_blocks=("condition_label", "count")) .reset_index())
     subject_sim.to_csv(out / "subject_similarity_to_sham_summary.csv", index=False)
-    stats_df = pd.DataFrame(
-        [
-            one_sample_summary(g["mean_cosine_perturbation"].to_numpy(), label=med, alternative="greater", rng=rng)
-            | {"medication": med}
-            for med, g in subject_sim.groupby("medication", sort=False)
-        ]
-    )
+    stats_df = pd.DataFrame([one_sample_summary(g["mean_cosine_perturbation"].to_numpy(), label=med, alternative="greater", rng=rng) | {"medication": med} for med, g in subject_sim.groupby("medication", sort=False)])
     stats_df.to_csv(out / "similarity_perturbation_stats.csv", index=False)
     plot_subject_deltas(subject_sim.rename(columns={"mean_cosine_perturbation": "network_delta"}), "network_delta", "Similarity perturbation: 1 - cosine(active, sham)", out / "similarity_perturbation.png")
     best = stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "06",
-        "analysis": "Similarity-to-sham matrix analysis",
-        "primary_metric": "descriptive 1 - cosine similarity between active and sham ROI-trial matrices",
-        "best_p": np.nan,
-        "effect": float(best["mean"]),
-        "result_file": str(out / "similarity_perturbation_stats.csv"),
-    }
+    return {"analysis_id": "06", "analysis": "Similarity-to-sham matrix analysis", "primary_metric": "descriptive 1 - cosine similarity between active and sham ROI-trial matrices", "best_p": np.nan, "effect": float(best["mean"]), "result_file": str(out / "similarity_perturbation_stats.csv")}
 
 
 def analysis_07_variability_dispersion(data, rng):
     out = ensure_dir(OUT_DIR / "07_network_variability_dispersion")
     metrics = ["network_var_delta", "roi_dispersion_delta"]
     rows = []
-    subject_vals = (
-        data.block_delta.groupby(["subject", "session", "medication"], dropna=False)[metrics]
-        .mean()
-        .reset_index()
-    )
+    subject_vals = (data.block_delta.groupby(["subject", "session", "medication"], dropna=False)[metrics] .mean() .reset_index())
     for metric in metrics:
         for med, g in subject_vals.groupby("medication", sort=False):
             row = one_sample_summary(g[metric].to_numpy(), label=f"{med}_{metric}", rng=rng)
@@ -854,14 +629,7 @@ def analysis_07_variability_dispersion(data, rng):
     for metric in metrics:
         plot_subject_deltas(subject_vals.rename(columns={metric: "network_delta"}), "network_delta", metric, out / f"{metric}.png")
     best = stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "07",
-        "analysis": "Network variability and ROI dispersion",
-        "primary_metric": "active minus sham variance/dispersion",
-        "best_p": float(best["p_signflip"]),
-        "effect": float(best["mean"]),
-        "result_file": str(out / "variability_dispersion_stats.csv"),
-    }
+    return {"analysis_id": "07", "analysis": "Network variability and ROI dispersion", "primary_metric": "active minus sham variance/dispersion", "best_p": float(best["p_signflip"]), "effect": float(best["mean"]), "result_file": str(out / "variability_dispersion_stats.csv")}
 
 
 def corr_edge_vector(values):
@@ -940,9 +708,7 @@ def analysis_main_result(data, rng):
     conn = pd.DataFrame(rows)
     conn.to_csv(out / "block_connectivity_metrics.csv", index=False)
     active = conn.loc[conn["condition_code"].ne(SHAM_CODE)].copy()
-    sham = conn.loc[conn["condition_code"].eq(SHAM_CODE)].rename(
-        columns={"mean_abs_corr": "sham_mean_abs_corr", "mean_corr": "sham_mean_corr"}
-    )
+    sham = conn.loc[conn["condition_code"].eq(SHAM_CODE)].rename(columns={"mean_abs_corr": "sham_mean_abs_corr", "mean_corr": "sham_mean_corr"})
     sham = sham[["subject", "session", "run", "run_id", "sham_mean_abs_corr", "sham_mean_corr"]]
     delta = active.merge(sham, on=["subject", "session", "run", "run_id"], how="inner")
     delta["mean_abs_corr_delta"] = delta["mean_abs_corr"] - delta["sham_mean_abs_corr"]
@@ -971,9 +737,7 @@ def analysis_main_result(data, rng):
             edge_delta_frames.append(edge_frame)
     delta["edge_mean_abs_distance_to_sham"] = edge_distances
     delta.to_csv(out / "active_minus_sham_connectivity_deltas.csv", index=False)
-    subject = delta.groupby(["subject", "session", "medication"], dropna=False)[
-        ["mean_abs_corr_delta", "mean_corr_delta", "edge_mean_abs_distance_to_sham"]
-    ].mean().reset_index()
+    subject = delta.groupby(["subject", "session", "medication"], dropna=False)[["mean_abs_corr_delta", "mean_corr_delta", "edge_mean_abs_distance_to_sham"]].mean().reset_index()
     subject.to_csv(out / "subject_connectivity_delta_summary.csv", index=False)
     rows = []
     for metric in ["mean_abs_corr_delta", "mean_corr_delta", "edge_mean_abs_distance_to_sham"]:
@@ -987,44 +751,14 @@ def analysis_main_result(data, rng):
 
     edge_delta = pd.concat(edge_delta_frames, ignore_index=True) if edge_delta_frames else pd.DataFrame()
     if not edge_delta.empty:
-        edge_cols = [
-            "subject",
-            "session",
-            "medication",
-            "run",
-            "run_id",
-            "condition_label",
-            "condition_code",
-            "edge_id",
-            "roi_i",
-            "roi_j",
-            "edge_label",
-            "active_corr",
-            "sham_corr",
-            "corr_delta",
-        ]
+        edge_cols = ["subject", "session", "medication", "run", "run_id", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label", "active_corr", "sham_corr", "corr_delta"]
         edge_delta = edge_delta[edge_cols]
     edge_delta.to_csv(out / "block_edge_connectivity_deltas.csv", index=False)
 
-    subject_edge_any = (
-        edge_delta.groupby(["subject", "session", "medication", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False)
-        .agg(corr_delta=("corr_delta", "mean"), n_active_blocks=("corr_delta", "count"))
-        .reset_index()
-        if not edge_delta.empty
-        else pd.DataFrame()
-    )
+    subject_edge_any = (edge_delta.groupby(["subject", "session", "medication", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_active_blocks=("corr_delta", "count")) .reset_index() if not edge_delta.empty else pd.DataFrame())
     subject_edge_any.to_csv(out / "subject_edge_any_gvs_delta_summary.csv", index=False)
 
-    subject_edge_condition = (
-        edge_delta.groupby(
-            ["subject", "session", "medication", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"],
-            dropna=False,
-        )
-        .agg(corr_delta=("corr_delta", "mean"), n_runs=("corr_delta", "count"))
-        .reset_index()
-        if not edge_delta.empty
-        else pd.DataFrame()
-    )
+    subject_edge_condition = (edge_delta.groupby(["subject", "session", "medication", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_runs=("corr_delta", "count")) .reset_index() if not edge_delta.empty else pd.DataFrame())
     subject_edge_condition.to_csv(out / "subject_edge_by_gvs_delta_summary.csv", index=False)
 
     edge_stat_cols = ["edge_id", "roi_i", "roi_j", "edge_label"]
@@ -1036,12 +770,7 @@ def analysis_main_result(data, rng):
             edge_stats["medication"] = med
             edge_stats["gvs_group"] = "ANY_GVS"
             any_edge_rows.append(edge_stats)
-        pooled_matrix = subject_edge_any.pivot_table(
-            index=["subject", "session", "medication"],
-            columns=edge_stat_cols,
-            values="corr_delta",
-            aggfunc="mean",
-        )
+        pooled_matrix = subject_edge_any.pivot_table(index=["subject", "session", "medication"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
         pooled_stats = one_sample_matrix_summary(pooled_matrix, label="POOLED_ANY_GVS_edge_delta", rng=rng)
         pooled_stats["medication"] = "POOLED"
         pooled_stats["gvs_group"] = "ANY_GVS"
@@ -1053,26 +782,16 @@ def analysis_main_result(data, rng):
         any_edge_stats = add_groupwise_fdr(any_edge_stats, "p_signflip", ["medication", "gvs_group"])
     any_edge_stats.to_csv(out / "edge_any_gvs_vs_sham_stats.csv", index=False)
     if not any_edge_stats.empty:
-        top_any = any_edge_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(100)
+        top_any = any_edge_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(100)
         top_any.to_csv(out / "top_edge_any_gvs_vs_sham.csv", index=False)
         for med in ["OFF", "ON", "POOLED"]:
             med_stats = any_edge_stats.loc[any_edge_stats["medication"].eq(med)]
             if not med_stats.empty:
-                plot_edge_tstat_matrix(
-                    med_stats,
-                    data.roi_cols,
-                    f"{med}: any active GVS edge deltas",
-                    out / f"{med.lower()}_any_gvs_edge_tstat_heatmap.png",
-                )
+                plot_edge_tstat_matrix(med_stats, data.roi_cols, f"{med}: any active GVS edge deltas", out / f"{med.lower()}_any_gvs_edge_tstat_heatmap.png")
 
     condition_edge_rows = []
     if not subject_edge_condition.empty:
-        for (med, condition_label, condition_code), g in subject_edge_condition.groupby(
-            ["medication", "condition_label", "condition_code"], sort=False
-        ):
+        for (med, condition_label, condition_code), g in subject_edge_condition.groupby(["medication", "condition_label", "condition_code"], sort=False):
             matrix = g.pivot_table(index=["subject", "session"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
             edge_stats = one_sample_matrix_summary(matrix, label=f"{med}_{condition_label}_edge_delta", rng=rng)
             edge_stats["medication"] = med
@@ -1080,12 +799,7 @@ def analysis_main_result(data, rng):
             edge_stats["condition_code"] = condition_code
             condition_edge_rows.append(edge_stats)
         for (condition_label, condition_code), g in subject_edge_condition.groupby(["condition_label", "condition_code"], sort=False):
-            matrix = g.pivot_table(
-                index=["subject", "session", "medication"],
-                columns=edge_stat_cols,
-                values="corr_delta",
-                aggfunc="mean",
-            )
+            matrix = g.pivot_table(index=["subject", "session", "medication"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
             edge_stats = one_sample_matrix_summary(matrix, label=f"POOLED_{condition_label}_edge_delta", rng=rng)
             edge_stats["medication"] = "POOLED"
             edge_stats["condition_label"] = condition_label
@@ -1098,19 +812,10 @@ def analysis_main_result(data, rng):
         condition_edge_stats = add_groupwise_fdr(condition_edge_stats, "p_signflip", ["medication", "condition_label", "condition_code"])
     condition_edge_stats.to_csv(out / "edge_by_gvs_vs_sham_stats.csv", index=False)
     if not condition_edge_stats.empty:
-        top_condition = condition_edge_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(150)
+        top_condition = condition_edge_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(150)
         top_condition.to_csv(out / "top_edge_by_gvs_vs_sham.csv", index=False)
 
-    run_edge_any = (
-        edge_delta.groupby(["subject", "session", "medication", "run", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False)
-        .agg(corr_delta=("corr_delta", "mean"), n_active_conditions=("corr_delta", "count"))
-        .reset_index()
-        if not edge_delta.empty
-        else pd.DataFrame()
-    )
+    run_edge_any = (edge_delta.groupby(["subject", "session", "medication", "run", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_active_conditions=("corr_delta", "count")) .reset_index() if not edge_delta.empty else pd.DataFrame())
     run_edge_any.to_csv(out / "subject_run_edge_any_gvs_delta_summary.csv", index=False)
     run_any_rows = []
     if not run_edge_any.empty:
@@ -1135,27 +840,13 @@ def analysis_main_result(data, rng):
         run_any_stats = add_groupwise_fdr(run_any_stats, "p_signflip", ["medication", "run", "gvs_group"])
     run_any_stats.to_csv(out / "edge_any_gvs_by_run_vs_sham_stats.csv", index=False)
     if not run_any_stats.empty:
-        run_any_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(150).to_csv(out / "top_edge_any_gvs_by_run_vs_sham.csv", index=False)
+        run_any_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(150).to_csv(out / "top_edge_any_gvs_by_run_vs_sham.csv", index=False)
 
-    run_edge_condition = (
-        edge_delta.groupby(
-            ["subject", "session", "medication", "run", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"],
-            dropna=False,
-        )
-        .agg(corr_delta=("corr_delta", "mean"), n_blocks=("corr_delta", "count"))
-        .reset_index()
-        if not edge_delta.empty
-        else pd.DataFrame()
-    )
+    run_edge_condition = (edge_delta.groupby(["subject", "session", "medication", "run", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_blocks=("corr_delta", "count")) .reset_index() if not edge_delta.empty else pd.DataFrame())
     run_edge_condition.to_csv(out / "subject_run_edge_by_gvs_delta_summary.csv", index=False)
     run_condition_rows = []
     if not run_edge_condition.empty:
-        for (med, run, condition_label, condition_code), g in run_edge_condition.groupby(
-            ["medication", "run", "condition_label", "condition_code"], sort=False
-        ):
+        for (med, run, condition_label, condition_code), g in run_edge_condition.groupby(["medication", "run", "condition_label", "condition_code"], sort=False):
             matrix = g.pivot_table(index=["subject", "session"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
             edge_stats = one_sample_matrix_summary(matrix, label=f"{med}_run{run}_{condition_label}_edge_delta", rng=rng)
             edge_stats["medication"] = med
@@ -1175,25 +866,12 @@ def analysis_main_result(data, rng):
     if not run_condition_stats.empty:
         run_condition_stats["abs_mean"] = run_condition_stats["mean"].abs()
         run_condition_stats["sig_uncorrected"] = run_condition_stats["p_signflip"].lt(ALPHA)
-        run_condition_stats = add_groupwise_fdr(
-            run_condition_stats,
-            "p_signflip",
-            ["medication", "run", "condition_label", "condition_code"],
-        )
+        run_condition_stats = add_groupwise_fdr(run_condition_stats, "p_signflip", ["medication", "run", "condition_label", "condition_code"])
     run_condition_stats.to_csv(out / "edge_by_gvs_by_run_vs_sham_stats.csv", index=False)
     if not run_condition_stats.empty:
-        run_condition_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(150).to_csv(out / "top_edge_by_gvs_by_run_vs_sham.csv", index=False)
+        run_condition_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(150).to_csv(out / "top_edge_by_gvs_by_run_vs_sham.csv", index=False)
 
-    both_session_any = (
-        subject_edge_any.groupby(["subject", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False)
-        .agg(corr_delta=("corr_delta", "mean"), n_sessions=("corr_delta", "count"))
-        .reset_index()
-        if not subject_edge_any.empty
-        else pd.DataFrame()
-    )
+    both_session_any = (subject_edge_any.groupby(["subject", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_sessions=("corr_delta", "count")) .reset_index() if not subject_edge_any.empty else pd.DataFrame())
     both_session_any.to_csv(out / "subject_edge_both_sessions_any_gvs_delta_summary.csv", index=False)
     both_any_stats = pd.DataFrame()
     if not both_session_any.empty:
@@ -1206,18 +884,9 @@ def analysis_main_result(data, rng):
         both_any_stats = add_groupwise_fdr(both_any_stats, "p_signflip", ["session_pool", "gvs_group"])
     both_any_stats.to_csv(out / "edge_both_sessions_any_gvs_vs_sham_stats.csv", index=False)
     if not both_any_stats.empty:
-        both_any_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(100).to_csv(out / "top_edge_both_sessions_any_gvs_vs_sham.csv", index=False)
+        both_any_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(100).to_csv(out / "top_edge_both_sessions_any_gvs_vs_sham.csv", index=False)
 
-    both_session_condition = (
-        subject_edge_condition.groupby(["subject", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False)
-        .agg(corr_delta=("corr_delta", "mean"), n_sessions=("corr_delta", "count"))
-        .reset_index()
-        if not subject_edge_condition.empty
-        else pd.DataFrame()
-    )
+    both_session_condition = (subject_edge_condition.groupby(["subject", "condition_label", "condition_code", "edge_id", "roi_i", "roi_j", "edge_label"], dropna=False) .agg(corr_delta=("corr_delta", "mean"), n_sessions=("corr_delta", "count")) .reset_index() if not subject_edge_condition.empty else pd.DataFrame())
     both_session_condition.to_csv(out / "subject_edge_both_sessions_by_gvs_delta_summary.csv", index=False)
     both_condition_rows = []
     if not both_session_condition.empty:
@@ -1235,19 +904,11 @@ def analysis_main_result(data, rng):
         both_condition_stats = add_groupwise_fdr(both_condition_stats, "p_signflip", ["session_pool", "condition_label", "condition_code"])
     both_condition_stats.to_csv(out / "edge_both_sessions_by_gvs_vs_sham_stats.csv", index=False)
     if not both_condition_stats.empty:
-        both_condition_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(150).to_csv(out / "top_edge_both_sessions_by_gvs_vs_sham.csv", index=False)
+        both_condition_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(150).to_csv(out / "top_edge_both_sessions_by_gvs_vs_sham.csv", index=False)
 
     all_subject_rows = []
     if not edge_delta.empty:
-        matrix = edge_delta.pivot_table(
-            index=["subject", "session", "medication", "run", "condition_label", "condition_code"],
-            columns=edge_stat_cols,
-            values="corr_delta",
-            aggfunc="mean",
-        )
+        matrix = edge_delta.pivot_table(index=["subject", "session", "medication", "run", "condition_label", "condition_code"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
         all_any_stats = one_sample_matrix_summary(matrix, label="ALL_SUBJECTS_BLOCK_POOL_ANY_GVS_edge_delta", rng=rng)
         all_any_stats["pool"] = "ALL_SUBJECTS_BLOCKS"
         all_any_stats["condition_label"] = "ANY_GVS"
@@ -1255,12 +916,7 @@ def analysis_main_result(data, rng):
         all_any_stats["analysis_unit"] = "subject_session_medication_run_condition"
         all_subject_rows.append(all_any_stats)
         for (condition_label, condition_code), g in edge_delta.groupby(["condition_label", "condition_code"], sort=False):
-            matrix = g.pivot_table(
-                index=["subject", "session", "medication", "run"],
-                columns=edge_stat_cols,
-                values="corr_delta",
-                aggfunc="mean",
-            )
+            matrix = g.pivot_table(index=["subject", "session", "medication", "run"], columns=edge_stat_cols, values="corr_delta", aggfunc="mean")
             edge_stats = one_sample_matrix_summary(matrix, label=f"ALL_SUBJECTS_BLOCK_POOL_{condition_label}_edge_delta", rng=rng)
             edge_stats["pool"] = "ALL_SUBJECTS_BLOCKS"
             edge_stats["condition_label"] = condition_label
@@ -1274,22 +930,12 @@ def analysis_main_result(data, rng):
         all_subject_stats = add_groupwise_fdr(all_subject_stats, "p_signflip", ["pool", "condition_label", "condition_code"])
     all_subject_stats.to_csv(out / "edge_all_subjects_block_pool_vs_sham_stats.csv", index=False)
     if not all_subject_stats.empty:
-        all_subject_stats.sort_values(
-            ["sig_fdr", "q_fdr", "p_signflip", "abs_mean"],
-            ascending=[False, True, True, False],
-        ).head(150).to_csv(out / "top_edge_all_subjects_block_pool_vs_sham.csv", index=False)
+        all_subject_stats.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]).head(150).to_csv(out / "top_edge_all_subjects_block_pool_vs_sham.csv", index=False)
 
     inferential = any_edge_stats if not any_edge_stats.empty else stats_df.loc[~stats_df["metric"].eq("edge_mean_abs_distance_to_sham")].copy()
     best_p_col = "p_signflip"
     best = inferential.loc[inferential[best_p_col].idxmin()] if not inferential.empty else stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "08",
-        "analysis": "Edge-wise connectivity/coactivation graph analysis",
-        "primary_metric": "edge-wise active minus sham ROI-ROI correlation delta",
-        "best_p": float(best[best_p_col]),
-        "effect": float(best["mean"]),
-        "result_file": str(out / "edge_any_gvs_vs_sham_stats.csv"),
-    }
+    return {"analysis_id": "08", "analysis": "Edge-wise connectivity/coactivation graph analysis", "primary_metric": "edge-wise active minus sham ROI-ROI correlation delta", "best_p": float(best[best_p_col]), "effect": float(best["mean"]), "result_file": str(out / "edge_any_gvs_vs_sham_stats.csv")}
 
 
 def circuit_for_roi(roi):
@@ -1345,14 +991,7 @@ def analysis_09_circuit_level(data, rng):
     ax.set_title("Circuit-level active GVS effect")
     save_fig(fig, out / "circuit_level_heatmap.png")
     best = stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "09",
-        "analysis": "Circuit-level aggregation",
-        "primary_metric": "active minus sham circuit score",
-        "best_p": float(best["p_signflip"]),
-        "effect": float(best["mean"]),
-        "result_file": str(out / "circuit_level_stats.csv"),
-    }
+    return {"analysis_id": "09", "analysis": "Circuit-level aggregation", "primary_metric": "active minus sham circuit score", "best_p": float(best["p_signflip"]), "effect": float(best["mean"]), "result_file": str(out / "circuit_level_stats.csv")}
 
 
 def maxt_permutation(cell_matrix, rng):
@@ -1370,12 +1009,7 @@ def maxt_permutation(cell_matrix, rng):
     null_t = null_means / (null_sds / np.sqrt(n_per_cell[None, :]))
     null_t[~np.isfinite(null_t)] = np.nan
     max_null = np.nanmax(np.abs(null_t), axis=1)
-    p_maxt = np.array(
-        [
-            (1 + np.count_nonzero(max_null >= abs(t))) / (max_null.size + 1) if np.isfinite(t) else np.nan
-            for t in obs_t
-        ]
-    )
+    p_maxt = np.array([(1 + np.count_nonzero(max_null >= abs(t))) / (max_null.size + 1) if np.isfinite(t) else np.nan for t in obs_t])
     out = pd.DataFrame({"mean_delta": means, "t_stat": obs_t, "p_maxt": p_maxt, "n_subjects": n_per_cell}, index=cell_matrix.columns)
     return out.reset_index()
 
@@ -1405,14 +1039,7 @@ def analysis_10_maxt_heatmap(data, rng):
     stats_df["sig_maxt"] = stats_df["p_maxt"].lt(ALPHA)
     stats_df.to_csv(out / "maxt_roi_gvs_results.csv", index=False)
     best = stats_df.loc[stats_df["p_maxt"].idxmin()]
-    return {
-        "analysis_id": "10",
-        "analysis": "Permutation max-T ROI x GVS heatmap",
-        "primary_metric": "max-T corrected ROI x GVS cell",
-        "best_p": float(best["p_maxt"]),
-        "effect": float(best["mean_delta"]),
-        "result_file": str(out / "maxt_roi_gvs_results.csv"),
-    }
+    return {"analysis_id": "10", "analysis": "Permutation max-T ROI x GVS heatmap", "primary_metric": "max-T corrected ROI x GVS cell", "best_p": float(best["p_maxt"]), "effect": float(best["mean_delta"]), "result_file": str(out / "maxt_roi_gvs_results.csv")}
 
 
 def analysis_11_empirical_bayes(data, rng):
@@ -1423,16 +1050,7 @@ def analysis_11_empirical_bayes(data, rng):
         vals = g["roi_delta"].dropna().to_numpy(dtype=float)
         if vals.size < 2:
             continue
-        rows.append(
-            {
-                "medication": med,
-                "condition_label": condition,
-                "roi_label": roi,
-                "n": vals.size,
-                "observed_mean": float(np.mean(vals)),
-                "observed_se": float(stats.sem(vals)),
-            }
-        )
+        rows.append({"medication": med, "condition_label": condition, "roi_label": roi, "n": vals.size, "observed_mean": float(np.mean(vals)), "observed_se": float(stats.sem(vals))})
     obs = pd.DataFrame(rows)
     eb_rows = []
     for med, group in obs.groupby("medication", sort=False):
@@ -1451,18 +1069,7 @@ def analysis_11_empirical_bayes(data, rng):
                 post_mean = post_var * (float(row.observed_mean) / se2_i + mu / tau2)
                 post_sd = float(np.sqrt(post_var))
             prob_gt0 = float(norm.sf(0.0, loc=post_mean, scale=post_sd)) if post_sd > 0 else np.nan
-            eb_rows.append(
-                {
-                    **row._asdict(),
-                    "global_mu": mu,
-                    "tau": float(np.sqrt(tau2)),
-                    "posterior_mean": float(post_mean),
-                    "posterior_sd": float(post_sd),
-                    "posterior_prob_gt0": prob_gt0,
-                    "posterior_prob_direction": max(prob_gt0, 1.0 - prob_gt0) if np.isfinite(prob_gt0) else np.nan,
-                    "posterior_direction": "positive" if prob_gt0 >= 0.5 else "negative",
-                }
-            )
+            eb_rows.append({**row._asdict(), "global_mu": mu, "tau": float(np.sqrt(tau2)), "posterior_mean": float(post_mean), "posterior_sd": float(post_sd), "posterior_prob_gt0": prob_gt0, "posterior_prob_direction": max(prob_gt0, 1.0 - prob_gt0) if np.isfinite(prob_gt0) else np.nan, "posterior_direction": "positive" if prob_gt0 >= 0.5 else "negative"})
     eb = pd.DataFrame(eb_rows)
     eb["credible_direction_95"] = eb["posterior_prob_direction"].ge(0.95)
     eb.to_csv(out / "empirical_bayes_shrinkage_results.csv", index=False)
@@ -1479,14 +1086,7 @@ def analysis_11_empirical_bayes(data, rng):
     ax.set_title("Empirical-Bayes shrinkage: strongest directional cells")
     save_fig(fig, out / "top_posterior_direction_cells.png")
     best = eb.loc[eb["posterior_prob_direction"].idxmax()]
-    return {
-        "analysis_id": "11",
-        "analysis": "Bayesian hierarchical shrinkage approximation",
-        "primary_metric": "posterior directional probability after shrinkage",
-        "best_p": float(1.0 - best["posterior_prob_direction"]),
-        "effect": float(best["posterior_mean"]),
-        "result_file": str(out / "empirical_bayes_shrinkage_results.csv"),
-    }
+    return {"analysis_id": "11", "analysis": "Bayesian hierarchical shrinkage approximation", "primary_metric": "posterior directional probability after shrinkage", "best_p": float(1.0 - best["posterior_prob_direction"]), "effect": float(best["posterior_mean"]), "result_file": str(out / "empirical_bayes_shrinkage_results.csv")}
 
 
 def run_decoder(df, roi_cols, label, out):
@@ -1497,13 +1097,7 @@ def run_decoder(df, roi_cols, label, out):
     n_splits = min(5, subjects.nunique())
     if n_splits < 2 or sub["active"].nunique() < 2:
         return {"label": label, "status": "skipped", "reason": "not enough groups/classes"}
-    pipe = Pipeline(
-        [
-            ("impute", SimpleImputer(strategy="median")),
-            ("scale", StandardScaler()),
-            ("model", LogisticRegression(max_iter=2000, class_weight="balanced", solver="liblinear")),
-        ]
-    )
+    pipe = Pipeline([("impute", SimpleImputer(strategy="median")), ("scale", StandardScaler()), ("model", LogisticRegression(max_iter=2000, class_weight="balanced", solver="liblinear"))])
     gkf = GroupKFold(n_splits=n_splits)
     y = sub["active"].astype(int).to_numpy()
     X = sub[roi_cols].to_numpy(dtype=float)
@@ -1516,30 +1110,13 @@ def run_decoder(df, roi_cols, label, out):
         fold_prob = pipe.predict_proba(X[test_idx])[:, 1]
         pred[test_idx] = fold_pred
         prob[test_idx] = fold_prob
-        fold_rows.append(
-            {
-                "label": label,
-                "fold": fold,
-                "n_test": int(test_idx.size),
-                "accuracy": float(accuracy_score(y[test_idx], fold_pred)),
-                "balanced_accuracy": float(balanced_accuracy_score(y[test_idx], fold_pred)),
-                "auc": float(roc_auc_score(y[test_idx], fold_prob)) if len(np.unique(y[test_idx])) == 2 else np.nan,
-            }
-        )
+        fold_rows.append({"label": label, "fold": fold, "n_test": int(test_idx.size), "accuracy": float(accuracy_score(y[test_idx], fold_pred)), "balanced_accuracy": float(balanced_accuracy_score(y[test_idx], fold_pred)), "auc": float(roc_auc_score(y[test_idx], fold_prob)) if len(np.unique(y[test_idx])) == 2 else np.nan})
     pd.DataFrame(fold_rows).to_csv(out / f"{label}_decoder_folds.csv", index=False)
     predictions = sub[["subject", "session", "medication", "run", "condition_label", "active"]].copy()
     predictions["predicted_active"] = pred
     predictions["prob_active"] = prob
     predictions.to_csv(out / f"{label}_decoder_predictions.csv", index=False)
-    return {
-        "label": label,
-        "status": "ok",
-        "n": int(y.size),
-        "n_subjects": int(subjects.nunique()),
-        "accuracy": float(accuracy_score(y, pred)),
-        "balanced_accuracy": float(balanced_accuracy_score(y, pred)),
-        "auc": float(roc_auc_score(y, prob)),
-    }
+    return {"label": label, "status": "ok", "n": int(y.size), "n_subjects": int(subjects.nunique()), "accuracy": float(accuracy_score(y, pred)), "balanced_accuracy": float(balanced_accuracy_score(y, pred)), "auc": float(roc_auc_score(y, prob))}
 
 
 def analysis_12_predictive_decoding(data, rng):
@@ -1561,14 +1138,7 @@ def analysis_12_predictive_decoding(data, rng):
         save_fig(fig, out / "active_vs_sham_decoder_auc.png")
     best = plot_df.sort_values("auc", ascending=False).head(1)
     auc = float(best["auc"].iloc[0]) if not best.empty else np.nan
-    return {
-        "analysis_id": "12",
-        "analysis": "Predictive decoding active GVS vs sham",
-        "primary_metric": "subject-group cross-validated AUC",
-        "best_p": np.nan,
-        "effect": auc,
-        "result_file": str(out / "active_vs_sham_decoder_summary.csv"),
-    }
+    return {"analysis_id": "12", "analysis": "Predictive decoding active GVS vs sham", "primary_metric": "subject-group cross-validated AUC", "best_p": np.nan, "effect": auc, "result_file": str(out / "active_vs_sham_decoder_summary.csv")}
 
 
 def correlation_row(x, y, label):
@@ -1698,39 +1268,19 @@ def analysis_14_threshold_sensitivity(data, rng):
             for percentile, projected in projected_by_percentile.items():
                 vals = projected[start:stop]
                 finite = vals[np.isfinite(vals)]
-                rows.append(
-                    {
-                        "percentile": percentile,
-                        "subject": row.subject,
-                        "session": int(row.session),
-                        "medication": row.medication,
-                        "run": int(row.run),
-                        "condition_code": row.condition_code,
-                        "condition_label": clean_label(row.condition_label),
-                        "mean_projection": float(np.mean(finite)) if finite.size else np.nan,
-                        "n_trials": int(finite.size),
-                    }
-                )
+                rows.append({"percentile": percentile, "subject": row.subject, "session": int(row.session), "medication": row.medication, "run": int(row.run), "condition_code": row.condition_code, "condition_label": clean_label(row.condition_label), "mean_projection": float(np.mean(finite)) if finite.size else np.nan, "n_trials": int(finite.size)})
     proj = pd.DataFrame(rows)
     proj.to_csv(out / "threshold_projected_condition_means.csv", index=False)
     if proj.empty:
         skipped = pd.DataFrame([{"status": "skipped", "reason": "No beta paths from inventory were available"}])
         skipped.to_csv(out / "threshold_sensitivity_stats.csv", index=False)
         return {"analysis_id": "14", "analysis": "Threshold sensitivity", "primary_metric": "p85/p90/p95 network projection", "best_p": np.nan, "effect": np.nan, "result_file": str(out / "threshold_sensitivity_stats.csv")}
-    subject_condition = (
-        proj.groupby(["percentile", "subject", "session", "medication", "condition_label"], dropna=False)["mean_projection"]
-        .mean()
-        .reset_index()
-    )
+    subject_condition = (proj.groupby(["percentile", "subject", "session", "medication", "condition_label"], dropna=False)["mean_projection"] .mean() .reset_index())
     sham = subject_condition.loc[subject_condition["condition_label"].eq("sham")].rename(columns={"mean_projection": "sham_projection"})
     sham = sham[["percentile", "subject", "session", "sham_projection"]]
     active = subject_condition.loc[subject_condition["condition_label"].ne("sham")].merge(sham, on=["percentile", "subject", "session"], how="inner")
     active["projection_delta"] = active["mean_projection"] - active["sham_projection"]
-    subject_any = (
-        active.groupby(["percentile", "subject", "session", "medication"], dropna=False)["projection_delta"]
-        .mean()
-        .reset_index()
-    )
+    subject_any = (active.groupby(["percentile", "subject", "session", "medication"], dropna=False)["projection_delta"] .mean() .reset_index())
     subject_any.to_csv(out / "threshold_subject_any_gvs_projection_delta.csv", index=False)
     stats_rows = []
     for (percentile, med), g in subject_any.groupby(["percentile", "medication"], sort=False):
@@ -1749,14 +1299,7 @@ def analysis_14_threshold_sensitivity(data, rng):
     ax.legend()
     save_fig(fig, out / "threshold_sensitivity.png")
     best = stats_df.loc[stats_df["p_signflip"].idxmin()]
-    return {
-        "analysis_id": "14",
-        "analysis": "Threshold sensitivity",
-        "primary_metric": "p85/p90/p95 projected network active GVS delta",
-        "best_p": float(best["p_signflip"]),
-        "effect": float(best["mean"]),
-        "result_file": str(out / "threshold_sensitivity_stats.csv"),
-    }
+    return {"analysis_id": "14", "analysis": "Threshold sensitivity", "primary_metric": "p85/p90/p95 projected network active GVS delta", "best_p": float(best["p_signflip"]), "effect": float(best["mean"]), "result_file": str(out / "threshold_sensitivity_stats.csv")}
 
 
 def write_method_summary(summary):
@@ -1767,19 +1310,9 @@ def write_method_summary(summary):
     summary.to_csv(OUT_DIR / "all_14_methods_summary.csv", index=False)
 
     promising = summary.loc[summary["best_p_numeric"].notna()].head(5)
-    lines = [
-        "# GVS Vigour-Network Analysis Summary",
-        "",
-        f"Generated by `{Path(__file__).name}`.",
-        "",
-        "## Top Methods By Primary Evidence",
-        "",
-    ]
+    lines = ["# GVS Vigour-Network Analysis Summary", "", f"Generated by `{Path(__file__).name}`.", "", "## Top Methods By Primary Evidence", ""]
     for row in promising.itertuples(index=False):
-        lines.append(
-            f"- {row.analysis_id}. {row.analysis}: best p={row.best_p_numeric:.4g}, "
-            f"effect={row.effect:.6g}; metric={row.primary_metric}"
-        )
+        lines.append(f"- {row.analysis_id}. {row.analysis}: best p={row.best_p_numeric:.4g}, " f"effect={row.effect:.6g}; metric={row.primary_metric}")
     lines.extend(
         [
             "",
@@ -1824,9 +1357,7 @@ def main():
             "rng_seed": RNG_SEED,
         },
     )
-    data.trial[["subject", "session", "medication", "run", "condition_label", "active", "network_score", "roi_dispersion"]].to_csv(
-        OUT_DIR / "prepared_trial_network_scores.csv", index=False
-    )
+    data.trial[["subject", "session", "medication", "run", "condition_label", "active", "network_score", "roi_dispersion"]].to_csv(OUT_DIR / "prepared_trial_network_scores.csv", index=False)
     data.block.to_csv(OUT_DIR / "prepared_block_network_scores.csv", index=False)
     data.block_delta.to_csv(OUT_DIR / "prepared_block_network_deltas.csv", index=False)
     data.subject_network_any.to_csv(OUT_DIR / "prepared_subject_network_any_gvs_deltas.csv", index=False)
@@ -1854,16 +1385,7 @@ def main():
         print("Running analysis_14_threshold_sensitivity", flush=True)
         summary_rows.append(analysis_14_threshold_sensitivity(data, rng))
     else:
-        summary_rows.append(
-            {
-                "analysis_id": "14",
-                "analysis": "Threshold sensitivity",
-                "primary_metric": "p85/p90/p95 network projection",
-                "best_p": np.nan,
-                "effect": np.nan,
-                "result_file": "skipped by --skip-threshold-sensitivity",
-            }
-        )
+        summary_rows.append({"analysis_id": "14", "analysis": "Threshold sensitivity", "primary_metric": "p85/p90/p95 network projection", "best_p": np.nan, "effect": np.nan, "result_file": "skipped by --skip-threshold-sensitivity"})
     write_method_summary(pd.DataFrame(summary_rows))
     print(f"Saved outputs under {OUT_DIR}", flush=True)
 

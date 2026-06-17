@@ -340,229 +340,51 @@ def metric_stats(edge_delta, metric, metric_family, rng):
     if edge_delta.empty:
         return pd.DataFrame()
 
-    subject_any = (
-        edge_delta.groupby(["subject", "session", "medication", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_active_blocks=("edge_delta", "count"))
-        .reset_index()
-    )
+    subject_any = (edge_delta.groupby(["subject", "session", "medication", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_active_blocks=("edge_delta", "count")) .reset_index())
     for med, group in subject_any.groupby("medication", sort=False):
         matrix = group.pivot_table(index=["subject", "session"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="any_gvs_by_medication",
-            label=f"{metric}_{med}_ANY_GVS",
-            fdr_scope=f"medication={med};gvs=ANY_GVS",
-            rng=rng,
-            medication=med,
-            gvs_group="ANY_GVS",
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="any_gvs_by_medication", label=f"{metric}_{med}_ANY_GVS", fdr_scope=f"medication={med};gvs=ANY_GVS", rng=rng, medication=med, gvs_group="ANY_GVS")
     matrix = subject_any.pivot_table(index=["subject", "session", "medication"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-    append_stats(
-        rows,
-        matrix,
-        metric=metric,
-        metric_family=metric_family,
-        analysis_view="any_gvs_by_medication",
-        label=f"{metric}_POOLED_ANY_GVS",
-        fdr_scope="medication=POOLED;gvs=ANY_GVS",
-        rng=rng,
-        medication="POOLED",
-        gvs_group="ANY_GVS",
-    )
+    append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="any_gvs_by_medication", label=f"{metric}_POOLED_ANY_GVS", fdr_scope="medication=POOLED;gvs=ANY_GVS", rng=rng, medication="POOLED", gvs_group="ANY_GVS")
 
-    subject_condition = (
-        edge_delta.groupby(["subject", "session", "medication", "condition_label", "condition_code", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_runs=("edge_delta", "count"))
-        .reset_index()
-    )
-    for (med, condition_label, condition_code), group in subject_condition.groupby(
-        ["medication", "condition_label", "condition_code"], sort=False
-    ):
+    subject_condition = (edge_delta.groupby(["subject", "session", "medication", "condition_label", "condition_code", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_runs=("edge_delta", "count")) .reset_index())
+    for (med, condition_label, condition_code), group in subject_condition.groupby(["medication", "condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index=["subject", "session"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="by_gvs_by_medication",
-            label=f"{metric}_{med}_{condition_label}",
-            fdr_scope=f"medication={med};condition={condition_label}",
-            rng=rng,
-            medication=med,
-            condition_label=condition_label,
-            condition_code=condition_code,
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="by_gvs_by_medication", label=f"{metric}_{med}_{condition_label}", fdr_scope=f"medication={med};condition={condition_label}", rng=rng, medication=med, condition_label=condition_label, condition_code=condition_code)
     for (condition_label, condition_code), group in subject_condition.groupby(["condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index=["subject", "session", "medication"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="by_gvs_by_medication",
-            label=f"{metric}_POOLED_{condition_label}",
-            fdr_scope=f"medication=POOLED;condition={condition_label}",
-            rng=rng,
-            medication="POOLED",
-            condition_label=condition_label,
-            condition_code=condition_code,
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="by_gvs_by_medication", label=f"{metric}_POOLED_{condition_label}", fdr_scope=f"medication=POOLED;condition={condition_label}", rng=rng, medication="POOLED", condition_label=condition_label, condition_code=condition_code)
 
-    run_any = (
-        edge_delta.groupby(["subject", "session", "medication", "run", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_active_conditions=("edge_delta", "count"))
-        .reset_index()
-    )
+    run_any = (edge_delta.groupby(["subject", "session", "medication", "run", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_active_conditions=("edge_delta", "count")) .reset_index())
     for (med, run), group in run_any.groupby(["medication", "run"], sort=False):
         matrix = group.pivot_table(index=["subject", "session"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="any_gvs_by_run",
-            label=f"{metric}_{med}_run{run}_ANY_GVS",
-            fdr_scope=f"medication={med};run={run};gvs=ANY_GVS",
-            rng=rng,
-            medication=med,
-            run=run,
-            gvs_group="ANY_GVS",
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="any_gvs_by_run", label=f"{metric}_{med}_run{run}_ANY_GVS", fdr_scope=f"medication={med};run={run};gvs=ANY_GVS", rng=rng, medication=med, run=run, gvs_group="ANY_GVS")
     for run, group in run_any.groupby("run", sort=False):
         matrix = group.pivot_table(index=["subject", "session", "medication"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="any_gvs_by_run",
-            label=f"{metric}_POOLED_run{run}_ANY_GVS",
-            fdr_scope=f"medication=POOLED;run={run};gvs=ANY_GVS",
-            rng=rng,
-            medication="POOLED",
-            run=run,
-            gvs_group="ANY_GVS",
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="any_gvs_by_run", label=f"{metric}_POOLED_run{run}_ANY_GVS", fdr_scope=f"medication=POOLED;run={run};gvs=ANY_GVS", rng=rng, medication="POOLED", run=run, gvs_group="ANY_GVS")
 
-    run_condition = (
-        edge_delta.groupby(["subject", "session", "medication", "run", "condition_label", "condition_code", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_blocks=("edge_delta", "count"))
-        .reset_index()
-    )
-    for (med, run, condition_label, condition_code), group in run_condition.groupby(
-        ["medication", "run", "condition_label", "condition_code"], sort=False
-    ):
+    run_condition = (edge_delta.groupby(["subject", "session", "medication", "run", "condition_label", "condition_code", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_blocks=("edge_delta", "count")) .reset_index())
+    for (med, run, condition_label, condition_code), group in run_condition.groupby(["medication", "run", "condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index=["subject", "session"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="by_gvs_by_run",
-            label=f"{metric}_{med}_run{run}_{condition_label}",
-            fdr_scope=f"medication={med};run={run};condition={condition_label}",
-            rng=rng,
-            medication=med,
-            run=run,
-            condition_label=condition_label,
-            condition_code=condition_code,
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="by_gvs_by_run", label=f"{metric}_{med}_run{run}_{condition_label}", fdr_scope=f"medication={med};run={run};condition={condition_label}", rng=rng, medication=med, run=run, condition_label=condition_label, condition_code=condition_code)
     for (run, condition_label, condition_code), group in run_condition.groupby(["run", "condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index=["subject", "session", "medication"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="by_gvs_by_run",
-            label=f"{metric}_POOLED_run{run}_{condition_label}",
-            fdr_scope=f"medication=POOLED;run={run};condition={condition_label}",
-            rng=rng,
-            medication="POOLED",
-            run=run,
-            condition_label=condition_label,
-            condition_code=condition_code,
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="by_gvs_by_run", label=f"{metric}_POOLED_run{run}_{condition_label}", fdr_scope=f"medication=POOLED;run={run};condition={condition_label}", rng=rng, medication="POOLED", run=run, condition_label=condition_label, condition_code=condition_code)
 
-    both_any = (
-        subject_any.groupby(["subject", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_sessions=("edge_delta", "count"))
-        .reset_index()
-    )
+    both_any = (subject_any.groupby(["subject", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_sessions=("edge_delta", "count")) .reset_index())
     matrix = both_any.pivot_table(index="subject", columns=edge_cols, values="edge_delta", aggfunc="mean")
-    append_stats(
-        rows,
-        matrix,
-        metric=metric,
-        metric_family=metric_family,
-        analysis_view="any_gvs_both_sessions",
-        label=f"{metric}_BOTH_SESSIONS_ANY_GVS",
-        fdr_scope="session_pool=BOTH_SESSIONS;gvs=ANY_GVS",
-        rng=rng,
-        session_pool="BOTH_SESSIONS",
-        gvs_group="ANY_GVS",
-    )
+    append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="any_gvs_both_sessions", label=f"{metric}_BOTH_SESSIONS_ANY_GVS", fdr_scope="session_pool=BOTH_SESSIONS;gvs=ANY_GVS", rng=rng, session_pool="BOTH_SESSIONS", gvs_group="ANY_GVS")
 
-    both_condition = (
-        subject_condition.groupby(["subject", "condition_label", "condition_code", *edge_cols], dropna=False)
-        .agg(edge_delta=("edge_delta", "mean"), n_sessions=("edge_delta", "count"))
-        .reset_index()
-    )
+    both_condition = (subject_condition.groupby(["subject", "condition_label", "condition_code", *edge_cols], dropna=False) .agg(edge_delta=("edge_delta", "mean"), n_sessions=("edge_delta", "count")) .reset_index())
     for (condition_label, condition_code), group in both_condition.groupby(["condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index="subject", columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="by_gvs_both_sessions",
-            label=f"{metric}_BOTH_SESSIONS_{condition_label}",
-            fdr_scope=f"session_pool=BOTH_SESSIONS;condition={condition_label}",
-            rng=rng,
-            session_pool="BOTH_SESSIONS",
-            condition_label=condition_label,
-            condition_code=condition_code,
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="by_gvs_both_sessions", label=f"{metric}_BOTH_SESSIONS_{condition_label}", fdr_scope=f"session_pool=BOTH_SESSIONS;condition={condition_label}", rng=rng, session_pool="BOTH_SESSIONS", condition_label=condition_label, condition_code=condition_code)
 
-    matrix = edge_delta.pivot_table(
-        index=["subject", "session", "medication", "run", "condition_label", "condition_code"],
-        columns=edge_cols,
-        values="edge_delta",
-        aggfunc="mean",
-    )
-    append_stats(
-        rows,
-        matrix,
-        metric=metric,
-        metric_family=metric_family,
-        analysis_view="all_subjects_block_pool",
-        label=f"{metric}_ALL_SUBJECTS_BLOCK_POOL_ANY_GVS",
-        fdr_scope="pool=ALL_SUBJECTS_BLOCKS;gvs=ANY_GVS",
-        rng=rng,
-        pool="ALL_SUBJECTS_BLOCKS",
-        condition_label="ANY_GVS",
-        condition_code="ANY_GVS",
-        analysis_unit="subject_session_medication_run_condition",
-    )
+    matrix = edge_delta.pivot_table(index=["subject", "session", "medication", "run", "condition_label", "condition_code"], columns=edge_cols, values="edge_delta", aggfunc="mean")
+    append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="all_subjects_block_pool", label=f"{metric}_ALL_SUBJECTS_BLOCK_POOL_ANY_GVS", fdr_scope="pool=ALL_SUBJECTS_BLOCKS;gvs=ANY_GVS", rng=rng, pool="ALL_SUBJECTS_BLOCKS", condition_label="ANY_GVS", condition_code="ANY_GVS", analysis_unit="subject_session_medication_run_condition")
     for (condition_label, condition_code), group in edge_delta.groupby(["condition_label", "condition_code"], sort=False):
         matrix = group.pivot_table(index=["subject", "session", "medication", "run"], columns=edge_cols, values="edge_delta", aggfunc="mean")
-        append_stats(
-            rows,
-            matrix,
-            metric=metric,
-            metric_family=metric_family,
-            analysis_view="all_subjects_block_pool",
-            label=f"{metric}_ALL_SUBJECTS_BLOCK_POOL_{condition_label}",
-            fdr_scope=f"pool=ALL_SUBJECTS_BLOCKS;condition={condition_label}",
-            rng=rng,
-            pool="ALL_SUBJECTS_BLOCKS",
-            condition_label=condition_label,
-            condition_code=condition_code,
-            analysis_unit="subject_session_medication_run",
-        )
+        append_stats(rows, matrix, metric=metric, metric_family=metric_family, analysis_view="all_subjects_block_pool", label=f"{metric}_ALL_SUBJECTS_BLOCK_POOL_{condition_label}", fdr_scope=f"pool=ALL_SUBJECTS_BLOCKS;condition={condition_label}", rng=rng, pool="ALL_SUBJECTS_BLOCKS", condition_label=condition_label, condition_code=condition_code, analysis_unit="subject_session_medication_run")
 
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
@@ -614,23 +436,7 @@ def main():
     stats_df["abs_mean"] = stats_df["mean"].abs()
     stats_df["sig_uncorrected"] = stats_df["p_signflip"].lt(base.ALPHA)
     stats_df = base.add_groupwise_fdr(stats_df, "p_signflip", ["metric", "analysis_view", "fdr_scope"])
-    front = [
-        "metric",
-        "metric_family",
-        "analysis_view",
-        "fdr_scope",
-        "edge_id",
-        "roi_i",
-        "roi_j",
-        "edge_label",
-        "label",
-        "n",
-        "mean",
-        "t_stat",
-        "p_signflip",
-        "q_fdr",
-        "sig_fdr",
-    ]
+    front = ["metric", "metric_family", "analysis_view", "fdr_scope", "edge_id", "roi_i", "roi_j", "edge_label", "label", "n", "mean", "t_stat", "p_signflip", "q_fdr", "sig_fdr"]
     stats_df = stats_df[front + [c for c in stats_df.columns if c not in front]]
     stats_df.to_csv(OUT / "edge_connectivity_metric_sensitivity_stats.csv", index=False)
     stats_df.loc[stats_df["sig_fdr"]].to_csv(OUT / "fdr_significant_edge_connectivity_metric_sensitivity.csv", index=False)
@@ -638,12 +444,7 @@ def main():
     summary = summarize_stats(stats_df)
     summary.to_csv(OUT / "edge_connectivity_metric_sensitivity_summary.csv", index=False)
 
-    top = (
-        stats_df.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False])
-        .groupby(["metric", "analysis_view", "fdr_scope"], dropna=False)
-        .head(10)
-        .reset_index(drop=True)
-    )
+    top = (stats_df.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]) .groupby(["metric", "analysis_view", "fdr_scope"], dropna=False) .head(10) .reset_index(drop=True))
     top.to_csv(OUT / "top_edge_connectivity_metric_sensitivity.csv", index=False)
     print(summary.head(30).to_string(index=False), flush=True)
     print(f"Saved outputs under {OUT}", flush=True)

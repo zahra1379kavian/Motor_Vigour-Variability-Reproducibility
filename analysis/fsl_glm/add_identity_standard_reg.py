@@ -35,65 +35,29 @@ class ImageGrid:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Create reg/example_func2standard.mat as identity in FEAT dirs."
-    )
+    parser = argparse.ArgumentParser(description="Create reg/example_func2standard.mat as identity in FEAT dirs.")
     parser.add_argument("--feat-root", type=Path, default=DEFAULT_FEAT_ROOT)
     parser.add_argument("--standard", type=Path, default=DEFAULT_STANDARD)
-    parser.add_argument(
-        "--apply",
-        action="store_true",
-        help="Actually write registration files. Without this, only report actions.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Replace an existing reg/example_func2standard.mat.",
-    )
+    parser.add_argument("--apply", action="store_true", help="Actually write registration files. Without this, only report actions.")
+    parser.add_argument("--overwrite", action="store_true", help="Replace an existing reg/example_func2standard.mat.")
     return parser.parse_args()
 
 
 def fslval(image, field):
-    result = subprocess.run(
-        ["fslval", str(image), field],
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    result = subprocess.run(["fslval", str(image), field], check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return result.stdout.strip()
 
 
 def grid(image):
-    return ImageGrid(
-        dim1=fslval(image, "dim1"),
-        dim2=fslval(image, "dim2"),
-        dim3=fslval(image, "dim3"),
-        pixdim1=float(fslval(image, "pixdim1")),
-        pixdim2=float(fslval(image, "pixdim2")),
-        pixdim3=float(fslval(image, "pixdim3")),
-    )
+    return ImageGrid(dim1=fslval(image, "dim1"), dim2=fslval(image, "dim2"), dim3=fslval(image, "dim3"), pixdim1=float(fslval(image, "pixdim1")), pixdim2=float(fslval(image, "pixdim2")), pixdim3=float(fslval(image, "pixdim3")))
 
 
 def same_grid(left, right):
-    return (
-        left.dim1 == right.dim1
-        and left.dim2 == right.dim2
-        and left.dim3 == right.dim3
-        and abs(left.pixdim1 - right.pixdim1) < 1e-6
-        and abs(left.pixdim2 - right.pixdim2) < 1e-6
-        and abs(left.pixdim3 - right.pixdim3) < 1e-6
-    )
+    return (left.dim1 == right.dim1 and left.dim2 == right.dim2 and left.dim3 == right.dim3 and abs(left.pixdim1 - right.pixdim1) < 1e-6 and abs(left.pixdim2 - right.pixdim2) < 1e-6 and abs(left.pixdim3 - right.pixdim3) < 1e-6)
 
 
 def completed_feat_dirs(root):
-    return sorted(
-        path
-        for path in root.glob("*.feat")
-        if (path / "report.html").exists()
-        and (path / "stats/cope1.nii.gz").exists()
-        and (path / "example_func.nii.gz").exists()
-    )
+    return sorted(path for path in root.glob("*.feat") if (path / "report.html").exists() and (path / "stats/cope1.nii.gz").exists() and (path / "example_func.nii.gz").exists())
 
 
 def write_identity_reg(feat_dir, standard, overwrite):

@@ -85,21 +85,10 @@ def _single_run_specs(specs):
         for beta_path in spec.beta_paths:
             run = _run_from_beta_path(beta_path)
             label = f"{spec.label}_run-{run}"
-            run_spec = M.SessionSpec(
-                label=label,
-                subject=spec.subject,
-                session=spec.session,
-                state=spec.state,
-                bold_path=None,
-                timeseries_path=None,
-                beta_paths=(beta_path,),
-            )
+            run_spec = M.SessionSpec(label=label, subject=spec.subject, session=spec.session, state=spec.state, bold_path=None, timeseries_path=None, beta_paths=(beta_path,))
             run_specs.append((run_spec, run))
     if missing:
-        raise ValueError(
-            "Run-baseline analysis requires beta_path inputs; missing beta paths for: "
-            + ", ".join(missing)
-        )
+        raise ValueError("Run-baseline analysis requires beta_path inputs; missing beta paths for: " + ", ".join(missing))
     return run_specs
 
 
@@ -113,16 +102,7 @@ def _prepare_rois(args):
     weight_img = nib.load(str(args.weight_map))
     weight_values = np.asarray(weight_img.get_fdata(), dtype=np.float64)
     groups, _, roi_names, min_roi_voxels = M._analysis_roi_setup(args, weight_img)
-    rois, roi_threshold, weighted_rois = M._build_analysis_rois(
-        weight_values=weight_values,
-        roi_names=roi_names,
-        groups=groups,
-        roi_percentile=args.roi_percentile,
-        min_report_voxels=args.min_report_voxels,
-        min_roi_voxels=min_roi_voxels,
-        voxel_selection=args.voxel_selection,
-        random_state=args.random_state,
-    )
+    rois, roi_threshold, weighted_rois = M._build_analysis_rois(weight_values=weight_values, roi_names=roi_names, groups=groups, roi_percentile=args.roi_percentile, min_report_voxels=args.min_report_voxels, min_roi_voxels=min_roi_voxels, voxel_selection=args.voxel_selection, random_state=args.random_state)
     return weight_img, rois, weighted_rois, roi_threshold
 
 
@@ -134,22 +114,10 @@ def _compute_run_level_values(args, weight_img, rois):
     for run_spec, run in run_specs:
         roi_ts = M._load_session_timeseries(run_spec, weight_img, rois)
         cleaned = M._clean_timeseries(roi_ts)
-        row = {
-            "label": run_spec.label,
-            "subject": run_spec.subject,
-            "session": run_spec.session,
-            "state": run_spec.state,
-            "run": run,
-            "connectivity_metric": M.INTRA_BETWEEN_FC_METRIC,
-        }
+        row = {"label": run_spec.label, "subject": run_spec.subject, "session": run_spec.session, "state": run_spec.state, "run": run, "connectivity_metric": M.INTRA_BETWEEN_FC_METRIC}
         row.update(M._between_roi_fc_summary(cleaned, mi_quantile_bins=args.mi_quantile_bins))
         voxel_ts = M._load_session_voxel_timeseries(run_spec, weight_img, rois)
-        run_roi_rows, intra_summary = M._intra_roi_fc_values(
-            run_spec,
-            voxel_ts,
-            rois,
-            mi_quantile_bins=args.mi_quantile_bins,
-        )
+        run_roi_rows, intra_summary = M._intra_roi_fc_values(run_spec, voxel_ts, rois, mi_quantile_bins=args.mi_quantile_bins)
         for roi_row in run_roi_rows:
             roi_row["run"] = run
         row.update(intra_summary)
@@ -201,16 +169,7 @@ def _complete_run_deltas(run_values):
         run2 = run2.iloc[0]
         within_delta = float(run2[cols["within"]] - run1[cols["within"]])
         between_delta = float(run2[cols["between"]] - run1[cols["between"]])
-        row = {
-            "subject": subject,
-            "state": state,
-            "session": run1["session"],
-            "run1_label": run1["label"],
-            "run2_label": run2["label"],
-            cols["run_within_delta"]: within_delta,
-            cols["run_between_delta"]: between_delta,
-            cols["run_contrast_delta"]: within_delta - between_delta,
-        }
+        row = {"subject": subject, "state": state, "session": run1["session"], "run1_label": run1["label"], "run2_label": run2["label"], cols["run_within_delta"]: within_delta, cols["run_between_delta"]: between_delta, cols["run_contrast_delta"]: within_delta - between_delta}
         if cols["metric_suffix"] == "z":
             row.update(
                 {
@@ -227,14 +186,7 @@ def _complete_run_deltas(run_values):
                 }
             )
         else:
-            row.update(
-                {
-                    "within_roi_run1_mi": float(run1[cols["within"]]),
-                    "within_roi_run2_mi": float(run2[cols["within"]]),
-                    "between_roi_run1_mi": float(run1[cols["between"]]),
-                    "between_roi_run2_mi": float(run2[cols["between"]]),
-                }
-            )
+            row.update({"within_roi_run1_mi": float(run1[cols["within"]]), "within_roi_run2_mi": float(run2[cols["within"]]), "between_roi_run1_mi": float(run1[cols["between"]]), "between_roi_run2_mi": float(run2[cols["between"]])})
         rows.append(row)
     return pd.DataFrame(rows).sort_values(["subject", "state"]).reset_index(drop=True)
 
@@ -273,86 +225,34 @@ def _comparison_subject_values(run_values, run_deltas):
         within_baseline = 0.5 * (abs(float(off[cols["run_within_delta"]])) + abs(float(on[cols["run_within_delta"]])))
         between_baseline = 0.5 * (abs(float(off[cols["run_between_delta"]])) + abs(float(on[cols["run_between_delta"]])))
         contrast_baseline = 0.5 * (abs(float(off[cols["run_contrast_delta"]])) + abs(float(on[cols["run_contrast_delta"]])))
-        source_specs = [
-            (
-                "run_to_run_baseline_abs",
-                "Run-to-run baseline",
-                within_baseline,
-                between_baseline,
-                contrast_baseline,
-            ),
-            (
-                "run_level_medication_effect",
-                "Run-level medication effect",
-                medication_effect[0],
-                medication_effect[1],
-                medication_effect[2],
-            ),
-        ]
+        source_specs = [("run_to_run_baseline_abs", "Run-to-run baseline", within_baseline, between_baseline, contrast_baseline), ("run_level_medication_effect", "Run-level medication effect", medication_effect[0], medication_effect[1], medication_effect[2])]
         for source_key, source_label, within_value, between_value, contrast_value in source_specs:
-            rows.append(
-                {
-                    "subject": subject,
-                    "source": source_key,
-                    "source_label": source_label,
-                    "within_roi_change": float(within_value),
-                    "between_roi_change": float(between_value),
-                    "within_minus_between_change": float(contrast_value),
-                }
-            )
+            rows.append({"subject": subject, "source": source_key, "source_label": source_label, "within_roi_change": float(within_value), "between_roi_change": float(between_value), "within_minus_between_change": float(contrast_value)})
     return pd.DataFrame(rows)
 
 
 def _source_stats(comparison_values):
-    components = [
-        ("within_roi_change", "Intra-ROI FC change"),
-        ("between_roi_change", "Between-ROI FC change"),
-        ("within_minus_between_change", "Intra-minus-between FC change"),
-    ]
+    components = [("within_roi_change", "Intra-ROI FC change"), ("between_roi_change", "Between-ROI FC change"), ("within_minus_between_change", "Intra-minus-between FC change")]
     rows = []
     for source, group in comparison_values.groupby("source", sort=False):
         source_label = group["source_label"].iloc[0]
         for component, description in components:
             stats = M._single_subject_level_test(group, component)
-            row = {
-                "analysis_type": "source_vs_zero",
-                "source": source,
-                "source_label": source_label,
-                "baseline_source": "",
-                "component": component,
-                "description": description,
-            }
+            row = {"analysis_type": "source_vs_zero", "source": source, "source_label": source_label, "baseline_source": "", "component": component, "description": description}
             row.update(stats)
             rows.append(row)
     return pd.DataFrame(rows)
 
 
 def _paired_comparison_stats(comparison_values):
-    components = [
-        ("within_roi_change", "Medication-effect magnitude minus baseline for intra-ROI FC"),
-        ("between_roi_change", "Medication-effect magnitude minus baseline for between-ROI FC"),
-        ("within_minus_between_change", "Medication-effect magnitude minus baseline for intra-minus-between FC"),
-    ]
+    components = [("within_roi_change", "Medication-effect magnitude minus baseline for intra-ROI FC"), ("between_roi_change", "Medication-effect magnitude minus baseline for between-ROI FC"), ("within_minus_between_change", "Medication-effect magnitude minus baseline for intra-minus-between FC")]
     rows = []
     for component, description in components:
         wide = comparison_values.pivot(index="subject", columns="source", values=component)
         needed = wide.loc[:, ["run_to_run_baseline_abs", "run_level_medication_effect"]].dropna()
-        values = pd.DataFrame(
-            {
-                "subject": needed.index,
-                "medication_minus_baseline": needed["run_level_medication_effect"].to_numpy(dtype=np.float64)
-                - needed["run_to_run_baseline_abs"].to_numpy(dtype=np.float64),
-            }
-        )
+        values = pd.DataFrame({"subject": needed.index, "medication_minus_baseline": needed["run_level_medication_effect"].to_numpy(dtype=np.float64) - needed["run_to_run_baseline_abs"].to_numpy(dtype=np.float64)})
         stats = M._single_subject_level_test(values, "medication_minus_baseline")
-        row = {
-            "analysis_type": "medication_minus_baseline",
-            "source": "run_level_medication_effect",
-            "source_label": "Run-level medication effect",
-            "baseline_source": "run_to_run_baseline_abs",
-            "component": component,
-            "description": description,
-        }
+        row = {"analysis_type": "medication_minus_baseline", "source": "run_level_medication_effect", "source_label": "Run-level medication effect", "baseline_source": "run_to_run_baseline_abs", "component": component, "description": description}
         row.update(stats)
         rows.append(row)
     return pd.DataFrame(rows)
@@ -367,15 +267,8 @@ def _format_p(value):
 
 
 def _plot_comparison(comparison_values, summary, out_dir, ylabel):
-    components = [
-        ("within_roi_change", "Intra-ROI"),
-        ("between_roi_change", "Between-ROI"),
-        ("within_minus_between_change", "Intra - Between"),
-    ]
-    sources = [
-        ("run_to_run_baseline_abs", "Between\nRuns", "#555555"),
-        ("run_level_medication_effect", "Between\nSessions", "#D62728"),
-    ]
+    components = [("within_roi_change", "Intra-ROI"), ("between_roi_change", "Between-ROI"), ("within_minus_between_change", "Intra - Between")]
+    sources = [("run_to_run_baseline_abs", "Between\nRuns", "#555555"), ("run_level_medication_effect", "Between\nSessions", "#D62728")]
     x_positions = [0.0, 0.58]
     fig, axes = plt.subplots(1, 3, figsize=(9.2, 3.6), sharey=False)
     rng = np.random.default_rng(0)
@@ -383,61 +276,26 @@ def _plot_comparison(comparison_values, summary, out_dir, ylabel):
         wide = comparison_values.pivot(index="subject", columns="source", values=component)
         for _, row in wide.iterrows():
             if np.isfinite(row.get("run_to_run_baseline_abs", np.nan)) and np.isfinite(row.get("run_level_medication_effect", np.nan)):
-                ax.plot(
-                    x_positions,
-                    [row["run_to_run_baseline_abs"], row["run_level_medication_effect"]],
-                    color="#b3b3b3",
-                    linewidth=0.8,
-                    alpha=0.5,
-                    zorder=1,
-                )
+                ax.plot(x_positions, [row["run_to_run_baseline_abs"], row["run_level_medication_effect"]], color="#b3b3b3", linewidth=0.8, alpha=0.5, zorder=1)
         finite_values = []
         summary_bounds = []
         for x_value, (source, _, color) in zip(x_positions, sources):
             vals = comparison_values.loc[comparison_values["source"] == source, component].to_numpy(dtype=np.float64)
             vals = vals[np.isfinite(vals)]
             finite_values.extend(vals.tolist())
-            ax.scatter(
-                rng.normal(x_value, 0.018, vals.size),
-                vals,
-                s=42,
-                color=color,
-                edgecolor="white",
-                linewidth=0.45,
-                alpha=0.9,
-                zorder=2,
-            )
-            stat = summary.loc[
-                (summary["analysis_type"] == "source_vs_zero")
-                & (summary["source"] == source)
-                & (summary["component"] == component)
-            ]
+            ax.scatter(rng.normal(x_value, 0.018, vals.size), vals, s=42, color=color, edgecolor="white", linewidth=0.45, alpha=0.9, zorder=2)
+            stat = summary.loc[(summary["analysis_type"] == "source_vs_zero") & (summary["source"] == source) & (summary["component"] == component)]
             if not stat.empty:
                 stat = stat.iloc[0]
                 mean_value = float(stat["mean"])
                 ci_low = float(stat.get("ci95_low", np.nan))
                 ci_high = float(stat.get("ci95_high", np.nan))
                 if np.isfinite(ci_low) and np.isfinite(ci_high):
-                    ax.errorbar(
-                        x_value,
-                        mean_value,
-                        yerr=[[mean_value - ci_low], [ci_high - mean_value]],
-                        fmt="o",
-                        color="#111111",
-                        ecolor="#111111",
-                        elinewidth=2.0,
-                        capsize=4.5,
-                        markersize=6.2,
-                        zorder=3,
-                    )
+                    ax.errorbar(x_value, mean_value, yerr=[[mean_value - ci_low], [ci_high - mean_value]], fmt="o", color="#111111", ecolor="#111111", elinewidth=2.0, capsize=4.5, markersize=6.2, zorder=3)
                     summary_bounds.extend([ci_low, ci_high])
                 else:
                     ax.scatter([x_value], [mean_value], s=54, color="#111111", zorder=3)
-        comparison = summary.loc[
-            (summary["analysis_type"] == "medication_minus_baseline")
-            & (summary["baseline_source"] == "run_to_run_baseline_abs")
-            & (summary["component"] == component)
-        ]
+        comparison = summary.loc[(summary["analysis_type"] == "medication_minus_baseline") & (summary["baseline_source"] == "run_to_run_baseline_abs") & (summary["component"] == component)]
         y_all = np.asarray(finite_values + summary_bounds, dtype=np.float64)
         if y_all.size:
             y_min = float(np.nanmin(y_all))

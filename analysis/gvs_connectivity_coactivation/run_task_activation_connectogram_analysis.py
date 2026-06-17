@@ -83,17 +83,7 @@ def write_roi_definition(rois, path, z_threshold):
 
 def build_trial_table(args, rois, reference_img, out_path):
     inventory = pd.read_csv(args.run_inventory)
-    required = {
-        "subject",
-        "session",
-        "medication",
-        "run",
-        "condition_code",
-        "condition_label",
-        "trial_start",
-        "trial_stop",
-        "source_beta_path",
-    }
+    required = {"subject", "session", "medication", "run", "condition_code", "condition_label", "trial_start", "trial_stop", "source_beta_path"}
     missing = sorted(required - set(inventory.columns))
     if missing:
         raise ValueError(f"{args.run_inventory} is missing required columns: {', '.join(missing)}")
@@ -112,9 +102,7 @@ def build_trial_table(args, rois, reference_img, out_path):
             start = int(row.trial_start)
             stop = int(row.trial_stop)
             if start < 0 or stop > run_ts.shape[0] or stop <= start:
-                raise ValueError(
-                    f"Invalid trial slice {start}:{stop} for {beta_path}; beta run has {run_ts.shape[0]} trials"
-                )
+                raise ValueError(f"Invalid trial slice {start}:{stop} for {beta_path}; beta run has {run_ts.shape[0]} trials")
             block = run_ts.iloc[start:stop].reset_index(drop=True).copy()
             block.insert(0, "trial_in_condition", np.arange(block.shape[0], dtype=int))
             block.insert(0, "condition_label", str(row.condition_label).replace("\n", " "))
@@ -156,23 +144,7 @@ def run_metric_sensitivity(args, trial_table, roi_def, sensitivity):
     stats_df["abs_mean"] = stats_df["mean"].abs()
     stats_df["sig_uncorrected"] = stats_df["p_signflip"].lt(sensitivity.base.ALPHA)
     stats_df = sensitivity.base.add_groupwise_fdr(stats_df, "p_signflip", ["metric", "analysis_view", "fdr_scope"])
-    front = [
-        "metric",
-        "metric_family",
-        "analysis_view",
-        "fdr_scope",
-        "edge_id",
-        "roi_i",
-        "roi_j",
-        "edge_label",
-        "label",
-        "n",
-        "mean",
-        "t_stat",
-        "p_signflip",
-        "q_fdr",
-        "sig_fdr",
-    ]
+    front = ["metric", "metric_family", "analysis_view", "fdr_scope", "edge_id", "roi_i", "roi_j", "edge_label", "label", "n", "mean", "t_stat", "p_signflip", "q_fdr", "sig_fdr"]
     stats_df = stats_df[front + [col for col in stats_df.columns if col not in front]]
     stats_df.to_csv(metric_dir / "edge_connectivity_metric_sensitivity_stats.csv", index=False)
     sig_df = stats_df.loc[stats_df["sig_fdr"]].copy()
@@ -180,12 +152,7 @@ def run_metric_sensitivity(args, trial_table, roi_def, sensitivity):
 
     summary = sensitivity.summarize_stats(stats_df)
     summary.to_csv(metric_dir / "edge_connectivity_metric_sensitivity_summary.csv", index=False)
-    top = (
-        stats_df.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False])
-        .groupby(["metric", "analysis_view", "fdr_scope"], dropna=False)
-        .head(10)
-        .reset_index(drop=True)
-    )
+    top = (stats_df.sort_values(["sig_fdr", "q_fdr", "p_signflip", "abs_mean"], ascending=[False, True, True, False]) .groupby(["metric", "analysis_view", "fdr_scope"], dropna=False) .head(10) .reset_index(drop=True))
     top.to_csv(metric_dir / "top_edge_connectivity_metric_sensitivity.csv", index=False)
     return stats_df, sig_df
 
@@ -258,10 +225,7 @@ def main():
             "connectogram_report_rows": int(connectogram_summary.shape[0]),
         }
     )
-    (args.out_dir / "task_activation_connectogram_manifest.json").write_text(
-        json.dumps(metadata, indent=2, default=json_default),
-        encoding="utf-8",
-    )
+    (args.out_dir / "task_activation_connectogram_manifest.json").write_text(json.dumps(metadata, indent=2, default=json_default), encoding="utf-8")
     print(f"Saved task-activation connectogram outputs under {args.out_dir}", flush=True)
     return 0
 

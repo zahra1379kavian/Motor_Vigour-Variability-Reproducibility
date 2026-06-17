@@ -45,11 +45,7 @@ DEFAULT_MI_QUANTILE_BLOCK_SIZE = 1024
 VOXEL_SELECTION_WEIGHTED_VIGOUR = 'weighted-vigour'
 VOXEL_SELECTION_UNWEIGHTED_VIGOUR = 'unweighted-vigour'
 VOXEL_SELECTION_MATCHED_NONVIGOUR = 'matched-nonvigour'
-VOXEL_SELECTION_MODES = (
-    VOXEL_SELECTION_WEIGHTED_VIGOUR,
-    VOXEL_SELECTION_UNWEIGHTED_VIGOUR,
-    VOXEL_SELECTION_MATCHED_NONVIGOUR,
-)
+VOXEL_SELECTION_MODES = (VOXEL_SELECTION_WEIGHTED_VIGOUR, VOXEL_SELECTION_UNWEIGHTED_VIGOUR, VOXEL_SELECTION_MATCHED_NONVIGOUR)
 BETA_FILE_RE = re.compile('cleaned_beta_volume_(?P<subject>sub-pd\\d+)_ses-(?P<session>\\d+)_run-(?P<run>\\d+)\\.npy$')
 DEFAULT_SESSION_STATES = {'1': 'off', '2': 'on'}
 PAPER_FONT_FAMILY = 'Liberation Sans'
@@ -585,11 +581,7 @@ def _swapped_paired_assignments(complete_subjects, mask):
         assignments.append({'subject': subject['subject'], 'label': subject['on_label'], 'state': 'off' if swapped else 'on'})
     return assignments
 
-CONTRAST_DEFINITIONS = (
-    ('off_minus_on', 'off-off', 'on-on', 'OFF-OFF - ON-ON'),
-    ('off_minus_off_on', 'off-off', 'off-on', 'OFF-OFF - OFF-ON'),
-    ('on_minus_off_on', 'on-on', 'off-on', 'ON-ON - OFF-ON'),
-)
+CONTRAST_DEFINITIONS = (('off_minus_on', 'off-off', 'on-on', 'OFF-OFF - ON-ON'), ('off_minus_off_on', 'off-off', 'off-on', 'OFF-OFF - OFF-ON'), ('on_minus_off_on', 'on-on', 'off-on', 'ON-ON - OFF-ON'))
 
 def _contrast_values(means):
     return {name: float(means[left_key] - means[right_key]) for (name, left_key, right_key, _) in CONTRAST_DEFINITIONS}
@@ -694,11 +686,7 @@ def _subject_level_bootstrap(complete_subjects, lookup, n_bootstrap=DEFAULT_BOOT
         means, _ = _resampled_subject_group_means(complete_subjects, lookup, sample_indices)
         for key in bootstrap_means:
             bootstrap_means[key][bootstrap_index] = means[key]
-    bootstrap_contrasts = {
-        'off_minus_on': bootstrap_means['off-off'] - bootstrap_means['on-on'],
-        'off_minus_off_on': bootstrap_means['off-off'] - bootstrap_means['off-on'],
-        'on_minus_off_on': bootstrap_means['on-on'] - bootstrap_means['off-on'],
-    }
+    bootstrap_contrasts = {'off_minus_on': bootstrap_means['off-off'] - bootstrap_means['on-on'], 'off_minus_off_on': bootstrap_means['off-off'] - bootstrap_means['off-on'], 'on_minus_off_on': bootstrap_means['on-on'] - bootstrap_means['off-on']}
     observed_contrasts = _contrast_values(observed_means)
     valid_iterations = int(np.count_nonzero(np.isfinite(bootstrap_contrasts['off_minus_on'])))
     return {'method': 'subject-level bootstrap: resample complete subjects and recompute OFF-OFF, ON-ON, and OFF-ON pairwise means', 'n_subjects': n_subjects, 'n_bootstrap': int(n_bootstrap), 'valid_bootstrap_iterations': valid_iterations, 'random_state': int(random_state), 'observed_pair_counts': observed_counts, 'means': {key: _summary_with_bootstrap_ci(observed_means[key], bootstrap_means[key]) for key in observed_means}, 'contrasts': {key: _summary_with_bootstrap_ci(observed_contrasts[key], bootstrap_contrasts[key]) for key in observed_contrasts}}
@@ -1275,10 +1263,7 @@ def _plot_hemisphere_fc(subject_deltas, results, out_dir):
     colors = {'off': '#4C78A8', 'on': '#D65F5F', 'delta': '#333333'}
     (fig, axes) = plt.subplots(1, 2, figsize=(8.0, 3.65))
     rng = np.random.default_rng(0)
-    paired_specs = [
-        ('Within hemi', 'within_hemisphere_off', 'within_hemisphere_on', 0.0),
-        ('Between hemi', 'between_hemisphere_off', 'between_hemisphere_on', 1.1),
-    ]
+    paired_specs = [('Within hemi', 'within_hemisphere_off', 'within_hemisphere_on', 0.0), ('Between hemi', 'between_hemisphere_off', 'between_hemisphere_on', 1.1)]
     for (_, off_column, on_column, offset) in paired_specs:
         off_values = subject_deltas[off_column].to_numpy(dtype=np.float64)
         on_values = subject_deltas[on_column].to_numpy(dtype=np.float64)
@@ -1292,10 +1277,7 @@ def _plot_hemisphere_fc(subject_deltas, results, out_dir):
     axes[0].set_title('Medication State', fontsize=10)
     axes[0].legend(frameon=False, fontsize=8, loc='best')
 
-    delta_specs = [
-        ('Within hemi', 'within_hemisphere_delta_on_minus_off', 0.0),
-        ('Between hemi', 'between_hemisphere_delta_on_minus_off', 1.0),
-    ]
+    delta_specs = [('Within hemi', 'within_hemisphere_delta_on_minus_off', 0.0), ('Between hemi', 'between_hemisphere_delta_on_minus_off', 1.0)]
     for (_, row) in subject_deltas.iterrows():
         values = [row['within_hemisphere_delta_on_minus_off'], row['between_hemisphere_delta_on_minus_off']]
         axes[1].plot([0, 1], values, color='#9a9a9a', linewidth=0.7, alpha=0.55, zorder=1)
@@ -1350,13 +1332,7 @@ def _save_hemisphere_fc_analysis(specs, networks, roi_names, out_dir):
     if subject_deltas.empty:
         raise ValueError('No complete OFF/ON subjects were available for hemisphere FC analysis')
     (results_table, results) = _hemisphere_fc_test_rows(subject_deltas)
-    result_summary = {
-        'connectivity_metric': CONNECTIVITY_METRIC,
-        'method': f'Mean {_edge_weight_description()} are summarized separately for within-hemisphere and between-hemisphere ROI pairs.',
-        'n_sessions': int(session_values.shape[0]),
-        'n_complete_subjects': int(subject_deltas.shape[0]),
-        'tests': results,
-    }
+    result_summary = {'connectivity_metric': CONNECTIVITY_METRIC, 'method': f'Mean {_edge_weight_description()} are summarized separately for within-hemisphere and between-hemisphere ROI pairs.', 'n_sessions': int(session_values.shape[0]), 'n_complete_subjects': int(subject_deltas.shape[0]), 'tests': results}
     edge_path = out_dir / 'within_vs_between_hemisphere_fc_edge_values.csv'
     session_path = out_dir / 'within_vs_between_hemisphere_fc_session_values.csv'
     delta_path = out_dir / 'within_vs_between_hemisphere_fc_subject_deltas.csv'
@@ -1370,16 +1346,7 @@ def _save_hemisphere_fc_analysis(specs, networks, roi_names, out_dir):
     json_path.write_text(json.dumps(result_summary, indent=2), encoding='utf-8')
     _write_hemisphere_fc_method(method_path)
     figure_path = _plot_hemisphere_fc(subject_deltas, results, out_dir)
-    return {
-        'summary': result_summary,
-        'edge_values': edge_path,
-        'session_values': session_path,
-        'subject_deltas': delta_path,
-        'results': results_path,
-        'results_json': json_path,
-        'method': method_path,
-        'figure': figure_path,
-    }
+    return {'summary': result_summary, 'edge_values': edge_path, 'session_values': session_path, 'subject_deltas': delta_path, 'results': results_path, 'results_json': json_path, 'method': method_path, 'figure': figure_path}
 
 def _remove_hemisphere_fc_outputs(out_dir):
     for path in out_dir.glob('within_vs_between_hemisphere_fc_*'):
@@ -1441,12 +1408,7 @@ def _clean_feature_timeseries(values):
 def _mean_pairwise_fisher_z(cleaned, weights=None):
     n_timepoints, n_features = cleaned.shape
     if n_timepoints < 4 or n_features < 2:
-        return {
-            'mean_z': float('nan'),
-            'mean_r': float('nan'),
-            'n_features': int(n_features),
-            'n_pairs': 0,
-        }
+        return {'mean_z': float('nan'), 'mean_r': float('nan'), 'n_features': int(n_features), 'n_pairs': 0}
     corr = (cleaned.T @ cleaned) / float(n_timepoints - 1)
     corr = np.clip(corr, -0.999999, 0.999999)
     pair_indices = np.triu_indices(n_features, k=1)
@@ -1462,12 +1424,7 @@ def _mean_pairwise_fisher_z(cleaned, weights=None):
             mean_z = float('nan')
     else:
         mean_z = float(np.mean(pair_z[valid])) if np.any(valid) else float('nan')
-    return {
-        'mean_z': mean_z,
-        'mean_r': float(np.tanh(mean_z)) if np.isfinite(mean_z) else float('nan'),
-        'n_features': int(n_features),
-        'n_pairs': int(np.count_nonzero(valid)),
-    }
+    return {'mean_z': mean_z, 'mean_r': float(np.tanh(mean_z)) if np.isfinite(mean_z) else float('nan'), 'n_features': int(n_features), 'n_pairs': int(np.count_nonzero(valid))}
 
 def _mean_pairwise_fisher_z_pairwise_complete(values, weights=None, min_overlap=4):
     values = np.asarray(values, dtype=np.float64)
@@ -1479,12 +1436,7 @@ def _mean_pairwise_fisher_z_pairwise_complete(values, weights=None, min_overlap=
     finite = finite[:, usable_features]
     n_features = values.shape[1]
     if n_features < 2:
-        return {
-            'mean_z': float('nan'),
-            'mean_r': float('nan'),
-            'n_features': int(n_features),
-            'n_pairs': 0,
-        }
+        return {'mean_z': float('nan'), 'mean_r': float('nan'), 'n_features': int(n_features), 'n_pairs': 0}
     if weights is not None:
         weights = np.asarray(weights, dtype=np.float64)[usable_features]
     mask = finite.astype(np.float64)
@@ -1506,12 +1458,7 @@ def _mean_pairwise_fisher_z_pairwise_complete(values, weights=None, min_overlap=
     valid = (counts[pair_indices] >= int(min_overlap)) & np.isfinite(pair_corr)
     valid &= (variance_left[pair_indices] > 0) & (variance_right[pair_indices] > 0)
     if not np.any(valid):
-        return {
-            'mean_z': float('nan'),
-            'mean_r': float('nan'),
-            'n_features': int(n_features),
-            'n_pairs': 0,
-        }
+        return {'mean_z': float('nan'), 'mean_r': float('nan'), 'n_features': int(n_features), 'n_pairs': 0}
     pair_z = np.arctanh(np.clip(pair_corr[valid], -0.999999, 0.999999))
     if weights is not None:
         pair_weights = weights[pair_indices[0]] * weights[pair_indices[1]]
@@ -1525,12 +1472,7 @@ def _mean_pairwise_fisher_z_pairwise_complete(values, weights=None, min_overlap=
             mean_z = float(np.average(pair_z, weights=pair_weights))
     else:
         mean_z = float(np.mean(pair_z))
-    return {
-        'mean_z': mean_z,
-        'mean_r': float(np.tanh(mean_z)) if np.isfinite(mean_z) else float('nan'),
-        'n_features': int(n_features),
-        'n_pairs': int(pair_z.size),
-    }
+    return {'mean_z': mean_z, 'mean_r': float(np.tanh(mean_z)) if np.isfinite(mean_z) else float('nan'), 'n_features': int(n_features), 'n_pairs': int(pair_z.size)}
 
 def _quantile_codes_1d(values, n_bins=DEFAULT_MI_QUANTILE_BINS):
     values = np.asarray(values, dtype=np.float64)
@@ -1587,11 +1529,7 @@ def _mean_pairwise_mutual_info_quantile(cleaned, weights=None, n_bins=DEFAULT_MI
     if weights is not None:
         weights = np.asarray(weights, dtype=np.float64)[usable_features]
     if n_timepoints < 4 or n_features < 2:
-        return {
-            'mean_mi': float('nan'),
-            'n_features': int(n_features),
-            'n_pairs': 0,
-        }
+        return {'mean_mi': float('nan'), 'n_features': int(n_features), 'n_pairs': 0}
     n_bins = max(2, int(n_bins))
     block_size = max(1, int(block_size))
     codes = _quantile_codes_matrix(values, n_bins=n_bins)
@@ -1639,11 +1577,7 @@ def _mean_pairwise_mutual_info_quantile(cleaned, weights=None, n_bins=DEFAULT_MI
             total_weight += pair_weight_sum
             n_pairs += int(np.count_nonzero(valid_pairs))
     mean_mi = weighted_sum / total_weight if total_weight > 0 else float('nan')
-    return {
-        'mean_mi': float(mean_mi),
-        'n_features': int(n_features),
-        'n_pairs': int(n_pairs),
-    }
+    return {'mean_mi': float(mean_mi), 'n_features': int(n_features), 'n_pairs': int(n_pairs)}
 
 def _mean_pairwise_mutual_info_quantile_pairwise_complete(values, weights=None, n_bins=DEFAULT_MI_QUANTILE_BINS, min_overlap=4):
     values = np.asarray(values, dtype=np.float64)
@@ -1656,11 +1590,7 @@ def _mean_pairwise_mutual_info_quantile_pairwise_complete(values, weights=None, 
     if weights is not None:
         weights = np.asarray(weights, dtype=np.float64)[usable_features]
     if n_features < 2:
-        return {
-            'mean_mi': float('nan'),
-            'n_features': int(n_features),
-            'n_pairs': 0,
-        }
+        return {'mean_mi': float('nan'), 'n_features': int(n_features), 'n_pairs': 0}
     weighted_sum = 0.0
     total_weight = 0.0
     n_pairs = 0
@@ -1677,27 +1607,14 @@ def _mean_pairwise_mutual_info_quantile_pairwise_complete(values, weights=None, 
         weighted_sum += float(mi) * pair_weight
         total_weight += pair_weight
         n_pairs += 1
-    return {
-        'mean_mi': float(weighted_sum / total_weight) if total_weight > 0 else float('nan'),
-        'n_features': int(n_features),
-        'n_pairs': int(n_pairs),
-    }
+    return {'mean_mi': float(weighted_sum / total_weight) if total_weight > 0 else float('nan'), 'n_features': int(n_features), 'n_pairs': int(n_pairs)}
 
 def _between_roi_fc_summary(cleaned_roi_timeseries, mi_quantile_bins=DEFAULT_MI_QUANTILE_BINS):
     if INTRA_BETWEEN_FC_METRIC == INTRA_BETWEEN_FC_METRIC_MI_QUANTILE:
         summary = _mean_pairwise_mutual_info_quantile(cleaned_roi_timeseries, n_bins=mi_quantile_bins)
-        return {
-            'between_roi_mean_mi': summary['mean_mi'],
-            'n_rois': summary['n_features'],
-            'n_between_roi_pairs': summary['n_pairs'],
-        }
+        return {'between_roi_mean_mi': summary['mean_mi'], 'n_rois': summary['n_features'], 'n_between_roi_pairs': summary['n_pairs']}
     summary = _mean_pairwise_fisher_z(cleaned_roi_timeseries)
-    return {
-        'between_roi_mean_z': summary['mean_z'],
-        'between_roi_mean_r': summary['mean_r'],
-        'n_rois': summary['n_features'],
-        'n_between_roi_pairs': summary['n_pairs'],
-    }
+    return {'between_roi_mean_z': summary['mean_z'], 'between_roi_mean_r': summary['mean_r'], 'n_rois': summary['n_features'], 'n_between_roi_pairs': summary['n_pairs']}
 
 def _intra_roi_fc_values(spec, voxel_timeseries, rois, mi_quantile_bins=DEFAULT_MI_QUANTILE_BINS):
     roi_rows = []
@@ -1753,19 +1670,9 @@ def _intra_roi_fc_values(spec, voxel_timeseries, rois, mi_quantile_bins=DEFAULT_
             })
     session_mean = float(np.mean(roi_mean_values)) if roi_mean_values else float('nan')
     if INTRA_BETWEEN_FC_METRIC == INTRA_BETWEEN_FC_METRIC_MI_QUANTILE:
-        session_summary = {
-            'within_roi_mean_mi': session_mean,
-            'n_within_roi_values': int(len(roi_mean_values)),
-            'within_roi_aggregation': 'equal_roi_mean_of_roi_level_weighted_voxel_pair_quantile_mi',
-            'mi_quantile_bins': int(mi_quantile_bins),
-        }
+        session_summary = {'within_roi_mean_mi': session_mean, 'n_within_roi_values': int(len(roi_mean_values)), 'within_roi_aggregation': 'equal_roi_mean_of_roi_level_weighted_voxel_pair_quantile_mi', 'mi_quantile_bins': int(mi_quantile_bins)}
     else:
-        session_summary = {
-            'within_roi_mean_z': session_mean,
-            'within_roi_mean_r': float(np.tanh(session_mean)) if np.isfinite(session_mean) else float('nan'),
-            'n_within_roi_values': int(len(roi_mean_values)),
-            'within_roi_aggregation': 'equal_roi_mean_of_roi_level_weighted_voxel_pair_fisher_z',
-        }
+        session_summary = {'within_roi_mean_z': session_mean, 'within_roi_mean_r': float(np.tanh(session_mean)) if np.isfinite(session_mean) else float('nan'), 'n_within_roi_values': int(len(roi_mean_values)), 'within_roi_aggregation': 'equal_roi_mean_of_roi_level_weighted_voxel_pair_fisher_z'}
     return (roi_rows, session_summary)
 
 def _complete_intra_between_subject_deltas(session_values):
@@ -1837,25 +1744,11 @@ def _intra_between_fc_columns(subject_deltas):
             'mean_ylabel': 'Mean quantile MI per subject',
             'delta_ylabel': 'Quantile MI difference (ON - OFF)',
         }
-    return {
-        'within_off': 'within_roi_off_r',
-        'within_on': 'within_roi_on_r',
-        'between_off': 'between_roi_off_r',
-        'between_on': 'between_roi_on_r',
-        'within_delta': 'within_roi_delta_z_on_minus_off',
-        'between_delta': 'between_roi_delta_z_on_minus_off',
-        'contrast_delta': 'within_minus_between_delta_z',
-        'mean_ylabel': 'Mean FC per subject',
-        'delta_ylabel': 'FC difference (On-Off)',
-    }
+    return {'within_off': 'within_roi_off_r', 'within_on': 'within_roi_on_r', 'between_off': 'between_roi_off_r', 'between_on': 'between_roi_on_r', 'within_delta': 'within_roi_delta_z_on_minus_off', 'between_delta': 'between_roi_delta_z_on_minus_off', 'contrast_delta': 'within_minus_between_delta_z', 'mean_ylabel': 'Mean FC per subject', 'delta_ylabel': 'FC difference (On-Off)'}
 
 def _intra_between_fc_test_rows(subject_deltas):
     columns = _intra_between_fc_columns(subject_deltas)
-    tests = [
-        ('within_roi_on_minus_off', columns['within_delta'], 'ON - OFF intra-ROI voxel FC'),
-        ('between_roi_on_minus_off', columns['between_delta'], 'ON - OFF between-ROI FC'),
-        ('within_minus_between_delta', columns['contrast_delta'], '(ON - OFF intra-ROI FC) - (ON - OFF between-ROI FC)'),
-    ]
+    tests = [('within_roi_on_minus_off', columns['within_delta'], 'ON - OFF intra-ROI voxel FC'), ('between_roi_on_minus_off', columns['between_delta'], 'ON - OFF between-ROI FC'), ('within_minus_between_delta', columns['contrast_delta'], '(ON - OFF intra-ROI FC) - (ON - OFF between-ROI FC)')]
     rows = []
     details = {}
     for (analysis, column, description) in tests:
@@ -1882,10 +1775,7 @@ def _plot_intra_between_fc(subject_deltas, results, out_dir):
     rng = np.random.default_rng(0)
 
     state_offset = 0.22
-    paired_specs = [
-        ('Intra-ROI', columns['within_off'], columns['within_on'], 0.0),
-        ('Between-ROI', columns['between_off'], columns['between_on'], 0.52),
-    ]
+    paired_specs = [('Intra-ROI', columns['within_off'], columns['within_on'], 0.0), ('Between-ROI', columns['between_off'], columns['between_on'], 0.52)]
     for (_, off_column, on_column, offset) in paired_specs:
         off_values = subject_deltas[off_column].to_numpy(dtype=np.float64)
         on_values = subject_deltas[on_column].to_numpy(dtype=np.float64)
@@ -1899,10 +1789,7 @@ def _plot_intra_between_fc(subject_deltas, results, out_dir):
     axes[0].set_ylabel(columns['mean_ylabel'])
     axes[0].legend(frameon=False, fontsize=CELL_VALUE_FONT_SIZE, loc='best')
 
-    delta_specs = [
-        ('Intra-ROI', columns['within_delta'], 'within_roi_on_minus_off', 0.0),
-        ('Between-ROI', columns['between_delta'], 'between_roi_on_minus_off', 1.0),
-    ]
+    delta_specs = [('Intra-ROI', columns['within_delta'], 'within_roi_on_minus_off', 0.0), ('Between-ROI', columns['between_delta'], 'between_roi_on_minus_off', 1.0)]
     delta_positions = [item[3] for item in delta_specs]
     axes[1].axhline(0.0, color='#666666', linestyle='--', linewidth=0.8, alpha=0.65, zorder=0)
     for (_, row) in subject_deltas.iterrows():
@@ -1960,18 +1847,7 @@ def _plot_intra_between_fc(subject_deltas, results, out_dir):
         else:
             y_text = mean_value - label_pad
             va = 'top'
-        axes[1].text(
-            x_value,
-            y_text,
-            f'mean = {mean_value:+.3f}\np = {_format_p(component_p)}',
-            ha='center',
-            va=va,
-            fontsize=9.2,
-            fontweight='bold',
-            color=colors['summary'],
-            bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.82, 'pad': 1.2},
-            zorder=4,
-        )
+        axes[1].text(x_value, y_text, f'mean={mean_value:+.3f}\np={_format_p(component_p)}', ha='center', va=va, fontsize=9.2, fontweight='bold', color=colors['summary'], bbox={'facecolor': 'white', 'edgecolor': 'none', 'alpha': 0.82, 'pad': 1.2}, zorder=4)
 
     for (label, ax) in zip(('A', 'B'), axes):
         ax.set_axisbelow(True)
@@ -2069,16 +1945,7 @@ def _save_intra_between_fc_analysis(session_rows, roi_rows, out_dir, voxel_selec
     json_path.write_text(json.dumps(result_summary, indent=2), encoding='utf-8')
     _write_intra_between_method(method_path, voxel_selection=voxel_selection, metric=INTRA_BETWEEN_FC_METRIC, mi_quantile_bins=mi_quantile_bins)
     figure_path = _plot_intra_between_fc(subject_deltas, results, out_dir)
-    return {
-        'summary': result_summary,
-        'roi_values': roi_path,
-        'session_values': session_path,
-        'subject_deltas': delta_path,
-        'results': results_path,
-        'results_json': json_path,
-        'method': method_path,
-        'figure': figure_path,
-    }
+    return {'summary': result_summary, 'roi_values': roi_path, 'session_values': session_path, 'subject_deltas': delta_path, 'results': results_path, 'results_json': json_path, 'method': method_path, 'figure': figure_path}
 
 def _save_networks(networks, roi_names, out_dir):
     network_dir = out_dir / 'network_matrices'

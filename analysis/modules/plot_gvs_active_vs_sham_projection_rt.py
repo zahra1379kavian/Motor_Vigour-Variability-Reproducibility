@@ -17,59 +17,26 @@ import pandas as pd
 from scipy import stats
 
 from gvs_behaviour_effects import _rt_seconds
-from projected_sig_vs_RT import (
-    DEFAULT_WEIGHT_MAP,
-    PAPER_FONT_FAMILY,
-    _load_behaviour_rt,
-    _load_weights,
-    _project_beta,
-)
+from projected_sig_vs_RT import (DEFAULT_WEIGHT_MAP, PAPER_FONT_FAMILY, _load_behaviour_rt, _load_weights, _project_beta)
 
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INVENTORY = ROOT / "data" / "processed" / "gvs_connectivity" / "common" / "run_condition_inventory.csv"
-DEFAULT_RUN_METRICS = (
-    ROOT / "results" / "main" / "figure_02a_behavior_projection" / "projection_behavior_run_metrics.csv"
-)
+DEFAULT_RUN_METRICS = (ROOT / "results" / "main" / "figure_02a_behavior_projection" / "projection_behavior_run_metrics.csv")
 DEFAULT_OUT_DIR = ROOT / "results" / "supplementary" / "figure_11_gvs_projection_rt"
 SHAM_CODE = "gvs-01"
 FIGURE_STEM = "gvs_active_vs_sham_projection_rt_four_panel"
 
 METRICS = {
-    "rt_ms": {
-        "label": "RT",
-        "ylabel": "Mean RT (ms)",
-        "delta_label": "ms",
-        "color": "#4C78A8",
-    },
-    "projection": {
-        "label": "Vigour projection",
-        "ylabel": "Mean projection",
-        "delta_label": "a.u.",
-        "color": "#D55E00",
-    },
-    "projection_variability": {
-        "label": "Projection variability",
-        "ylabel": "Mean Variability",
-        "delta_label": "a.u.",
-        "color": "#009E73",
-    },
-    "projection_rt_coupling_z": {
-        "label": "Projection-RT coupling",
-        "ylabel": "Corr",
-        "delta_label": "z",
-        "color": "#7A5195",
-    },
+    "rt_ms": {"label": "RT", "ylabel": "Mean RT (ms)", "delta_label": "ms", "color": "#4C78A8"},
+    "projection": {"label": "Vigour projection", "ylabel": "Mean projection", "delta_label": "a.u.", "color": "#D55E00"},
+    "projection_variability": {"label": "Projection variability", "ylabel": "Mean Variability", "delta_label": "a.u.", "color": "#009E73"},
+    "projection_rt_coupling_z": {"label": "Projection-RT coupling", "ylabel": "Corr", "delta_label": "z", "color": "#7A5195"},
 }
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Use the GVS trial inventory beta volumes and the revised behaviour inputs "
-            "from the projected-RT panel to plot active-GVS versus sham effects."
-        )
-    )
+    parser = argparse.ArgumentParser(description=("Use the GVS trial inventory beta volumes and the revised behaviour inputs " "from the projected-RT panel to plot active-GVS versus sham effects."))
     parser.add_argument("--inventory", type=Path, default=DEFAULT_INVENTORY)
     parser.add_argument("--run-metrics", type=Path, default=DEFAULT_RUN_METRICS)
     parser.add_argument("--weight-map", type=Path, default=DEFAULT_WEIGHT_MAP)
@@ -124,17 +91,7 @@ def _coupling_fisher_z(projection, rt_ms, min_pairs):
 
 def _load_inputs(inventory_path, run_metrics_path):
     inventory = pd.read_csv(inventory_path)
-    required_inventory = {
-        "subject",
-        "session",
-        "medication",
-        "run",
-        "condition_code",
-        "condition_label",
-        "trial_start",
-        "trial_stop",
-        "source_beta_path",
-    }
+    required_inventory = {"subject", "session", "medication", "run", "condition_code", "condition_label", "trial_start", "trial_stop", "source_beta_path"}
     missing = sorted(required_inventory - set(inventory.columns))
     if missing:
         raise ValueError(f"{inventory_path} is missing columns: {', '.join(missing)}")
@@ -167,16 +124,8 @@ def _run_projection_and_rt(row, beta_path, weights, *, behaviour_column):
 
 
 def _build_trial_table(inventory, run_metrics, weights, *, behaviour_column):
-    metric_lookup = {
-        (str(row.subject), int(row.session), int(row.run)): row
-        for row in run_metrics.itertuples(index=False)
-    }
-    beta_lookup = (
-        inventory[["subject", "session", "run", "source_beta_path"]]
-        .drop_duplicates()
-        .set_index(["subject", "session", "run"])["source_beta_path"]
-        .to_dict()
-    )
+    metric_lookup = {(str(row.subject), int(row.session), int(row.run)): row for row in run_metrics.itertuples(index=False)}
+    beta_lookup = (inventory[["subject", "session", "run", "source_beta_path"]] .drop_duplicates() .set_index(["subject", "session", "run"])["source_beta_path"] .to_dict())
     missing_runs = []
     rows = []
     cache = {}
@@ -194,12 +143,7 @@ def _build_trial_table(inventory, run_metrics, weights, *, behaviour_column):
             continue
         if run_index == 1 or run_index % 10 == 0:
             print(f"Projecting run {run_index}/{len(run_keys)}: {key[0]} ses-{key[1]} run-{key[2]}", flush=True)
-        cache[key] = _run_projection_and_rt(
-            pd.Series(metric_row._asdict()),
-            _resolve_path(beta_path),
-            weights,
-            behaviour_column=behaviour_column,
-        )
+        cache[key] = _run_projection_and_rt(pd.Series(metric_row._asdict()), _resolve_path(beta_path), weights, behaviour_column=behaviour_column)
 
     if missing_runs:
         raise ValueError(f"Run metrics are missing {len(missing_runs)} inventory runs.")
@@ -237,25 +181,13 @@ def _build_trial_table(inventory, run_metrics, weights, *, behaviour_column):
 
 def _block_metrics(trials, min_coupling_pairs):
     rows = []
-    group_cols = [
-        "subject",
-        "session",
-        "medication",
-        "run",
-        "condition_code",
-        "condition_label",
-        "active_gvs",
-    ]
+    group_cols = ["subject", "session", "medication", "run", "condition_code", "condition_label", "active_gvs"]
     for key, group in trials.sort_values("task_trial_index_zero_based").groupby(group_cols, sort=True):
         record = dict(zip(group_cols, key))
         projection = group["projection"].to_numpy(dtype=np.float64)
         rt_ms = group["rt_ms"].to_numpy(dtype=np.float64)
         projection_variability, n_projection_adjacent_pairs = _mean_normalized_adjacent_change(projection)
-        coupling_z, coupling_r, n_coupling_pairs = _coupling_fisher_z(
-            projection,
-            rt_ms,
-            min_pairs=min_coupling_pairs,
-        )
+        coupling_z, coupling_r, n_coupling_pairs = _coupling_fisher_z(projection, rt_ms, min_pairs=min_coupling_pairs)
         record.update(
             {
                 "n_trials": int(group.shape[0]),
@@ -287,58 +219,24 @@ def _run_pairs(blocks):
         for metric in metric_cols:
             sham_value = float(sham[metric].mean(skipna=True))
             active_value = float(active[metric].mean(skipna=True))
-            rows.append(
-                {
-                    **record_base,
-                    "metric": metric,
-                    "sham_value": sham_value,
-                    "active_value": active_value,
-                    "delta_active_minus_sham": active_value - sham_value,
-                    "n_active_blocks": int(active[metric].notna().sum()),
-                    "n_sham_blocks": int(sham[metric].notna().sum()),
-                }
-            )
+            rows.append({**record_base, "metric": metric, "sham_value": sham_value, "active_value": active_value, "delta_active_minus_sham": active_value - sham_value, "n_active_blocks": int(active[metric].notna().sum()), "n_sham_blocks": int(sham[metric].notna().sum())})
     return pd.DataFrame(rows)
 
 
 def _subject_pairs(run_pairs):
-    subject = (
-        run_pairs.replace([np.inf, -np.inf], np.nan)
-        .dropna(subset=["sham_value", "active_value", "delta_active_minus_sham"])
-        .groupby(["subject", "metric"], as_index=False)
-        .agg(
-            sham_value=("sham_value", "mean"),
-            active_value=("active_value", "mean"),
-            delta_active_minus_sham=("delta_active_minus_sham", "mean"),
-            n_runs=("run", "size"),
-        )
-    )
+    subject = (run_pairs.replace([np.inf, -np.inf], np.nan) .dropna(subset=["sham_value", "active_value", "delta_active_minus_sham"]) .groupby(["subject", "metric"], as_index=False) .agg(sham_value=("sham_value", "mean"), active_value=("active_value", "mean"), delta_active_minus_sham=("delta_active_minus_sham", "mean"), n_runs=("run", "size")))
     return subject.sort_values(["metric", "subject"]).reset_index(drop=True)
 
 
 def _one_sample_stats(values):
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
-    row = {
-        "n_subjects": int(values.size),
-        "mean_delta": float(np.mean(values)) if values.size else np.nan,
-        "ci95_low": np.nan,
-        "ci95_high": np.nan,
-        "t_statistic": np.nan,
-        "p_value": np.nan,
-    }
+    row = {"n_subjects": int(values.size), "mean_delta": float(np.mean(values)) if values.size else np.nan, "ci95_low": np.nan, "ci95_high": np.nan, "t_statistic": np.nan, "p_value": np.nan}
     if values.size > 1:
         sem = float(stats.sem(values))
         ci_low, ci_high = stats.t.interval(0.95, values.size - 1, loc=float(np.mean(values)), scale=sem)
         t_result = stats.ttest_1samp(values, 0.0)
-        row.update(
-            {
-                "ci95_low": float(ci_low),
-                "ci95_high": float(ci_high),
-                "t_statistic": float(t_result.statistic),
-                "p_value": float(t_result.pvalue),
-            }
-        )
+        row.update({"ci95_low": float(ci_low), "ci95_high": float(ci_high), "t_statistic": float(t_result.statistic), "p_value": float(t_result.pvalue)})
     return row
 
 
@@ -390,20 +288,7 @@ def _draw_metric_panel(ax, subject_pairs, metric):
             sem = float(stats.sem(finite))
             ci = stats.t.interval(0.95, finite.size - 1, loc=mean, scale=sem)
             yerr = np.array([[mean - ci[0]], [ci[1] - mean]])
-        ax.errorbar(
-            [x],
-            [mean],
-            yerr=yerr,
-            fmt="D",
-            markersize=6.3,
-            markerfacecolor="white",
-            markeredgecolor=point_color,
-            markeredgewidth=1.25,
-            ecolor=point_color,
-            elinewidth=1.25,
-            capsize=3.5,
-            zorder=4,
-        )
+        ax.errorbar([x], [mean], yerr=yerr, fmt="D", markersize=6.3, markerfacecolor="white", markeredgecolor=point_color, markeredgewidth=1.25, ecolor=point_color, elinewidth=1.25, capsize=3.5, zorder=4)
 
     ax.set_xlim(-0.14, 0.70)
     ax.set_xticks([0.0, 0.45])
@@ -417,20 +302,7 @@ def _draw_metric_panel(ax, subject_pairs, metric):
 
 
 def _save_figure(subject_pairs, out_dir):
-    with plt.rc_context(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "DejaVu Sans"],
-            "font.weight": "bold",
-            "font.size": 13,
-            "axes.labelweight": "bold",
-            "axes.labelsize": 13,
-            "xtick.labelsize": 12,
-            "ytick.labelsize": 12,
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-        }
-    ):
+    with plt.rc_context({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "DejaVu Sans"], "font.weight": "bold", "font.size": 13, "axes.labelweight": "bold", "axes.labelsize": 13, "xtick.labelsize": 12, "ytick.labelsize": 12, "pdf.fonttype": 42, "ps.fonttype": 42}):
         fig, axes = plt.subplots(2, 2, figsize=(6.6, 5.0))
         for ax, metric in zip(axes.ravel(), METRICS):
             _draw_metric_panel(ax, subject_pairs, metric)
@@ -462,12 +334,7 @@ def main():
     args = _parse_args()
     inventory, run_metrics = _load_inputs(args.inventory, args.run_metrics)
     weights = _load_weights(args.weight_map)
-    trial_table = _build_trial_table(
-        inventory,
-        run_metrics,
-        weights,
-        behaviour_column=int(args.behaviour_column),
-    )
+    trial_table = _build_trial_table(inventory, run_metrics, weights, behaviour_column=int(args.behaviour_column))
     blocks = _block_metrics(trial_table, min_coupling_pairs=int(args.min_coupling_pairs))
     run_pair_df = _run_pairs(blocks)
     subject_pair_df = _subject_pairs(run_pair_df)
@@ -499,10 +366,7 @@ def main():
         "n_subject_metric_rows": int(subject_pair_df.shape[0]),
         "outputs": [str(path) for path in [trial_path, block_path, run_pair_path, subject_pair_path, stats_path, png, pdf]],
     }
-    (args.out_dir / f"{FIGURE_STEM}_summary.json").write_text(
-        json.dumps(_json_safe(summary), indent=2) + "\n",
-        encoding="utf-8",
-    )
+    (args.out_dir / f"{FIGURE_STEM}_summary.json").write_text(json.dumps(_json_safe(summary), indent=2) + "\n", encoding="utf-8")
 
     print(f"Saved trial table to {trial_path}")
     print(f"Saved block metrics to {block_path}")

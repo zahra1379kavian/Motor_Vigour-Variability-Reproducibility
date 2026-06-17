@@ -17,10 +17,7 @@ DEFAULT_SESSION_DIR = ROOT / "outputs/feat/session_fixed.gfeat"
 DEFAULT_SUBJECT_DIR = ROOT / "outputs/feat/subject_fixed.gfeat"
 DEFAULT_FSF_DIR = ROOT / "outputs/fsf/subject_fixed"
 DEFAULT_LOG_DIR = ROOT / "outputs/logs/subject_fixed"
-FALLBACK_TEMPLATE = Path(
-    "/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/"
-    "test_feat/2ndlevel_realdata.gfeat/design.fsf"
-)
+FALLBACK_TEMPLATE = Path("/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/" "test_feat/2ndlevel_realdata.gfeat/design.fsf")
 
 SESSION_RE = re.compile(r"sub(?P<sub>\d+)-ses(?P<ses>\d+)\.gfeat$")
 
@@ -73,21 +70,14 @@ def discover_subjects(session_dir):
         sub = int(match.group("sub"))
         ses = int(match.group("ses"))
         input_feat = gfeat / "cope1.feat"
-        required = (
-            input_feat / "report.html",
-            input_feat / "stats/cope1.nii.gz",
-            input_feat / "stats/varcope1.nii.gz",
-        )
+        required = (input_feat / "report.html", input_feat / "stats/cope1.nii.gz", input_feat / "stats/varcope1.nii.gz")
         missing = [str(path) for path in required if not path.exists()]
         if missing:
             warnings.append(f"Skipping incomplete {gfeat}: missing {', '.join(missing)}")
             continue
         by_subject.setdefault(sub, []).append((ses, input_feat))
 
-    subjects = [
-        SubjectSessions(sub=sub, sessions=tuple(path for _, path in sorted(sessions)))
-        for sub, sessions in sorted(by_subject.items())
-    ]
+    subjects = [SubjectSessions(sub=sub, sessions=tuple(path for _, path in sorted(sessions))) for sub, sessions in sorted(by_subject.items())]
     return subjects, warnings
 
 
@@ -209,10 +199,7 @@ def main():
 
     failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {
-            pool.submit(run_feat, fsf, args.log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf
-            for fsf in fsfs
-        }
+        futures = {pool.submit(run_feat, fsf, args.log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf for fsf in fsfs}
         for future in as_completed(futures):
             fsf, returncode = future.result()
             if returncode == 0:

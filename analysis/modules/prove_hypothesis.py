@@ -27,14 +27,8 @@ from scipy import stats
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_WEIGHT_MAP = ROOT / "data" / "derived_maps" / "vigour_network_weights.nii.gz"
-DEFAULT_BETA_ROOT = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed"
-)
-DEFAULT_GROUP_CONCAT_DIR = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "Zahra-Thesis-Data/fmri_opt_group/data/group_concat"
-)
+DEFAULT_BETA_ROOT = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed")
+DEFAULT_GROUP_CONCAT_DIR = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "Zahra-Thesis-Data/fmri_opt_group/data/group_concat")
 DEFAULT_OUT_DIR = ROOT / "results" / "main" / "figure_02b_trial_variability"
 DEFAULT_SELECTED_PERCENTILE = 90.0
 DEFAULT_NUM_RESAMPLES = 1000
@@ -42,40 +36,12 @@ DEFAULT_RANDOM_SEED = 13
 DEFAULT_BATCH_SIZE = 2048
 DEFAULT_MIN_ABS_VOXEL_MEAN = 1e-12
 DEFAULT_SESSION_STATES = "1:off,2:on"
-DEFAULT_CEREBELLUM_ATLAS = Path(
-    "/usr/local/fsl/data/atlases/Cerebellum/Cerebellum-MNIfnirt-maxprob-thr25-2mm.nii.gz"
-)
+DEFAULT_CEREBELLUM_ATLAS = Path("/usr/local/fsl/data/atlases/Cerebellum/Cerebellum-MNIfnirt-maxprob-thr25-2mm.nii.gz")
 BETA_FILE_RE = re.compile(r"cleaned_beta_volume_(sub-[^_]+)_ses-(\d+)_run-(\d+)\.npy$")
 
-CORTICAL_MOTOR_LABELS = (
-    "Precentral Gyrus",
-    "Postcentral Gyrus",
-    "Frontal Medial Cortex",
-    "Juxtapositional Lobule Cortex (formerly Supplementary Motor Cortex)",
-)
-SUBCORTICAL_MOTOR_LABELS = (
-    "Left Thalamus",
-    "Left Putamen",
-    "Left Pallidum",
-    "Right Thalamus",
-    "Right Putamen",
-    "Right Pallidum",
-)
-MOTOR_LABEL_PATTERNS = (
-    "precentral gyrus",
-    "juxtapositional lobule cortex",
-    "supplementary motor",
-    "precentral",
-    "postcentral gyrus",
-    "frontal medial cortex",
-    "paracentral lobule",
-    "thalamus",
-    "caudate nucleus",
-    "putamen",
-    "globus pallidus",
-    "pallidum",
-    "cerebellum",
-)
+CORTICAL_MOTOR_LABELS = ("Precentral Gyrus", "Postcentral Gyrus", "Frontal Medial Cortex", "Juxtapositional Lobule Cortex (formerly Supplementary Motor Cortex)")
+SUBCORTICAL_MOTOR_LABELS = ("Left Thalamus", "Left Putamen", "Left Pallidum", "Right Thalamus", "Right Putamen", "Right Pallidum")
+MOTOR_LABEL_PATTERNS = ("precentral gyrus", "juxtapositional lobule cortex", "supplementary motor", "precentral", "postcentral gyrus", "frontal medial cortex", "paracentral lobule", "thalamus", "caudate nucleus", "putamen", "globus pallidus", "pallidum", "cerebellum")
 
 
 class SegmentNorm:
@@ -118,13 +84,7 @@ def _resolve_group_concat_dir(beta_root, group_concat_dir):
     candidates = []
     if group_concat_dir is not None:
         candidates.append(group_concat_dir)
-    candidates.extend(
-        [
-            beta_root / "group_concat",
-            beta_root.parent / "data" / "group_concat",
-            DEFAULT_GROUP_CONCAT_DIR,
-        ]
-    )
+    candidates.extend([beta_root / "group_concat", beta_root.parent / "data" / "group_concat", DEFAULT_GROUP_CONCAT_DIR])
     for candidate in candidates:
         if candidate and (candidate / "cleaned_beta_volume_group.npy").exists():
             return candidate
@@ -137,13 +97,7 @@ def _resample_label_img(label_img, reference_img):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
-        resampled = image.resample_to_img(
-            label_img,
-            reference_img,
-            interpolation="nearest",
-            force_resample=True,
-            copy_header=True,
-        )
+        resampled = image.resample_to_img(label_img, reference_img, interpolation="nearest", force_resample=True, copy_header=True)
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
@@ -168,22 +122,8 @@ def _build_motor_mask(reference_img, cerebellum_atlas):
     region_names = []
     region_counts = []
 
-    _add_harvard_oxford_labels(
-        motor_mask,
-        reference_img,
-        "cort-maxprob-thr25-2mm",
-        CORTICAL_MOTOR_LABELS,
-        region_names,
-        region_counts,
-    )
-    _add_harvard_oxford_labels(
-        motor_mask,
-        reference_img,
-        "sub-maxprob-thr25-2mm",
-        SUBCORTICAL_MOTOR_LABELS,
-        region_names,
-        region_counts,
-    )
+    _add_harvard_oxford_labels(motor_mask, reference_img, "cort-maxprob-thr25-2mm", CORTICAL_MOTOR_LABELS, region_names, region_counts)
+    _add_harvard_oxford_labels(motor_mask, reference_img, "sub-maxprob-thr25-2mm", SUBCORTICAL_MOTOR_LABELS, region_names, region_counts)
 
     cere_img = nib.load(str(cerebellum_atlas))
     cere_data = _resample_label_img(cere_img, reference_img)
@@ -192,13 +132,7 @@ def _build_motor_mask(reference_img, cerebellum_atlas):
     region_names.append("Cerebellum (FSL maxprob)")
     region_counts.append(int(np.count_nonzero(cere_mask)))
 
-    metadata = {
-        "motor_mask_source": "harvard_oxford_thr25_plus_fsl_cerebellum_mnifnirt_thr25",
-        "motor_label_patterns": MOTOR_LABEL_PATTERNS,
-        "motor_region_names": region_names,
-        "motor_region_counts": region_counts,
-        "cerebellum_atlas": cerebellum_atlas,
-    }
+    metadata = {"motor_mask_source": "harvard_oxford_thr25_plus_fsl_cerebellum_mnifnirt_thr25", "motor_label_patterns": MOTOR_LABEL_PATTERNS, "motor_region_names": region_names, "motor_region_counts": region_counts, "cerebellum_atlas": cerebellum_atlas}
     return motor_mask, metadata
 
 
@@ -243,12 +177,7 @@ def _load_selected_flat_indices(path, shape):
 def _selected_from_weight_map(weights, weight_map, percentile, selected_indices):
     if selected_indices is not None:
         selected_flat = np.unique(_load_selected_flat_indices(selected_indices, weights.shape))
-        metadata = {
-            "selected_source": selected_indices,
-            "selected_source_type": selected_indices.suffix.lstrip("."),
-            "selected_definition": "explicit_selected_indices",
-            "selected_threshold_value": None,
-        }
+        metadata = {"selected_source": selected_indices, "selected_source_type": selected_indices.suffix.lstrip("."), "selected_definition": "explicit_selected_indices", "selected_threshold_value": None}
         return selected_flat, metadata
 
     finite_nonzero = np.isfinite(weights) & (weights != 0)
@@ -258,14 +187,7 @@ def _selected_from_weight_map(weights, weight_map, percentile, selected_indices)
     threshold = float(np.percentile(finite_values, percentile))
     selected_mask = finite_nonzero & (weights >= threshold)
     selected_flat = _flat_indices_from_mask(selected_mask)
-    metadata = {
-        "selected_source": weight_map,
-        "selected_source_type": "nifti_weight_percentile",
-        "selected_definition": f"weights >= p{percentile:g} over finite nonzero weights",
-        "selected_threshold_percentile": float(percentile),
-        "selected_threshold_value": threshold,
-        "selected_nonzero_weight_count": int(finite_values.size),
-    }
+    metadata = {"selected_source": weight_map, "selected_source_type": "nifti_weight_percentile", "selected_definition": f"weights >= p{percentile:g} over finite nonzero weights", "selected_threshold_percentile": float(percentile), "selected_threshold_value": threshold, "selected_nonzero_weight_count": int(finite_values.size)}
     return selected_flat, metadata
 
 
@@ -308,10 +230,7 @@ def _iter_slices(n_items, batch_size):
 
 
 def _compute_segment_norms(beta, row_indices, manifest, batch_size, pre_normalize):
-    segment_bounds = [
-        (int(row.offset_start), int(row.offset_end))
-        for row in manifest.itertuples(index=False)
-    ]
+    segment_bounds = [(int(row.offset_start), int(row.offset_end)) for row in manifest.itertuples(index=False)]
     if not pre_normalize:
         return [SegmentNorm(start, stop, 0.0, 1.0) for start, stop in segment_bounds]
 
@@ -454,34 +373,11 @@ def _plot_norm_diff_figure(output_png, percentiles, ratios, selected_scores, res
     resample_mean = float(np.mean(resampled_means))
     ci_low, ci_high = np.percentile(resampled_means, [2.5, 97.5])
 
-    with plt.rc_context(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-            "axes.labelsize": 13,
-            "xtick.labelsize": 13,
-            "ytick.labelsize": 13,
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-        }
-    ):
+    with plt.rc_context({"font.family": "sans-serif", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "axes.labelsize": 13, "xtick.labelsize": 13, "ytick.labelsize": 13, "pdf.fonttype": 42, "ps.fonttype": 42}):
         fig, axes = plt.subplots(1, 2, figsize=(11.35, 4.3))
 
-        axes[0].plot(
-            percentiles,
-            ratios,
-            color=selected_color,
-            marker="o",
-            markersize=5.8,
-            linewidth=2.2,
-        )
-        axes[0].axhline(
-            1.0,
-            color=reference_color,
-            linestyle="--",
-            linewidth=1.4,
-            label="Equal fractions",
-        )
+        axes[0].plot(percentiles, ratios, color=selected_color, marker="o", markersize=5.8, linewidth=2.2)
+        axes[0].axhline(1.0, color=reference_color, linestyle="--", linewidth=1.4, label="Equal fractions")
         axes[0].set_xticks(percentiles)
         axes[0].set_xticklabels([f"{int(p)}%" for p in percentiles])
         axes[0].set_xlabel("Variability percentile threshold")
@@ -499,55 +395,16 @@ def _plot_norm_diff_figure(output_png, percentiles, ratios, selected_scores, res
         _style_axis(axes[0])
 
         bins = min(40, max(16, int(np.sqrt(resampled_means.size))))
-        axes[1].axvspan(
-            ci_low,
-            ci_high,
-            color=ci_color,
-            alpha=0.24,
-            linewidth=0,
-            label="Control mean interval",
-        )
-        axes[1].hist(
-            resampled_means,
-            bins=bins,
-            density=True,
-            color=resample_color,
-            alpha=0.58,
-            edgecolor="white",
-            linewidth=0.4,
-        )
-        axes[1].axvline(
-            selected_mean,
-            color=selected_color,
-            linestyle="--",
-            linewidth=1.8,
-            label="Vigour network mean",
-        )
-        axes[1].axvline(
-            resample_mean,
-            color=reference_color,
-            linestyle="--",
-            linewidth=1.5,
-            label="Control network mean",
-        )
+        axes[1].axvspan(ci_low, ci_high, color=ci_color, alpha=0.24, linewidth=0, label="Control mean interval")
+        axes[1].hist(resampled_means, bins=bins, density=True, color=resample_color, alpha=0.58, edgecolor="white", linewidth=0.4)
+        axes[1].axvline(selected_mean, color=selected_color, linestyle="--", linewidth=1.8, label="Vigour network mean")
+        axes[1].axvline(resample_mean, color=reference_color, linestyle="--", linewidth=1.5, label="Control network mean")
         axes[1].set_xlabel("Consecutive trial variability")
         axes[1].set_ylabel("Density")
-        axes[1].set_xlim(
-            min(selected_mean, float(np.min(resampled_means))) - 0.07,
-            max(ci_high, float(np.max(resampled_means))) + 0.07,
-        )
+        axes[1].set_xlim(min(selected_mean, float(np.min(resampled_means))) - 0.07, max(ci_high, float(np.max(resampled_means))) + 0.07)
         _style_axis(axes[1])
 
-        axes[1].legend(
-            frameon=True,
-            facecolor="white",
-            edgecolor="none",
-            framealpha=0.78,
-            fontsize=12,
-            loc="upper right",
-            borderaxespad=0.35,
-            handlelength=2.4,
-        )
+        axes[1].legend(frameon=True, facecolor="white", edgecolor="none", framealpha=0.78, fontsize=12, loc="upper right", borderaxespad=0.35, handlelength=2.4)
 
         _bold_figure_text(fig)
         fig.tight_layout(w_pad=2.0)
@@ -584,27 +441,14 @@ def _discover_run_beta_files(beta_root):
         match = BETA_FILE_RE.match(path.name)
         if not match:
             continue
-        specs.append(
-            RunBetaFile(
-                subject=match.group(1),
-                session=int(match.group(2)),
-                run=int(match.group(3)),
-                path=path,
-            )
-        )
+        specs.append(RunBetaFile(subject=match.group(1), session=int(match.group(2)), run=int(match.group(3)), path=path))
     if not specs:
         raise FileNotFoundError(f"No per-run cleaned beta files found under {beta_root}")
     return specs
 
 
 def _new_metric_accumulator(n_voxels):
-    return {
-        "value_sum": np.zeros(n_voxels, dtype=np.float64),
-        "value_sumsq": np.zeros(n_voxels, dtype=np.float64),
-        "value_count": np.zeros(n_voxels, dtype=np.int32),
-        "diff_sum": np.zeros(n_voxels, dtype=np.float64),
-        "diff_count": np.zeros(n_voxels, dtype=np.int32),
-    }
+    return {"value_sum": np.zeros(n_voxels, dtype=np.float64), "value_sumsq": np.zeros(n_voxels, dtype=np.float64), "value_count": np.zeros(n_voxels, dtype=np.int32), "diff_sum": np.zeros(n_voxels, dtype=np.float64), "diff_count": np.zeros(n_voxels, dtype=np.int32)}
 
 
 def _run_normalization(flat_view, flat_indices, batch_size):
@@ -651,31 +495,16 @@ def _accumulator_metric_means(accumulator, min_abs_voxel_mean):
     value_count = accumulator["value_count"]
     with np.errstate(invalid="ignore", divide="ignore"):
         voxel_mean = np.divide(value_sum, value_count, out=np.full(value_sum.shape, np.nan), where=value_count > 0)
-        voxel_second_moment = np.divide(
-            accumulator["value_sumsq"],
-            value_count,
-            out=np.full(value_sum.shape, np.nan),
-            where=value_count > 0,
-        )
+        voxel_second_moment = np.divide(accumulator["value_sumsq"], value_count, out=np.full(value_sum.shape, np.nan), where=value_count > 0)
         variance = np.maximum(voxel_second_moment - voxel_mean * voxel_mean, 0.0)
         voxel_std = np.sqrt(variance)
-        mean_abs_diff = np.divide(
-            accumulator["diff_sum"],
-            accumulator["diff_count"],
-            out=np.full(value_sum.shape, np.nan),
-            where=accumulator["diff_count"] > 0,
-        )
+        mean_abs_diff = np.divide(accumulator["diff_sum"], accumulator["diff_count"], out=np.full(value_sum.shape, np.nan), where=accumulator["diff_count"] > 0)
         denom = np.abs(voxel_mean)
         cv_scores = voxel_std / denom
         norm_diff_scores = mean_abs_diff / denom
 
     cv_valid = np.isfinite(cv_scores) & np.isfinite(denom) & (denom > min_abs_voxel_mean) & (value_count > 1)
-    norm_valid = (
-        np.isfinite(norm_diff_scores)
-        & np.isfinite(denom)
-        & (denom > min_abs_voxel_mean)
-        & (accumulator["diff_count"] > 0)
-    )
+    norm_valid = (np.isfinite(norm_diff_scores) & np.isfinite(denom) & (denom > min_abs_voxel_mean) & (accumulator["diff_count"] > 0))
     cv_mean = float(np.mean(cv_scores[cv_valid])) if np.any(cv_valid) else float("nan")
     norm_diff_mean = float(np.mean(norm_diff_scores[norm_valid])) if np.any(norm_valid) else float("nan")
     return cv_mean, norm_diff_mean, int(np.count_nonzero(cv_valid)), int(np.count_nonzero(norm_valid))
@@ -699,22 +528,14 @@ def _compute_subject_session_selection_metrics(run_specs, selected_flat, control
             if beta.ndim != 4:
                 raise ValueError(f"Expected 4D beta volume for {spec.path}, got shape {beta.shape}.")
             if beta.shape[:3] != reference_shape:
-                raise ValueError(
-                    f"Beta volume shape mismatch for {spec.path}: {beta.shape[:3]} vs {reference_shape}."
-                )
+                raise ValueError(f"Beta volume shape mismatch for {spec.path}: {beta.shape[:3]} vs {reference_shape}.")
             flat_view = beta.reshape(-1, beta.shape[-1])
             norm_mean, norm_scale = _run_normalization(flat_view, target_flat, batch_size) if pre_normalize else (0.0, 1.0)
             _accumulate_run_beta_metrics(selected_acc, flat_view, selected_flat, batch_size, norm_mean, norm_scale)
             _accumulate_run_beta_metrics(control_acc, flat_view, control_flat, batch_size, norm_mean, norm_scale)
 
-        selected_cv, selected_norm, selected_cv_n, selected_norm_n = _accumulator_metric_means(
-            selected_acc,
-            min_abs_voxel_mean,
-        )
-        control_cv, control_norm, control_cv_n, control_norm_n = _accumulator_metric_means(
-            control_acc,
-            min_abs_voxel_mean,
-        )
+        selected_cv, selected_norm, selected_cv_n, selected_norm_n = _accumulator_metric_means(selected_acc, min_abs_voxel_mean)
+        control_cv, control_norm, control_cv_n, control_norm_n = _accumulator_metric_means(control_acc, min_abs_voxel_mean)
         rows.append(
             {
                 "subject": subject,
@@ -731,10 +552,7 @@ def _compute_subject_session_selection_metrics(run_specs, selected_flat, control
             }
         )
         if session_number % 4 == 0 or session_number == total_sessions:
-            print(
-                f"Computed state-selection metrics for {session_number}/{total_sessions} subject/session entries.",
-                flush=True,
-            )
+            print(f"Computed state-selection metrics for {session_number}/{total_sessions} subject/session entries.", flush=True)
 
     return pd.DataFrame(rows).sort_values(["subject", "session"]).reset_index(drop=True)
 
@@ -764,13 +582,7 @@ def _paired_difference_stats(differences):
     differences = np.asarray(differences, dtype=np.float64)
     differences = differences[np.isfinite(differences)]
     if differences.size < 2:
-        return {
-            "t": float("nan"),
-            "p_two_sided": float("nan"),
-            "p_one_sided_less": float("nan"),
-            "wilcoxon_stat": float("nan"),
-            "wilcoxon_p_two_sided": float("nan"),
-        }
+        return {"t": float("nan"), "p_two_sided": float("nan"), "p_one_sided_less": float("nan"), "wilcoxon_stat": float("nan"), "wilcoxon_p_two_sided": float("nan")}
     t_result = stats.ttest_1samp(differences, 0.0)
     t_stat = float(t_result.statistic)
     p_two = float(t_result.pvalue)
@@ -782,13 +594,7 @@ def _paired_difference_stats(differences):
     except ValueError:
         wilcoxon_stat = float("nan")
         wilcoxon_p = float("nan")
-    return {
-        "t": t_stat,
-        "p_two_sided": p_two,
-        "p_one_sided_less": float(p_less),
-        "wilcoxon_stat": wilcoxon_stat,
-        "wilcoxon_p_two_sided": wilcoxon_p,
-    }
+    return {"t": t_stat, "p_two_sided": p_two, "p_one_sided_less": float(p_less), "wilcoxon_stat": wilcoxon_stat, "wilcoxon_p_two_sided": wilcoxon_p}
 
 
 def _paired_delta_summary(session_df, metric, metric_label):
@@ -798,12 +604,7 @@ def _paired_delta_summary(session_df, metric, metric_label):
     frame = session_df.loc[:, needed].copy()
     frame = frame[frame["state"].isin(["off", "on"])]
     pivot = frame.pivot_table(index="subject", columns="state", values=[selected_col, control_col], aggfunc="mean")
-    required = [
-        (selected_col, "off"),
-        (selected_col, "on"),
-        (control_col, "off"),
-        (control_col, "on"),
-    ]
+    required = [(selected_col, "off"), (selected_col, "on"), (control_col, "off"), (control_col, "on")]
     if pivot.empty or any(column not in pivot.columns for column in required):
         selected_off = selected_on = control_off = control_on = np.array([], dtype=np.float64)
     else:
@@ -819,12 +620,7 @@ def _paired_delta_summary(session_df, metric, metric_label):
     selected_stats = _paired_difference_stats(d_sel)
     control_stats = _paired_difference_stats(d_ctl)
     interaction_stats = _paired_difference_stats(interaction)
-    supports_on_stability = bool(
-        np.isfinite(np.mean(d_sel))
-        and np.mean(d_sel) < 0
-        and np.isfinite(selected_stats["p_one_sided_less"])
-        and selected_stats["p_one_sided_less"] < 0.05
-    )
+    supports_on_stability = bool(np.isfinite(np.mean(d_sel)) and np.mean(d_sel) < 0 and np.isfinite(selected_stats["p_one_sided_less"]) and selected_stats["p_one_sided_less"] < 0.05)
     return {
         "n_subjects_paired": int(d_sel.size),
         "selected_off_mean": float(np.mean(selected_off)) if selected_off.size else float("nan"),
@@ -856,17 +652,7 @@ def _paired_delta_summary(session_df, metric, metric_label):
 
 def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
     paired_summary = paired_df.loc[paired_df["metric"].eq("norm_diff_mean")].iloc[0].to_dict()
-    long_df = pd.concat(
-        [
-            session_df.loc[:, ["subject", "session", "state", "n_runs", "selected_norm_diff_mean"]]
-            .rename(columns={"selected_norm_diff_mean": "value"})
-            .assign(selection="selected"),
-            session_df.loc[:, ["subject", "session", "state", "n_runs", "control_norm_diff_mean"]]
-            .rename(columns={"control_norm_diff_mean": "value"})
-            .assign(selection="control"),
-        ],
-        ignore_index=True,
-    )
+    long_df = pd.concat([session_df.loc[:, ["subject", "session", "state", "n_runs", "selected_norm_diff_mean"]] .rename(columns={"selected_norm_diff_mean": "value"}) .assign(selection="selected"), session_df.loc[:, ["subject", "session", "state", "n_runs", "control_norm_diff_mean"]] .rename(columns={"control_norm_diff_mean": "value"}) .assign(selection="control")], ignore_index=True)
     long_df = long_df.loc[np.isfinite(long_df["value"].to_numpy(dtype=np.float64))].copy()
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 4.3), sharey=True)
@@ -874,10 +660,7 @@ def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
     labels = {"control": "Motor reference", "selected": "Target network"}
     state_order = ["off", "on"]
     x_positions = np.array([0.0, 1.0], dtype=np.float64)
-    panel_stats = {
-        "control": {"delta": paired_summary["D_ctl_mean_on_minus_off"], "p": paired_summary["control_state_p_two_sided"]},
-        "selected": {"delta": paired_summary["D_sel_mean_on_minus_off"], "p": paired_summary["selected_state_p_two_sided"]},
-    }
+    panel_stats = {"control": {"delta": paired_summary["D_ctl_mean_on_minus_off"], "p": paired_summary["control_state_p_two_sided"]}, "selected": {"delta": paired_summary["D_sel_mean_on_minus_off"], "p": paired_summary["selected_state_p_two_sided"]}}
 
     values = long_df["value"].to_numpy(dtype=np.float64)
     values = values[np.isfinite(values)]
@@ -895,33 +678,10 @@ def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
             finite = np.isfinite(ys)
             if np.any(finite):
                 ax.plot(x_positions[finite], ys[finite], color="0.82", alpha=0.65, linewidth=0.9, zorder=1)
-                ax.scatter(
-                    x_positions[finite],
-                    ys[finite],
-                    s=22,
-                    facecolor="white",
-                    edgecolor=colors_map[selection],
-                    linewidth=0.9,
-                    alpha=0.9,
-                    zorder=2,
-                )
+                ax.scatter(x_positions[finite], ys[finite], s=22, facecolor="white", edgecolor=colors_map[selection], linewidth=0.9, alpha=0.9, zorder=2)
         means = subset.groupby("state")["value"].mean().reindex(state_order)
         sems = subset.groupby("state")["value"].apply(_sem).reindex(state_order).fillna(0.0)
-        ax.errorbar(
-            x_positions,
-            means.to_numpy(dtype=np.float64),
-            yerr=sems.to_numpy(dtype=np.float64),
-            color=colors_map[selection],
-            linewidth=2.6,
-            marker="o",
-            markersize=6.5,
-            markerfacecolor=colors_map[selection],
-            markeredgecolor="white",
-            markeredgewidth=0.9,
-            capsize=3.5,
-            elinewidth=1.5,
-            zorder=4,
-        )
+        ax.errorbar(x_positions, means.to_numpy(dtype=np.float64), yerr=sems.to_numpy(dtype=np.float64), color=colors_map[selection], linewidth=2.6, marker="o", markersize=6.5, markerfacecolor=colors_map[selection], markeredgecolor="white", markeredgewidth=0.9, capsize=3.5, elinewidth=1.5, zorder=4)
         ax.set_xticks(x_positions)
         ax.set_xticklabels(["OFF", "ON"])
         ax.set_title(labels[selection], fontsize=12, pad=8)
@@ -931,26 +691,11 @@ def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
         ax.spines["right"].set_visible(False)
         if y_limits is not None:
             ax.set_ylim(*y_limits)
-        ax.text(
-            0.04,
-            0.96,
-            f"ON - OFF = {_fmt_signed(panel_stats[selection]['delta'])}\n"
-            f"paired p = {_fmt_float(_safe_float(panel_stats[selection]['p']))}",
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=8.5,
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.8", alpha=0.95),
-        )
+        ax.text(0.04, 0.96, f"ON - OFF={_fmt_signed(panel_stats[selection]['delta'])}\n" f"paired p={_fmt_float(_safe_float(panel_stats[selection]['p']))}", transform=ax.transAxes, ha="left", va="top", fontsize=8.5, bbox=dict(boxstyle="round, pad=0.3", facecolor="white", edgecolor="0.8", alpha=0.95))
 
     axes[0].set_ylabel("Mean normalized |consecutive trial beta difference|")
     fig.tight_layout(rect=(0.04, 0.14, 1.0, 1.0))
-    interaction_text = (
-        "Difference in ON - OFF change\n"
-        f"{labels['selected'].lower()} - {labels['control'].lower()} = "
-        f"{_fmt_signed(paired_summary['interaction_mean_D_sel_minus_D_ctl'])}; "
-        f"paired p = {_fmt_float(_safe_float(paired_summary['interaction_p_two_sided']))}"
-    )
+    interaction_text = ("Difference in ON - OFF change\n" f"{labels['selected'].lower()} - {labels['control'].lower()}=" f"{_fmt_signed(paired_summary['interaction_mean_D_sel_minus_D_ctl'])}; " f"paired p={_fmt_float(_safe_float(paired_summary['interaction_p_two_sided']))}")
     fig.text(0.5, 0.025, interaction_text, ha="center", va="bottom", fontsize=9.0, color="0.25", linespacing=1.25)
 
     output_png.parent.mkdir(parents=True, exist_ok=True)
@@ -964,12 +709,7 @@ def _plot_state_selection_stability_figure(output_png, session_df, paired_df):
 def _run_state_selection_stability(args):
     weight_img = nib.load(str(args.weight_map))
     weights = np.asarray(weight_img.get_fdata(dtype=np.float32))
-    selected_flat, selected_metadata = _selected_from_weight_map(
-        weights,
-        args.weight_map,
-        args.selected_percentile,
-        args.selected_indices,
-    )
+    selected_flat, selected_metadata = _selected_from_weight_map(weights, args.weight_map, args.selected_percentile, args.selected_indices)
     motor_mask, motor_metadata = _build_motor_mask(weight_img, args.cerebellum_atlas)
     motor_flat = _flat_indices_from_mask(motor_mask)
     selected_set = set(int(value) for value in selected_flat)
@@ -981,25 +721,10 @@ def _run_state_selection_stability(args):
     print(f"Selected voxels total: {selected_flat.size:,}", flush=True)
     print(f"Motor reference voxels total: {control_flat.size:,}", flush=True)
 
-    session_df = _compute_subject_session_selection_metrics(
-        run_specs=run_specs,
-        selected_flat=selected_flat,
-        control_flat=control_flat,
-        reference_shape=weight_img.shape[:3],
-        batch_size=args.batch_size,
-        pre_normalize=not args.no_pre_normalize,
-        min_abs_voxel_mean=args.min_abs_voxel_mean,
-    )
-    session_df.insert(
-        session_df.columns.get_loc("n_runs"),
-        "state",
-        session_df["session"].map(session_states).fillna(session_df["session"].map(lambda value: f"ses-{value}")),
-    )
+    session_df = _compute_subject_session_selection_metrics(run_specs=run_specs, selected_flat=selected_flat, control_flat=control_flat, reference_shape=weight_img.shape[:3], batch_size=args.batch_size, pre_normalize=not args.no_pre_normalize, min_abs_voxel_mean=args.min_abs_voxel_mean)
+    session_df.insert(session_df.columns.get_loc("n_runs"), "state", session_df["session"].map(session_states).fillna(session_df["session"].map(lambda value: f"ses-{value}")))
 
-    paired_rows = [
-        _paired_delta_summary(session_df, "cv_mean", "Coefficient of Variation (std/|mean|)"),
-        _paired_delta_summary(session_df, "norm_diff_mean", "Normalized |Delta| (consecutive diff / |mean|)"),
-    ]
+    paired_rows = [_paired_delta_summary(session_df, "cv_mean", "Coefficient of Variation (std/|mean|)"), _paired_delta_summary(session_df, "norm_diff_mean", "Normalized |Delta| (consecutive diff / |mean|)")]
     paired_df = pd.DataFrame(paired_rows)
 
     out_dir = args.out_dir / "state_selection_stability_followup"
@@ -1020,11 +745,7 @@ def _run_state_selection_stability(args):
         "analysis": "state_selection_stability_followup",
         "metric": "subject_session_mean_abs_consecutive_trial_diff_divided_by_abs_voxel_mean",
         "pre_normalize_each_run": not args.no_pre_normalize,
-        "pre_normalization_mode": (
-            "demean_then_divide_by_maxabs_per_run_over_selected_and_motor_reference_voxels"
-            if not args.no_pre_normalize
-            else "none"
-        ),
+        "pre_normalization_mode": ("demean_then_divide_by_maxabs_per_run_over_selected_and_motor_reference_voxels" if not args.no_pre_normalize else "none"),
         "session_states": session_states,
         "run_file_count": int(len(run_specs)),
         "subject_session_count_total": int(session_df.shape[0]),
@@ -1052,18 +773,8 @@ def _run_state_selection_stability(args):
     summary_path.write_text(json.dumps(_json_ready(summary), indent=2), encoding="utf-8")
     summary["summary_path"] = summary_path
 
-    print(
-        "Norm-diff OFF/ON means: "
-        f"selected {norm_summary['selected_off_mean']:.4f}/{norm_summary['selected_on_mean']:.4f}, "
-        f"control {norm_summary['control_off_mean']:.4f}/{norm_summary['control_on_mean']:.4f}",
-        flush=True,
-    )
-    print(
-        "Interaction selected-control ON-OFF: "
-        f"{norm_summary['interaction_mean_D_sel_minus_D_ctl']:.4f}, "
-        f"p={norm_summary['interaction_p_two_sided']:.4g}",
-        flush=True,
-    )
+    print("Norm-diff OFF/ON means: " f"selected {norm_summary['selected_off_mean']:.4f}/{norm_summary['selected_on_mean']:.4f}, " f"control {norm_summary['control_off_mean']:.4f}/{norm_summary['control_on_mean']:.4f}", flush=True)
+    print("Interaction selected-control ON-OFF: " f"{norm_summary['interaction_mean_D_sel_minus_D_ctl']:.4f}, " f"p={norm_summary['interaction_p_two_sided']:.4g}", flush=True)
     print(f"Wrote figure: {figure_png}", flush=True)
     print(f"Wrote summary: {summary_path}", flush=True)
     return summary
@@ -1072,12 +783,7 @@ def _run_state_selection_stability(args):
 def _run_analysis(args):
     weight_img = nib.load(str(args.weight_map))
     weights = np.asarray(weight_img.get_fdata(dtype=np.float32))
-    selected_flat, selected_metadata = _selected_from_weight_map(
-        weights,
-        args.weight_map,
-        args.selected_percentile,
-        args.selected_indices,
-    )
+    selected_flat, selected_metadata = _selected_from_weight_map(weights, args.weight_map, args.selected_percentile, args.selected_indices)
     motor_mask, motor_metadata = _build_motor_mask(weight_img, args.cerebellum_atlas)
     motor_flat = _flat_indices_from_mask(motor_mask)
     selected_set = set(int(value) for value in selected_flat)
@@ -1098,15 +804,7 @@ def _run_analysis(args):
     print(f"Non-selected motor voxels total: {nonselected_motor_flat.size:,}", flush=True)
     print(f"Voxels available in group beta matrix for metric: {valid_target_flat.size:,}", flush=True)
 
-    scores, counts, segment_norms, units = _compute_voxel_norm_diff_scores(
-        beta=beta,
-        row_indices=valid_active_rows,
-        manifest=manifest,
-        batch_size=args.batch_size,
-        metric_unit=args.metric_unit,
-        pre_normalize=not args.no_pre_normalize,
-        min_abs_voxel_mean=args.min_abs_voxel_mean,
-    )
+    scores, counts, segment_norms, units = _compute_voxel_norm_diff_scores(beta=beta, row_indices=valid_active_rows, manifest=manifest, batch_size=args.batch_size, metric_unit=args.metric_unit, pre_normalize=not args.no_pre_normalize, min_abs_voxel_mean=args.min_abs_voxel_mean)
 
     selected_valid_mask = np.isin(valid_target_flat, selected_flat) & np.isfinite(scores)
     nonselected_valid_mask = np.isin(valid_target_flat, nonselected_motor_flat) & np.isfinite(scores)
@@ -1122,12 +820,7 @@ def _run_analysis(args):
 
     percentiles = np.arange(10.0, 100.0, 10.0)
     thresholds, ratios = _prevalence_ratios(selected_scores, nonselected_scores, percentiles)
-    resampled_means, replacement = _resample_means(
-        nonselected_scores,
-        selected_scores.size,
-        args.num_resamples,
-        args.random_seed,
-    )
+    resampled_means, replacement = _resample_means(nonselected_scores, selected_scores.size, args.num_resamples, args.random_seed)
 
     selected_mean = float(np.mean(selected_scores))
     nonselected_mean = float(np.mean(nonselected_scores))
@@ -1139,13 +832,7 @@ def _run_analysis(args):
     out_dir = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     figure_png = out_dir / "trial_variability_hypothesis_norm_diff_cd(main).png"
-    figure_pdf = _plot_norm_diff_figure(
-        figure_png,
-        percentiles,
-        ratios,
-        selected_scores,
-        resampled_means,
-    )
+    figure_pdf = _plot_norm_diff_figure(figure_png, percentiles, ratios, selected_scores, resampled_means)
 
     npz_path = out_dir / "trial_variability_hypothesis_analysis_data.npz"
     np.savez_compressed(
@@ -1178,11 +865,7 @@ def _run_analysis(args):
         "metric": "mean_abs_consecutive_trial_diff_divided_by_abs_voxel_mean",
         "aggregation_mode": f"{args.metric_unit}_voxelwise_nanmean",
         "pre_normalize_each_manifest_segment": not args.no_pre_normalize,
-        "pre_normalization_mode": (
-            "demean_then_divide_by_maxabs_per_manifest_file_over_target_voxels_and_kept_trials"
-            if not args.no_pre_normalize
-            else "none"
-        ),
+        "pre_normalization_mode": ("demean_then_divide_by_maxabs_per_manifest_file_over_target_voxels_and_kept_trials" if not args.no_pre_normalize else "none"),
         "min_abs_voxel_mean": float(args.min_abs_voxel_mean),
         "manifest_segment_count": int(manifest.shape[0]),
         "metric_unit_count_total": int(len(units)),
@@ -1227,15 +910,8 @@ def _run_analysis(args):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(
-        description="Run selected-voxel stability checks against motor-area reference voxels."
-    )
-    parser.add_argument(
-        "--analysis",
-        choices=("trial_variability", "state_selection", "both"),
-        default="trial_variability",
-        help="trial_variability reproduces the pooled Figure S3-style check; state_selection reproduces Section 3.2/Figure S5.",
-    )
+    parser = argparse.ArgumentParser(description="Run selected-voxel stability checks against motor-area reference voxels.")
+    parser.add_argument("--analysis", choices=("trial_variability", "state_selection", "both"), default="trial_variability", help="trial_variability reproduces the pooled Figure S3-style check; state_selection reproduces Section 3.2/Figure S5.")
     parser.add_argument("--weight-map", type=Path, default=DEFAULT_WEIGHT_MAP)
     parser.add_argument("--beta-root", type=Path, default=DEFAULT_BETA_ROOT)
     parser.add_argument("--group-concat-dir", type=Path, default=None)
@@ -1249,11 +925,7 @@ def build_parser():
     parser.add_argument("--num-resamples", type=int, default=DEFAULT_NUM_RESAMPLES)
     parser.add_argument("--random-seed", type=int, default=DEFAULT_RANDOM_SEED)
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
-    parser.add_argument(
-        "--session-states",
-        default=DEFAULT_SESSION_STATES,
-        help="Comma-separated medication-state mapping for state_selection, e.g. 1:off,2:on.",
-    )
+    parser.add_argument("--session-states", default=DEFAULT_SESSION_STATES, help="Comma-separated medication-state mapping for state_selection, e.g. 1:off, 2:on.")
     return parser
 
 

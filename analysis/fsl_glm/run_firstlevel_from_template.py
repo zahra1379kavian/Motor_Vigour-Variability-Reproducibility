@@ -37,46 +37,19 @@ class Run:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate and optionally run first-level FEAT FSFs."
-    )
+    parser = argparse.ArgumentParser(description="Generate and optionally run first-level FEAT FSFs.")
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--run-table", type=Path, default=DEFAULT_RUN_TABLE)
     parser.add_argument("--fsf-dir", type=Path, default=DEFAULT_FSF_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
     parser.add_argument("--feat-cmd", default="feat")
-    parser.add_argument(
-        "--run",
-        action="store_true",
-        help="Actually run feat for each generated FSF. Without this, only FSFs are written.",
-    )
-    parser.add_argument(
-        "--jobs",
-        type=int,
-        default=1,
-        help="Number of FEAT jobs to run at the same time when --run is used.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Allow FEAT to overwrite existing output directories.",
-    )
-    parser.add_argument(
-        "--subject",
-        action="append",
-        help="Only process this subject, e.g. --subject sub-pd001. Can be repeated.",
-    )
-    parser.add_argument(
-        "--session",
-        action="append",
-        help="Only process this session, e.g. --session ses-1. Can be repeated.",
-    )
-    parser.add_argument(
-        "--run-id",
-        action="append",
-        help="Only process this run, e.g. --run-id run-1. Can be repeated.",
-    )
+    parser.add_argument("--run", action="store_true", help="Actually run feat for each generated FSF. Without this, only FSFs are written.")
+    parser.add_argument("--jobs", type=int, default=1, help="Number of FEAT jobs to run at the same time when --run is used.")
+    parser.add_argument("--overwrite", action="store_true", help="Allow FEAT to overwrite existing output directories.")
+    parser.add_argument("--subject", action="append", help="Only process this subject, e.g. --subject sub-pd001. Can be repeated.")
+    parser.add_argument("--session", action="append", help="Only process this session, e.g. --session ses-1. Can be repeated.")
+    parser.add_argument("--run-id", action="append", help="Only process this run, e.g. --run-id run-1. Can be repeated.")
     return parser.parse_args()
 
 
@@ -92,15 +65,7 @@ def read_run_table(path):
             raise ValueError(f"{path} must contain columns: {', '.join(sorted(required))}")
 
         for row in reader:
-            runs.append(
-                Run(
-                    sub=row["sub"],
-                    ses=row["ses"],
-                    run=row["run"],
-                    bold=Path(row["bold"]),
-                    ev=Path(row["ev"]),
-                )
-            )
+            runs.append(Run(sub=row["sub"], ses=row["ses"], run=row["run"], bold=Path(row["bold"]), ev=Path(row["ev"])))
 
     return runs
 
@@ -110,13 +75,7 @@ def filter_runs(runs, args):
     sessions = set(args.session or [])
     run_ids = set(args.run_id or [])
 
-    return [
-        run
-        for run in runs
-        if (not subjects or run.sub in subjects)
-        and (not sessions or run.ses in sessions)
-        and (not run_ids or run.run in run_ids)
-    ]
+    return [run for run in runs if (not subjects or run.sub in subjects) and (not sessions or run.ses in sessions) and (not run_ids or run.run in run_ids)]
 
 
 def strip_nii_gz(path):
@@ -129,19 +88,12 @@ def strip_nii_gz(path):
 
 
 def fslnvols(path):
-    result = subprocess.run(
-        ["fslnvols", str(path)],
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    result = subprocess.run(["fslnvols", str(path)], check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return int(result.stdout.strip())
 
 
 def replace_setting(text, key, value):
-    pattern = re.compile(rf'^(set {re.escape(key)}\s+).*$',
-                         flags=re.MULTILINE)
+    pattern = re.compile(rf'^(set {re.escape(key)}\s+).*$', flags=re.MULTILINE)
     new_text, count = pattern.subn(lambda match: f"{match.group(1)}{value}", text)
     if count != 1:
         raise ValueError(f"Expected exactly one setting for {key}, found {count}")
@@ -191,22 +143,13 @@ def validate_runs(runs):
 def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
-        result = subprocess.run(
-            [feat_cmd, str(fsf)],
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
+        result = subprocess.run([feat_cmd, str(fsf)], stdout=log, stderr=subprocess.STDOUT, text=True)
     return fsf, result.returncode
 
 
 def completed_output(output_dir, run):
     feat_dir = output_dir / f"{run.label}.feat"
-    required = (
-        feat_dir / "report.html",
-        feat_dir / "stats/cope1.nii.gz",
-        feat_dir / "stats/varcope1.nii.gz",
-    )
+    required = (feat_dir / "report.html", feat_dir / "stats/cope1.nii.gz", feat_dir / "stats/varcope1.nii.gz")
     return all(path.exists() for path in required)
 
 
@@ -266,10 +209,7 @@ def main():
     print(f"Starting FEAT jobs: {len(fsfs)} with --jobs {args.jobs}")
     failures = []
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {
-            pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf
-            for fsf in fsfs
-        }
+        futures = {pool.submit(run_feat, fsf, log_dir / f"{fsf.stem}.log", args.feat_cmd): fsf for fsf in fsfs}
         for future in as_completed(futures):
             fsf, returncode = future.result()
             if returncode == 0:

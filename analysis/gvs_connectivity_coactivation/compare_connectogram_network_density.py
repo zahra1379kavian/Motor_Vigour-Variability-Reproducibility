@@ -91,11 +91,7 @@ def canonical_edge(roi_i, roi_j):
 
 
 def filter_scope(df, metric, analysis_view, fdr_scope):
-    out = df.loc[
-        df["metric"].astype(str).eq(metric)
-        & df["analysis_view"].astype(str).eq(analysis_view)
-        & df["fdr_scope"].astype(str).eq(fdr_scope)
-    ].copy()
+    out = df.loc[df["metric"].astype(str).eq(metric) & df["analysis_view"].astype(str).eq(analysis_view) & df["fdr_scope"].astype(str).eq(fdr_scope)].copy()
     out["mean"] = pd.to_numeric(out["mean"], errors="coerce")
     out["abs_mean"] = out["mean"].abs()
     out["edge"] = [canonical_edge(i, j) for i, j in zip(out["roi_i"], out["roi_j"], strict=True)]
@@ -157,14 +153,7 @@ def profile_network(data, rois, roi_set):
         bad = ", ".join(sig.loc[sig["hemisphere_class"].isna(), "edge"].head(5))
         raise ValueError(f"{data.spec.name}: significant edges missing from possible edge set: {bad}")
 
-    return {
-        "network": data.spec.name,
-        "roi_set": roi_set,
-        "rois": rois,
-        "possible": possible,
-        "sig": sig,
-        "stats": stats,
-    }
+    return {"network": data.spec.name, "roi_set": roi_set, "rois": rois, "possible": possible, "sig": sig, "stats": stats}
 
 
 def direction_sig(sig, direction):
@@ -175,35 +164,14 @@ def direction_sig(sig, direction):
 
 def summarize_effects(sig):
     if sig.empty:
-        return {
-            "mean_signed_effect": np.nan,
-            "mean_abs_effect": np.nan,
-            "median_abs_effect": np.nan,
-            "sum_abs_effect": 0.0,
-        }
-    return {
-        "mean_signed_effect": float(sig["mean"].mean()),
-        "mean_abs_effect": float(sig["abs_mean"].mean()),
-        "median_abs_effect": float(sig["abs_mean"].median()),
-        "sum_abs_effect": float(sig["abs_mean"].sum()),
-    }
+        return {"mean_signed_effect": np.nan, "mean_abs_effect": np.nan, "median_abs_effect": np.nan, "sum_abs_effect": 0.0}
+    return {"mean_signed_effect": float(sig["mean"].mean()), "mean_abs_effect": float(sig["abs_mean"].mean()), "median_abs_effect": float(sig["abs_mean"].median()), "sum_abs_effect": float(sig["abs_mean"].sum())}
 
 
 def density_row(profile, feature_family, feature, possible, sig, direction):
     n_possible = int(possible.shape[0])
     n_sig = int(sig.shape[0])
-    row = {
-        "network": profile["network"],
-        "roi_set": profile["roi_set"],
-        "feature_family": feature_family,
-        "feature": feature,
-        "direction": direction,
-        "n_rois": len(profile["rois"]),
-        "n_possible_edges": n_possible,
-        "n_significant_edges": n_sig,
-        "density": float(n_sig / n_possible) if n_possible else np.nan,
-        "density_per_100_edges": float(100 * n_sig / n_possible) if n_possible else np.nan,
-    }
+    row = {"network": profile["network"], "roi_set": profile["roi_set"], "feature_family": feature_family, "feature": feature, "direction": direction, "n_rois": len(profile["rois"]), "n_possible_edges": n_possible, "n_significant_edges": n_sig, "density": float(n_sig / n_possible) if n_possible else np.nan, "density_per_100_edges": float(100 * n_sig / n_possible) if n_possible else np.nan}
     row.update(summarize_effects(sig))
     return row
 
@@ -252,16 +220,7 @@ def anatomical_density_rows(profiles):
         for feature in ["same_anatomical_group", "cross_anatomical_group"]:
             for direction in DIRECTIONS:
                 sig = direction_sig(sig_all, direction)
-                rows.append(
-                    density_row(
-                        profile,
-                        "anatomical_class",
-                        feature,
-                        possible.loc[possible["anatomical_class"].eq(feature)],
-                        sig.loc[sig["anatomical_class"].eq(feature)],
-                        direction,
-                    )
-                )
+                rows.append(density_row(profile, "anatomical_class", feature, possible.loc[possible["anatomical_class"].eq(feature)], sig.loc[sig["anatomical_class"].eq(feature)], direction))
     return pd.DataFrame(rows)
 
 
@@ -343,30 +302,12 @@ def fisher_compare(a_sig, a_possible, b_sig, b_possible):
     if min(a_sig, a_not, b_sig, b_not) < 0:
         raise ValueError("Significant edge count cannot exceed possible edge count")
     if a_possible == 0 or b_possible == 0:
-        return {
-            "density_a": np.nan,
-            "density_b": np.nan,
-            "density_difference_a_minus_b": np.nan,
-            "density_ratio_a_vs_b": np.nan,
-            "odds_ratio_a_vs_b": np.nan,
-            "odds_ratio_ci95_low": np.nan,
-            "odds_ratio_ci95_high": np.nan,
-            "fisher_p": np.nan,
-        }
+        return {"density_a": np.nan, "density_b": np.nan, "density_difference_a_minus_b": np.nan, "density_ratio_a_vs_b": np.nan, "odds_ratio_a_vs_b": np.nan, "odds_ratio_ci95_low": np.nan, "odds_ratio_ci95_high": np.nan, "fisher_p": np.nan}
     result = fisher_exact([[a_sig, a_not], [b_sig, b_not]], alternative="two-sided")
     ci_low, ci_high = odds_ratio_ci(a_sig, a_not, b_sig, b_not)
     density_a = a_sig / a_possible
     density_b = b_sig / b_possible
-    return {
-        "density_a": float(density_a),
-        "density_b": float(density_b),
-        "density_difference_a_minus_b": float(density_a - density_b),
-        "density_ratio_a_vs_b": density_ratio(a_sig, a_possible, b_sig, b_possible),
-        "odds_ratio_a_vs_b": float(result.statistic),
-        "odds_ratio_ci95_low": ci_low,
-        "odds_ratio_ci95_high": ci_high,
-        "fisher_p": float(result.pvalue),
-    }
+    return {"density_a": float(density_a), "density_b": float(density_b), "density_difference_a_minus_b": float(density_a - density_b), "density_ratio_a_vs_b": density_ratio(a_sig, a_possible, b_sig, b_possible), "odds_ratio_a_vs_b": float(result.statistic), "odds_ratio_ci95_low": ci_low, "odds_ratio_ci95_high": ci_high, "fisher_p": float(result.pvalue)}
 
 
 def bh_q_values(p_values):
@@ -396,12 +337,7 @@ def compare_density_table(density, feature_family):
             continue
         task = group.loc[group["network"].eq("task_activation_z3p1")].iloc[0]
         main = group.loc[group["network"].eq("main_result")].iloc[0]
-        comp = fisher_compare(
-            int(task["n_significant_edges"]),
-            int(task["n_possible_edges"]),
-            int(main["n_significant_edges"]),
-            int(main["n_possible_edges"]),
-        )
+        comp = fisher_compare(int(task["n_significant_edges"]), int(task["n_possible_edges"]), int(main["n_significant_edges"]), int(main["n_possible_edges"]))
         rows.append(
             {
                 "roi_set": roi_set,
@@ -430,14 +366,7 @@ def compare_density_table(density, feature_family):
 
 
 def hemisphere_enrichment_rows(hemisphere_density):
-    return enrichment_rows(
-        hemisphere_density,
-        numerator_feature="between_hemisphere",
-        denominator_feature="within_hemisphere",
-        contrast="between_vs_within_hemisphere",
-        numerator_label="between",
-        denominator_label="within",
-    )
+    return enrichment_rows(hemisphere_density, numerator_feature="between_hemisphere", denominator_feature="within_hemisphere", contrast="between_vs_within_hemisphere", numerator_label="between", denominator_label="within")
 
 
 def enrichment_rows(density, numerator_feature, denominator_feature, contrast, numerator_label, denominator_label):
@@ -449,12 +378,7 @@ def enrichment_rows(density, numerator_feature, denominator_feature, contrast, n
             continue
         numerator = group.loc[group["feature"].eq(numerator_feature)].iloc[0]
         denominator = group.loc[group["feature"].eq(denominator_feature)].iloc[0]
-        comp = fisher_compare(
-            int(numerator["n_significant_edges"]),
-            int(numerator["n_possible_edges"]),
-            int(denominator["n_significant_edges"]),
-            int(denominator["n_possible_edges"]),
-        )
+        comp = fisher_compare(int(numerator["n_significant_edges"]), int(numerator["n_possible_edges"]), int(denominator["n_significant_edges"]), int(denominator["n_possible_edges"]))
         rows.append(
             {
                 "network": network,
@@ -504,17 +428,7 @@ def enrichment_network_comparison(density, numerator_feature, denominator_featur
             c = int(denominator["n_significant_edges"])
             d = int(denominator["n_possible_edges"] - denominator["n_significant_edges"])
             log_or, se = log_odds_ratio_and_se(a, b, c, d)
-            values[network] = {
-                "numerator_sig": a,
-                "numerator_possible": int(numerator["n_possible_edges"]),
-                "numerator_density": float(numerator["density"]),
-                "denominator_sig": c,
-                "denominator_possible": int(denominator["n_possible_edges"]),
-                "denominator_density": float(denominator["density"]),
-                "log_or": log_or,
-                "se": se,
-                "odds_ratio": float(math.exp(log_or)),
-            }
+            values[network] = {"numerator_sig": a, "numerator_possible": int(numerator["n_possible_edges"]), "numerator_density": float(numerator["density"]), "denominator_sig": c, "denominator_possible": int(denominator["n_possible_edges"]), "denominator_density": float(denominator["density"]), "log_or": log_or, "se": se, "odds_ratio": float(math.exp(log_or))}
         if set(values) != set(NETWORK_ORDER):
             continue
         task = values["task_activation_z3p1"]
@@ -652,11 +566,7 @@ def edge_set_similarity(profiles):
             "overlap_coefficient": float(len(overlap) / min(len(task_edges), len(main_edges))) if min(len(task_edges), len(main_edges)) else np.nan,
         }
         if direction == "any" and overlap:
-            merged_overlap = (
-                task_sig.loc[sorted(overlap), ["mean", "direction"]]
-                .rename(columns={"mean": "task_mean", "direction": "task_direction"})
-                .join(main_sig.loc[sorted(overlap), ["mean", "direction"]].rename(columns={"mean": "main_mean", "direction": "main_direction"}))
-            )
+            merged_overlap = (task_sig.loc[sorted(overlap), ["mean", "direction"]] .rename(columns={"mean": "task_mean", "direction": "task_direction"}) .join(main_sig.loc[sorted(overlap), ["mean", "direction"]].rename(columns={"mean": "main_mean", "direction": "main_direction"})))
             row["sign_concordant_overlap_edges"] = int(merged_overlap["task_direction"].eq(merged_overlap["main_direction"]).sum())
             row["sign_concordance_overlap"] = float(merged_overlap["task_direction"].eq(merged_overlap["main_direction"]).mean())
             row["overlap_effect_pearson"] = corr_or_nan(merged_overlap["task_mean"], merged_overlap["main_mean"], "pearson")
@@ -720,17 +630,7 @@ def distribution_similarity(group_density):
         if mix.sum() > 0:
             jsd = 0.5 * np.sum(task_p[valid_task] * np.log2(task_p[valid_task] / mix[valid_task]))
             jsd += 0.5 * np.sum(main_p[valid_main] * np.log2(main_p[valid_main] / mix[valid_main]))
-        rows.append(
-            {
-                "roi_set": roi_set,
-                "direction": direction,
-                "n_group_pairs": int(pivot_density.shape[0]),
-                "density_pearson": corr_or_nan(task_density, main_density, "pearson"),
-                "density_spearman": corr_or_nan(task_density, main_density, "spearman"),
-                "density_cosine": cosine_or_nan(task_density.fillna(0), main_density.fillna(0)),
-                "count_distribution_jsd_bits": float(jsd),
-            }
-        )
+        rows.append({"roi_set": roi_set, "direction": direction, "n_group_pairs": int(pivot_density.shape[0]), "density_pearson": corr_or_nan(task_density, main_density, "pearson"), "density_spearman": corr_or_nan(task_density, main_density, "spearman"), "density_cosine": cosine_or_nan(task_density.fillna(0), main_density.fillna(0)), "count_distribution_jsd_bits": float(jsd)})
     return pd.DataFrame(rows)
 
 
@@ -752,49 +652,18 @@ def significant_changes(*comparison_tables):
                     "roi_set": row.get("roi_set", ""),
                     "feature": feature,
                     "direction": direction,
-                    "task_density_or_normalized_degree": row.get(
-                        "task_density",
-                        row.get("task_normalized_degree", row.get("task_numerator_density", np.nan)),
-                    ),
-                    "main_density_or_normalized_degree": row.get(
-                        "main_density",
-                        row.get("main_normalized_degree", row.get("main_numerator_density", np.nan)),
-                    ),
+                    "task_density_or_normalized_degree": row.get("task_density", row.get("task_normalized_degree", row.get("task_numerator_density", np.nan))),
+                    "main_density_or_normalized_degree": row.get("main_density", row.get("main_normalized_degree", row.get("main_numerator_density", np.nan))),
                     "difference_task_minus_main": density_diff,
                     "higher_density_network": "task_activation_z3p1" if pd.notna(density_diff) and density_diff > 0 else "main_result",
-                    "odds_ratio_task_vs_main": row.get(
-                        "odds_ratio_task_vs_main",
-                        row.get("ratio_of_odds_ratios_task_vs_main", np.nan),
-                    ),
-                    "odds_ratio_ci95_low": row.get(
-                        "odds_ratio_ci95_low",
-                        row.get("ratio_of_odds_ratios_ci95_low", np.nan),
-                    ),
-                    "odds_ratio_ci95_high": row.get(
-                        "odds_ratio_ci95_high",
-                        row.get("ratio_of_odds_ratios_ci95_high", np.nan),
-                    ),
+                    "odds_ratio_task_vs_main": row.get("odds_ratio_task_vs_main", row.get("ratio_of_odds_ratios_task_vs_main", np.nan)),
+                    "odds_ratio_ci95_low": row.get("odds_ratio_ci95_low", row.get("ratio_of_odds_ratios_ci95_low", np.nan)),
+                    "odds_ratio_ci95_high": row.get("odds_ratio_ci95_high", row.get("ratio_of_odds_ratios_ci95_high", np.nan)),
                     "fisher_p": row.get("fisher_p", row.get("wald_p", np.nan)),
                     "q_bh": row.get("q_bh", np.nan),
                 }
             )
-    return pd.DataFrame(rows).sort_values(["q_bh", "fisher_p"], na_position="last") if rows else pd.DataFrame(
-        columns=[
-            "comparison_family",
-            "roi_set",
-            "feature",
-            "direction",
-            "task_density_or_normalized_degree",
-            "main_density_or_normalized_degree",
-            "difference_task_minus_main",
-            "higher_density_network",
-            "odds_ratio_task_vs_main",
-            "odds_ratio_ci95_low",
-            "odds_ratio_ci95_high",
-            "fisher_p",
-            "q_bh",
-        ]
-    )
+    return pd.DataFrame(rows).sort_values(["q_bh", "fisher_p"], na_position="last") if rows else pd.DataFrame(columns=["comparison_family", "roi_set", "feature", "direction", "task_density_or_normalized_degree", "main_density_or_normalized_degree", "difference_task_minus_main", "higher_density_network", "odds_ratio_task_vs_main", "odds_ratio_ci95_low", "odds_ratio_ci95_high", "fisher_p", "q_bh"])
 
 
 def nominal_changes(*comparison_tables):
@@ -818,39 +687,16 @@ def nominal_changes(*comparison_tables):
                     "roi_set": row.get("roi_set", ""),
                     "feature": feature,
                     "direction": direction,
-                    "task_density_or_normalized_degree": row.get(
-                        "task_density",
-                        row.get("task_normalized_degree", row.get("task_numerator_density", np.nan)),
-                    ),
-                    "main_density_or_normalized_degree": row.get(
-                        "main_density",
-                        row.get("main_normalized_degree", row.get("main_numerator_density", np.nan)),
-                    ),
+                    "task_density_or_normalized_degree": row.get("task_density", row.get("task_normalized_degree", row.get("task_numerator_density", np.nan))),
+                    "main_density_or_normalized_degree": row.get("main_density", row.get("main_normalized_degree", row.get("main_numerator_density", np.nan))),
                     "difference_task_minus_main": density_diff,
-                    "odds_or_ratio_of_odds_ratios_task_vs_main": row.get(
-                        "odds_ratio_task_vs_main",
-                        row.get("ratio_of_odds_ratios_task_vs_main", np.nan),
-                    ),
+                    "odds_or_ratio_of_odds_ratios_task_vs_main": row.get("odds_ratio_task_vs_main", row.get("ratio_of_odds_ratios_task_vs_main", np.nan)),
                     "p_value": row.get(p_col, np.nan),
                     "q_bh": row.get("q_bh", np.nan),
                     "survives_bh_q05": row.get("significant_q05", False),
                 }
             )
-    return pd.DataFrame(rows).sort_values(["p_value"], na_position="last") if rows else pd.DataFrame(
-        columns=[
-            "comparison_family",
-            "roi_set",
-            "feature",
-            "direction",
-            "task_density_or_normalized_degree",
-            "main_density_or_normalized_degree",
-            "difference_task_minus_main",
-            "odds_or_ratio_of_odds_ratios_task_vs_main",
-            "p_value",
-            "q_bh",
-            "survives_bh_q05",
-        ]
-    )
+    return pd.DataFrame(rows).sort_values(["p_value"], na_position="last") if rows else pd.DataFrame(columns=["comparison_family", "roi_set", "feature", "direction", "task_density_or_normalized_degree", "main_density_or_normalized_degree", "difference_task_minus_main", "odds_or_ratio_of_odds_ratios_task_vs_main", "p_value", "q_bh", "survives_bh_q05"])
 
 
 def write_report(out_dir, tables, args):
@@ -892,20 +738,13 @@ def write_report(out_dir, tables, args):
         any_row = rows.loc[rows["direction"].eq("any")].iloc[0]
         improved = rows.loc[rows["direction"].eq("improved"), "n_significant_edges"].iloc[0]
         decreased = rows.loc[rows["direction"].eq("decreased"), "n_significant_edges"].iloc[0]
-        lines.append(
-            f"| {network} | {int(any_row.n_rois)} | {int(any_row.n_possible_edges)} | "
-            f"{int(any_row.n_significant_edges)} | {fmt_pct(any_row.density)} | {int(improved)} | {int(decreased)} |"
-        )
+        lines.append(f"| {network} | {int(any_row.n_rois)} | {int(any_row.n_possible_edges)} | " f"{int(any_row.n_significant_edges)} | {fmt_pct(any_row.density)} | {int(improved)} | {int(decreased)} |")
 
     lines.extend(["", "## Between-vs-Within Hemisphere Enrichment", ""])
     lines.append("| network | ROI set | direction | between density | within density | density ratio | OR | p | q |")
     lines.append("|---|---|---|---:|---:|---:|---:|---:|---:|")
     for row in hemi_enrichment.sort_values(["roi_set", "network", "direction"]).itertuples(index=False):
-        lines.append(
-            f"| {row.network} | {row.roi_set} | {row.direction} | {fmt_pct(row.between_density)} | "
-            f"{fmt_pct(row.within_density)} | {row.between_within_density_ratio:.3g} | "
-            f"{row.between_vs_within_odds_ratio:.3g} | {row.fisher_p:.3g} | {row.q_bh:.3g} |"
-        )
+        lines.append(f"| {row.network} | {row.roi_set} | {row.direction} | {fmt_pct(row.between_density)} | " f"{fmt_pct(row.within_density)} | {row.between_within_density_ratio:.3g} | " f"{row.between_vs_within_odds_ratio:.3g} | {row.fisher_p:.3g} | {row.q_bh:.3g} |")
 
     lines.extend(["", "## Significant Task-vs-Main Density Differences", ""])
     if sig_changes.empty:
@@ -914,11 +753,7 @@ def write_report(out_dir, tables, args):
         lines.append("| family | ROI set | feature | direction | task density | main density | OR | p | q |")
         lines.append("|---|---|---|---|---:|---:|---:|---:|---:|")
         for row in sig_changes.head(30).itertuples(index=False):
-            lines.append(
-                f"| {row.comparison_family} | {row.roi_set} | {row.feature} | {row.direction} | "
-                f"{fmt_pct(row.task_density_or_normalized_degree)} | {fmt_pct(row.main_density_or_normalized_degree)} | "
-                f"{row.odds_ratio_task_vs_main:.3g} | {row.fisher_p:.3g} | {row.q_bh:.3g} |"
-            )
+            lines.append(f"| {row.comparison_family} | {row.roi_set} | {row.feature} | {row.direction} | " f"{fmt_pct(row.task_density_or_normalized_degree)} | {fmt_pct(row.main_density_or_normalized_degree)} | " f"{row.odds_ratio_task_vs_main:.3g} | {row.fisher_p:.3g} | {row.q_bh:.3g} |")
 
     lines.extend(["", "## Nominal Task-vs-Main Differences", ""])
     if nominal.empty:
@@ -929,22 +764,14 @@ def write_report(out_dir, tables, args):
         lines.append("| family | ROI set | feature | direction | task | main | OR/ratio | p | q |")
         lines.append("|---|---|---|---|---:|---:|---:|---:|---:|")
         for row in nominal.head(20).itertuples(index=False):
-            lines.append(
-                f"| {row.comparison_family} | {row.roi_set} | {row.feature} | {row.direction} | "
-                f"{fmt_pct(row.task_density_or_normalized_degree)} | {fmt_pct(row.main_density_or_normalized_degree)} | "
-                f"{row.odds_or_ratio_of_odds_ratios_task_vs_main:.3g} | {row.p_value:.3g} | {row.q_bh:.3g} |"
-            )
+            lines.append(f"| {row.comparison_family} | {row.roi_set} | {row.feature} | {row.direction} | " f"{fmt_pct(row.task_density_or_normalized_degree)} | {fmt_pct(row.main_density_or_normalized_degree)} | " f"{row.odds_or_ratio_of_odds_ratios_task_vs_main:.3g} | {row.p_value:.3g} | {row.q_bh:.3g} |")
 
     lines.extend(["", "## Common-ROI Edge Similarity", ""])
     lines.append("| direction | common ROIs | common possible edges | task sig | main sig | overlap | Jaccard | sign concordance |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
     for row in similarity.itertuples(index=False):
         sign = "NA" if pd.isna(row.sign_concordance_overlap) else f"{100 * row.sign_concordance_overlap:.1f}%"
-        lines.append(
-            f"| {row.direction} | {int(row.n_common_rois)} | {int(row.n_common_possible_edges)} | "
-            f"{int(row.task_significant_edges)} | {int(row.main_significant_edges)} | {int(row.overlap_edges)} | "
-            f"{row.jaccard_similarity:.3g} | {sign} |"
-        )
+        lines.append(f"| {row.direction} | {int(row.n_common_rois)} | {int(row.n_common_possible_edges)} | " f"{int(row.task_significant_edges)} | {int(row.main_significant_edges)} | {int(row.overlap_edges)} | " f"{row.jaccard_similarity:.3g} | {sign} |")
 
     lines.extend(["", "## Output Tables", ""])
     for name in sorted(tables):
@@ -971,26 +798,11 @@ def main():
     args = parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    main_data = load_network(
-        NetworkSpec("main_result", args.main_sig, args.main_stats, args.main_rois),
-        args.metric,
-        args.analysis_view,
-        args.fdr_scope,
-    )
-    task_data = load_network(
-        NetworkSpec("task_activation_z3p1", args.task_sig, args.task_stats, args.task_rois),
-        args.metric,
-        args.analysis_view,
-        args.fdr_scope,
-    )
+    main_data = load_network(NetworkSpec("main_result", args.main_sig, args.main_stats, args.main_rois), args.metric, args.analysis_view, args.fdr_scope)
+    task_data = load_network(NetworkSpec("task_activation_z3p1", args.task_sig, args.task_stats, args.task_rois), args.metric, args.analysis_view, args.fdr_scope)
 
     common_rois = sorted(set(main_data.rois) & set(task_data.rois))
-    profiles = [
-        profile_network(task_data, task_data.rois, "full_network"),
-        profile_network(main_data, main_data.rois, "full_network"),
-        profile_network(task_data, common_rois, "common_roi_set"),
-        profile_network(main_data, common_rois, "common_roi_set"),
-    ]
+    profiles = [profile_network(task_data, task_data.rois, "full_network"), profile_network(main_data, main_data.rois, "full_network"), profile_network(task_data, common_rois, "common_roi_set"), profile_network(main_data, common_rois, "common_roi_set")]
 
     network_summary = network_summary_rows(profiles)
     hemisphere_density = hemisphere_density_rows(profiles)
@@ -1003,40 +815,11 @@ def main():
     group_pair_comparison = compare_density_table(group_pair_density, "group_pair")
     node_comparison = node_comparison_rows(profiles)
     hemisphere_enrichment = hemisphere_enrichment_rows(hemisphere_density)
-    anatomical_enrichment = enrichment_rows(
-        anatomical_density,
-        numerator_feature="same_anatomical_group",
-        denominator_feature="cross_anatomical_group",
-        contrast="same_vs_cross_anatomical_group",
-        numerator_label="same",
-        denominator_label="cross",
-    )
-    homotopic_enrichment = enrichment_rows(
-        hemisphere_density,
-        numerator_feature="homotopic",
-        denominator_feature="between_nonhomotopic",
-        contrast="homotopic_vs_between_nonhomotopic",
-        numerator_label="homotopic",
-        denominator_label="between_nonhomotopic",
-    )
-    hemisphere_enrichment_comparison = enrichment_network_comparison(
-        hemisphere_density,
-        numerator_feature="between_hemisphere",
-        denominator_feature="within_hemisphere",
-        contrast="between_vs_within_hemisphere",
-    )
-    anatomical_enrichment_comparison = enrichment_network_comparison(
-        anatomical_density,
-        numerator_feature="same_anatomical_group",
-        denominator_feature="cross_anatomical_group",
-        contrast="same_vs_cross_anatomical_group",
-    )
-    homotopic_enrichment_comparison = enrichment_network_comparison(
-        hemisphere_density,
-        numerator_feature="homotopic",
-        denominator_feature="between_nonhomotopic",
-        contrast="homotopic_vs_between_nonhomotopic",
-    )
+    anatomical_enrichment = enrichment_rows(anatomical_density, numerator_feature="same_anatomical_group", denominator_feature="cross_anatomical_group", contrast="same_vs_cross_anatomical_group", numerator_label="same", denominator_label="cross")
+    homotopic_enrichment = enrichment_rows(hemisphere_density, numerator_feature="homotopic", denominator_feature="between_nonhomotopic", contrast="homotopic_vs_between_nonhomotopic", numerator_label="homotopic", denominator_label="between_nonhomotopic")
+    hemisphere_enrichment_comparison = enrichment_network_comparison(hemisphere_density, numerator_feature="between_hemisphere", denominator_feature="within_hemisphere", contrast="between_vs_within_hemisphere")
+    anatomical_enrichment_comparison = enrichment_network_comparison(anatomical_density, numerator_feature="same_anatomical_group", denominator_feature="cross_anatomical_group", contrast="same_vs_cross_anatomical_group")
+    homotopic_enrichment_comparison = enrichment_network_comparison(hemisphere_density, numerator_feature="homotopic", denominator_feature="between_nonhomotopic", contrast="homotopic_vs_between_nonhomotopic")
     similarity = edge_set_similarity(profiles)
     group_distribution_similarity = distribution_similarity(group_pair_density)
 

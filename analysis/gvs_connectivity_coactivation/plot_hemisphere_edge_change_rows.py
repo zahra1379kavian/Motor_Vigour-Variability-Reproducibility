@@ -36,22 +36,7 @@ DEFAULT_REPORTS = (
         / "metric_sensitivity"
         / "fdr_significant_edge_connectivity_metric_sensitivity.csv",
     ),
-    (
-        ROOT
-        / "figures"
-        / "GVS_effects"
-        / "main result"
-        / "metric_sensitivity"
-        / "connectogram_reports"
-        / "mutual_info_quantile__all_subjects_block_pool_pool_all_subjects_blocks_gvs_any_gvs.png",
-        ROOT
-        / "figures"
-        / "GVS_effects"
-        / "GPT"
-        / "08_connectivity_coactivation"
-        / "metric_sensitivity"
-        / "fdr_significant_edge_connectivity_metric_sensitivity.csv",
-    ),
+    (ROOT / "figures" / "GVS_effects" / "main result" / "metric_sensitivity" / "connectogram_reports" / "mutual_info_quantile__all_subjects_block_pool_pool_all_subjects_blocks_gvs_any_gvs.png", ROOT / "figures" / "GVS_effects" / "GPT" / "08_connectivity_coactivation" / "metric_sensitivity" / "fdr_significant_edge_connectivity_metric_sensitivity.csv"),
 )
 
 PAPER_FONT_FAMILY = "Liberation Sans"
@@ -60,14 +45,7 @@ DECREASE_COLOR = "#2166ac"
 ROW_ORDER = ("Between hemispheres", "Within hemisphere")
 Y_POSITIONS = {"Within hemisphere": 0.0, "Between hemispheres": 1.0}
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 
 
 def clean_slug(text):
@@ -121,9 +99,7 @@ def load_report_edges(source_csv, report_png):
     if matched.empty:
         raise ValueError(f"No FDR-significant edges matched {report_png.name} in {source_csv}")
 
-    matched["hemisphere_relation"] = [
-        hemisphere_relation(roi_i, roi_j) for roi_i, roi_j in zip(matched["roi_i"], matched["roi_j"], strict=True)
-    ]
+    matched["hemisphere_relation"] = [hemisphere_relation(roi_i, roi_j) for roi_i, roi_j in zip(matched["roi_i"], matched["roi_j"], strict=True)]
     unknown = matched.loc[matched["hemisphere_relation"] == "Unclassified", ["roi_i", "roi_j"]]
     if not unknown.empty:
         preview = unknown.head(5).to_dict(orient="records")
@@ -150,9 +126,7 @@ def load_possible_edge_denominators(source_csv, report_png):
     if matched.empty:
         raise ValueError(f"No full-stat edge rows matched {report_png.name} in {stats_csv}")
 
-    matched["hemisphere_relation"] = [
-        hemisphere_relation(roi_i, roi_j) for roi_i, roi_j in zip(matched["roi_i"], matched["roi_j"], strict=True)
-    ]
+    matched["hemisphere_relation"] = [hemisphere_relation(roi_i, roi_j) for roi_i, roi_j in zip(matched["roi_i"], matched["roi_j"], strict=True)]
     unknown = matched.loc[matched["hemisphere_relation"] == "Unclassified", ["roi_i", "roi_j"]]
     if not unknown.empty:
         preview = unknown.head(5).to_dict(orient="records")
@@ -178,17 +152,7 @@ def add_panel(ax, edges, title, color, x_max, denominators):
 
         denominator = denominators.get(relation, 0)
         density_label = "NA" if denominator <= 0 else f"{relation_edges.shape[0] / denominator:.1%}"
-        ax.text(
-            0.985,
-            y_center,
-            density_label,
-            transform=ax.get_yaxis_transform(),
-            ha="right",
-            va="center",
-            fontsize=9.3,
-            color="#333333",
-            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.75, "pad": 1.5},
-        )
+        ax.text(0.985, y_center, density_label, transform=ax.get_yaxis_transform(), ha="right", va="center", fontsize=9.3, color="#333333", bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.75, "pad": 1.5})
 
     ax.set_title(title, loc="left", fontsize=12.6, fontweight="bold", color=color, pad=5)
     ax.set_yticks([Y_POSITIONS[label] for label in ROW_ORDER])
@@ -237,21 +201,7 @@ def process_report(report_png, source_csv):
     denominators = load_possible_edge_denominators(source_csv, report_png)
     path_base = output_base(report_png)
     plot_hemisphere_rows(edges, denominators, path_base)
-    export_cols = [
-        "metric",
-        "analysis_view",
-        "fdr_scope",
-        "edge_id",
-        "roi_i",
-        "roi_j",
-        "edge_label",
-        "mean",
-        "plot_value",
-        "q_fdr",
-        "p_signflip",
-        "direction",
-        "hemisphere_relation",
-    ]
+    export_cols = ["metric", "analysis_view", "fdr_scope", "edge_id", "roi_i", "roi_j", "edge_label", "mean", "plot_value", "q_fdr", "p_signflip", "direction", "hemisphere_relation"]
     available_cols = [col for col in export_cols if col in edges.columns]
     edges[available_cols].to_csv(path_base.with_suffix(".csv"), index=False)
     return path_base
@@ -259,13 +209,7 @@ def process_report(report_png, source_csv):
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--report",
-        nargs=2,
-        action="append",
-        metavar=("REPORT_PNG", "SOURCE_CSV"),
-        help="Connectogram PNG and matching FDR-significant edge CSV. May be repeated.",
-    )
+    parser.add_argument("--report", nargs=2, action="append", metavar=("REPORT_PNG", "SOURCE_CSV"), help="Connectogram PNG and matching FDR-significant edge CSV. May be repeated.")
     return parser
 
 

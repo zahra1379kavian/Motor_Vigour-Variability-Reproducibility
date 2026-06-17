@@ -57,12 +57,8 @@ ROOT = HERE.parents[1]
 # task-activation ROI definition in figures/med_effects_task_activation.
 TS_DIR = ROOT / "results" / "main" / "figure_06a_medication_vigour_network" / "roi_timeseries"
 OUT = ROOT / "results" / "supplementary" / "figure_09_medication_fc_consistency"
-DEFAULT_TRIAL_TABLE = (
-    ROOT / "data" / "processed" / "gvs_connectivity" / "vigour_network" / "per_trial_roi_betas.csv"
-)
-GVS_METRIC_SCRIPT = (
-    ROOT / "analysis" / "gvs_connectivity_coactivation" / "run_edge_connectivity_metric_sensitivity.py"
-)
+DEFAULT_TRIAL_TABLE = (ROOT / "data" / "processed" / "gvs_connectivity" / "vigour_network" / "per_trial_roi_betas.csv")
+GVS_METRIC_SCRIPT = (ROOT / "analysis" / "gvs_connectivity_coactivation" / "run_edge_connectivity_metric_sensitivity.py")
 
 OFF_SESSION = "ses-1"
 ON_SESSION = "ses-2"
@@ -70,10 +66,7 @@ RUN_1 = "1"
 RUN_2 = "2"
 N_SPLITS = 50          # random half-splits for the noise floor
 N_PERM = 10000
-TRIAL_META_COLUMNS = {
-    "subject", "session", "medication", "run", "condition_code",
-    "condition_label", "trial_in_condition",
-}
+TRIAL_META_COLUMNS = {"subject", "session", "medication", "run", "condition_code", "condition_label", "trial_in_condition"}
 
 
 def _load(path, name):
@@ -88,12 +81,7 @@ def _load(path, name):
 
 gvs = _load(GVS_METRIC_SCRIPT, "gvs_edge_metric_sensitivity")
 
-FC_METRICS = [
-    ("pearson_r", gvs.pearson_edges),
-    ("spearman_rho", gvs.spearman_edges),
-    ("partial_corr_ledoitwolf", gvs.partial_corr_edges),
-    ("mutual_info_quantile", gvs.mutual_information_edges),
-]
+FC_METRICS = [("pearson_r", gvs.pearson_edges), ("spearman_rho", gvs.spearman_edges), ("partial_corr_ledoitwolf", gvs.partial_corr_edges), ("mutual_info_quantile", gvs.mutual_information_edges)]
 
 
 def load_timeseries(subject, session):
@@ -138,9 +126,7 @@ def load_run_timeseries(trial_table):
     work["_session_label"] = work["session"].map(_session_label)
     work["_run_label"] = work["run"].map(_run_label)
     run_ts = {}
-    for (subject, session, run), group in work.groupby(
-        ["subject", "_session_label", "_run_label"], sort=True
-    ):
+    for (subject, session, run), group in work.groupby(["subject", "_session_label", "_run_label"], sort=True):
         roi_df = group.loc[:, roi_cols].apply(pd.to_numeric, errors="coerce")
         roi_df = roi_df.loc[~roi_df.isna().all(axis=1)]
         if roi_df.empty:
@@ -151,19 +137,12 @@ def load_run_timeseries(trial_table):
 
 def complete_subjects():
     subs = sorted({p.name.split("_ses")[0] for p in TS_DIR.glob("*.csv")})
-    return [
-        s for s in subs
-        if (TS_DIR / f"{s}_{OFF_SESSION}.csv").exists()
-        and (TS_DIR / f"{s}_{ON_SESSION}.csv").exists()
-    ]
+    return [s for s in subs if (TS_DIR / f"{s}_{OFF_SESSION}.csv").exists() and (TS_DIR / f"{s}_{ON_SESSION}.csv").exists()]
 
 
 def complete_run_subjects(run_ts):
     subjects = sorted({subject for subject, _, _ in run_ts})
-    required = {
-        (OFF_SESSION, RUN_1), (OFF_SESSION, RUN_2),
-        (ON_SESSION, RUN_1), (ON_SESSION, RUN_2),
-    }
+    required = {(OFF_SESSION, RUN_1), (OFF_SESSION, RUN_2), (ON_SESSION, RUN_1), (ON_SESSION, RUN_2)}
     keep = []
     for subject in subjects:
         available = {(session, run) for s, session, run in run_ts if s == subject}
@@ -182,23 +161,10 @@ def corr_distance(a, b):
 
 def run_distances(run_ts, subject, fc_fn):
     """Return (within_state_dist, between_state_dist) from run 1/run 2 networks."""
-    off_edges = {
-        run: fc_fn(run_ts[(subject, OFF_SESSION, run)])
-        for run in (RUN_1, RUN_2)
-    }
-    on_edges = {
-        run: fc_fn(run_ts[(subject, ON_SESSION, run)])
-        for run in (RUN_1, RUN_2)
-    }
-    within = [
-        corr_distance(off_edges[RUN_1], off_edges[RUN_2]),
-        corr_distance(on_edges[RUN_1], on_edges[RUN_2]),
-    ]
-    between = [
-        corr_distance(off_edges[off_run], on_edges[on_run])
-        for off_run in (RUN_1, RUN_2)
-        for on_run in (RUN_1, RUN_2)
-    ]
+    off_edges = {run: fc_fn(run_ts[(subject, OFF_SESSION, run)]) for run in (RUN_1, RUN_2)}
+    on_edges = {run: fc_fn(run_ts[(subject, ON_SESSION, run)]) for run in (RUN_1, RUN_2)}
+    within = [corr_distance(off_edges[RUN_1], off_edges[RUN_2]), corr_distance(on_edges[RUN_1], on_edges[RUN_2])]
+    between = [corr_distance(off_edges[off_run], on_edges[on_run]) for off_run in (RUN_1, RUN_2) for on_run in (RUN_1, RUN_2)]
     return float(np.nanmean(within)), float(np.nanmean(between))
 
 
@@ -219,18 +185,12 @@ def split_distances(off_ts, on_ts, fc_fn, rng):
         fn1, fn2 = fc_fn(n1), fc_fn(n2)
         within.append(corr_distance(fo1, fo2))
         within.append(corr_distance(fn1, fn2))
-        between.extend([
-            corr_distance(fo1, fn1), corr_distance(fo1, fn2),
-            corr_distance(fo2, fn1), corr_distance(fo2, fn2),
-        ])
+        between.extend([corr_distance(fo1, fn1), corr_distance(fo1, fn2), corr_distance(fo2, fn1), corr_distance(fo2, fn2)])
     return float(np.nanmean(within)), float(np.nanmean(between))
 
 
 def concatenate_session_runs(run_ts, subject, session):
-    return np.vstack([
-        run_ts[(subject, session, RUN_1)],
-        run_ts[(subject, session, RUN_2)],
-    ])
+    return np.vstack([run_ts[(subject, session, RUN_1)], run_ts[(subject, session, RUN_2)]])
 
 
 def paired_signflip_p(delta, rng):
@@ -278,34 +238,24 @@ def consistency_stats(deltas, rng):
         p_loo_greater = p_loo / 2 if t_loo > 0 else 1 - p_loo / 2
     else:
         t_loo, p_loo_greater = np.nan, np.nan
-    return dict(mean_pairwise_corr=mean_pairwise, p_perm_consistency=p_perm,
-                mean_loo_corr=mean_loo, t_loo=float(t_loo),
-                p_loo_greater=float(p_loo_greater), loo=loo)
+    return dict(mean_pairwise_corr=mean_pairwise, p_perm_consistency=p_perm, mean_loo_corr=mean_loo, t_loo=float(t_loo), p_loo_greater=float(p_loo_greater), loo=loo)
 
 
 def main():
     global TS_DIR, OUT
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--trial-table", type=Path, default=DEFAULT_TRIAL_TABLE,
-                        help="run-labelled ROI beta-series table; default uses the vigour-weighted table")
-    parser.add_argument("--ts-dir", type=Path, default=TS_DIR,
-                        help="directory of per-subject/session ROI timeseries CSVs")
-    parser.add_argument("--out", type=Path, default=OUT,
-                        help="output directory")
-    parser.add_argument("--split-half", action="store_true",
-                        help="legacy mode: use random split halves of concatenated session time series")
-    parser.add_argument("--merge-panel", nargs=2, action="append", default=[],
-                        metavar=("LABEL", "CONSISTENCY_DIR"),
-                        help="make a merged figure from existing output dirs; repeat for each row")
-    parser.add_argument("--merged-out", type=Path, default=OUT,
-                        help="directory for merged-network figure when --merge-panel is used")
+    parser.add_argument("--trial-table", type=Path, default=DEFAULT_TRIAL_TABLE, help="run-labelled ROI beta-series table; default uses the vigour-weighted table")
+    parser.add_argument("--ts-dir", type=Path, default=TS_DIR, help="directory of per-subject/session ROI timeseries CSVs")
+    parser.add_argument("--out", type=Path, default=OUT, help="output directory")
+    parser.add_argument("--split-half", action="store_true", help="legacy mode: use random split halves of concatenated session time series")
+    parser.add_argument("--merge-panel", nargs=2, action="append", default=[], metavar=("LABEL", "CONSISTENCY_DIR"), help="make a merged figure from existing output dirs; repeat for each row")
+    parser.add_argument("--merged-out", type=Path, default=OUT, help="directory for merged-network figure when --merge-panel is used")
     args = parser.parse_args()
     TS_DIR = args.ts_dir
     OUT = args.out
 
     if args.merge_panel:
-        _make_merged_figure([(label, Path(path)) for label, path in args.merge_panel],
-                            args.merged_out)
+        _make_merged_figure([(label, Path(path)) for label, path in args.merge_panel], args.merged_out)
         return
 
     source = "split_half" if args.split_half else "run1_vs_run2"
@@ -345,10 +295,7 @@ def main():
                 w, b = run_distances(run_ts, s, fc_fn)
             within_d.append(w)
             between_d.append(b)
-            noise_rows.append(dict(fc_metric=fc_name, subject=s,
-                                   noise_floor=source,
-                                   within_state_dist=w, between_state_dist=b,
-                                   excess=b - w))
+            noise_rows.append(dict(fc_metric=fc_name, subject=s, noise_floor=source, within_state_dist=w, between_state_dist=b, excess=b - w))
         within_d = np.array(within_d)
         between_d = np.array(between_d)
         excess = between_d - within_d
@@ -376,11 +323,7 @@ def main():
             mean_loo_corr=cs["mean_loo_corr"],
             loo_t=cs["t_loo"], loo_p_greater=cs["p_loo_greater"]))
 
-        print(f"  {fc_name:24s} | Q1 within={np.nanmean(within_d):.3f} "
-              f"between={np.nanmean(between_d):.3f} excess d={d_e:.2f} "
-              f"p={p_e_greater:.3g} perm={p_e_perm:.3g} changed={n_pos}/{n_sub} "
-              f"|| Q2 pairwise r={cs['mean_pairwise_corr']:.3f} "
-              f"p={cs['p_perm_consistency']:.3g} LOO r={cs['mean_loo_corr']:.3f}")
+        print(f" {fc_name:24s} | Q1 within={np.nanmean(within_d):.3f} " f"between={np.nanmean(between_d):.3f} excess d={d_e:.2f} " f"p={p_e_greater:.3g} perm={p_e_perm:.3g} changed={n_pos}/{n_sub} " f"|| Q2 pairwise r={cs['mean_pairwise_corr']:.3f} " f"p={cs['p_perm_consistency']:.3g} LOO r={cs['mean_loo_corr']:.3f}")
 
     noise = pd.DataFrame(noise_rows)
     loo = pd.DataFrame(loo_rows)
@@ -390,14 +333,9 @@ def main():
     summary.to_csv(OUT / "change_consistency_summary.csv", index=False)
 
     _make_figure(noise, summary)
-    (OUT / "med_fc_change_consistency_method.md").write_text(
-        _method_note(n_sub, source=source, trial_table=args.trial_table if not args.split_half else None)
-    )
+    (OUT / "med_fc_change_consistency_method.md").write_text(_method_note(n_sub, source=source, trial_table=args.trial_table if not args.split_half else None))
     print("\nSummary:")
-    cols = ["fc_metric", "mean_within_dist", "mean_between_dist", "mean_excess",
-            "excess_cohens_d", "excess_p_greater", "excess_p_signflip",
-            "n_subjects_changed", "mean_pairwise_delta_corr",
-            "consistency_p_perm", "mean_loo_corr", "loo_p_greater"]
+    cols = ["fc_metric", "mean_within_dist", "mean_between_dist", "mean_excess", "excess_cohens_d", "excess_p_greater", "excess_p_signflip", "n_subjects_changed", "mean_pairwise_delta_corr", "consistency_p_perm", "mean_loo_corr", "loo_p_greater"]
     print(summary[cols].to_string(index=False))
 
 
@@ -422,15 +360,12 @@ def _load_edge_summary(panel_dir):
 
 def _edge_title_line(edge_summary, fc, g):
     if edge_summary is None or "metric" not in edge_summary.columns:
-        return (f"consistency r={g['mean_pairwise_delta_corr']:.3f} "
-                f"p={g['consistency_p_perm']:.3g}")
+        return (f"consistency r={g['mean_pairwise_delta_corr']:.3f} " f"p={g['consistency_p_perm']:.3g}")
     row = edge_summary.loc[edge_summary["metric"] == fc]
     if row.empty:
-        return (f"consistency r={g['mean_pairwise_delta_corr']:.3f} "
-                f"p={g['consistency_p_perm']:.3g}")
+        return (f"consistency r={g['mean_pairwise_delta_corr']:.3f} " f"p={g['consistency_p_perm']:.3g}")
     row = row.iloc[0]
-    return (f"edge-FDR q<0.05: t={int(row['n_sig_edges_fdr_ttest'])}, "
-            f"perm={int(row['n_sig_edges_fdr_perm'])}")
+    return (f"edge-FDR q<0.05: t={int(row['n_sig_edges_fdr_ttest'])}, " f"perm={int(row['n_sig_edges_fdr_perm'])}")
 
 
 def _draw_metric_axis(ax, noise, summary, fc, *, show_ylabel, show_legend, edge_summary=None):
@@ -441,16 +376,12 @@ def _draw_metric_axis(ax, noise, summary, fc, *, show_ylabel, show_legend, edge_
     w, b = d["within_state_dist"].to_numpy(), d["between_state_dist"].to_numpy()
     for wi, bi in zip(w, b):
         ax.plot([0, 1], [wi, bi], color="0.7", lw=0.7, zorder=1)
-    ax.scatter(np.zeros_like(w), w, color="#3182bd", s=16, zorder=2,
-               label=noise_label)
-    ax.scatter(np.ones_like(b), b, color="#e6550d", s=16, zorder=2,
-               label="ON vs OFF")
+    ax.scatter(np.zeros_like(w), w, color="#3182bd", s=16, zorder=2, label=noise_label)
+    ax.scatter(np.ones_like(b), b, color="#e6550d", s=16, zorder=2, label="ON vs OFF")
     ax.set_xticks([0, 1])
     ax.set_xticklabels(ticklabels, fontsize=8)
     star = "*" if (np.isfinite(g["excess_p_signflip"]) and g["excess_p_signflip"] < 0.05) else ""
-    ax.set_title(f"{fc}\nchange>noise: d={g['excess_cohens_d']:.2f} "
-                 f"p={g['excess_p_signflip']:.3g}{star}\n"
-                 f"{_edge_title_line(edge_summary, fc, g)}", fontsize=7.5)
+    ax.set_title(f"{fc}\nchange>noise: d={g['excess_cohens_d']:.2f} " f"p={g['excess_p_signflip']:.3g}{star}\n" f"{_edge_title_line(edge_summary, fc, g)}", fontsize=7.5)
     if show_ylabel:
         ax.set_ylabel("correlation distance", fontsize=8)
     ax.tick_params(labelsize=7)
@@ -465,11 +396,8 @@ def _make_figure(noise, summary):
     edge_summary = _load_edge_summary(OUT)
     for c, fc in enumerate(fcs):
         ax = axes[0][c]
-        _draw_metric_axis(ax, noise, summary, fc, show_ylabel=(c == 0),
-                          show_legend=(c == 0), edge_summary=edge_summary)
-    fig.suptitle(f"Does medication change the FC network (vs {noise_title}), and which "
-                 f"edges change consistently? (n={int(summary['n_subjects'].max())})",
-                 fontsize=11)
+        _draw_metric_axis(ax, noise, summary, fc, show_ylabel=(c == 0), show_legend=(c == 0), edge_summary=edge_summary)
+    fig.suptitle(f"Does medication change the FC network (vs {noise_title}), and which " f"edges change consistently? (n={int(summary['n_subjects'].max())})", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(OUT / "med_fc_change_consistency.png", dpi=200)
     fig.savefig(OUT / "med_fc_change_consistency.pdf")
@@ -485,19 +413,14 @@ def _make_merged_figure(panel_specs, out_dir):
         summary_path = panel_dir / "change_consistency_summary.csv"
         if not noise_path.exists() or not summary_path.exists():
             raise FileNotFoundError(f"Missing consistency CSVs under {panel_dir}")
-        panels.append((label, pd.read_csv(noise_path), pd.read_csv(summary_path),
-                       _load_edge_summary(panel_dir)))
+        panels.append((label, pd.read_csv(noise_path), pd.read_csv(summary_path), _load_edge_summary(panel_dir)))
 
     fcs = list(dict.fromkeys(panels[0][2]["fc_metric"]))
-    fig, axes = plt.subplots(len(panels), len(fcs), figsize=(3.2 * len(fcs), 3.25 * len(panels)),
-                             squeeze=False)
+    fig, axes = plt.subplots(len(panels), len(fcs), figsize=(3.2 * len(fcs), 3.25 * len(panels)), squeeze=False)
     for r, (label, noise, summary, edge_summary) in enumerate(panels):
         for c, fc in enumerate(fcs):
-            _draw_metric_axis(axes[r][c], noise, summary, fc,
-                              show_ylabel=(c == 0), show_legend=(c == 0),
-                              edge_summary=edge_summary)
-        axes[r][0].text(-0.24, 1.28, label, transform=axes[r][0].transAxes,
-                        ha="left", va="bottom", fontsize=13, fontweight="bold")
+            _draw_metric_axis(axes[r][c], noise, summary, fc, show_ylabel=(c == 0), show_legend=(c == 0), edge_summary=edge_summary)
+        axes[r][0].text(-0.24, 1.28, label, transform=axes[r][0].transAxes, ha="left", va="bottom", fontsize=13, fontweight="bold")
     fig.tight_layout(h_pad=3.0)
     out_dir.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_dir / "med_fc_change_consistency_merged_networks.png", dpi=200)

@@ -30,10 +30,7 @@ KEEP_VALUE = 0
 EVENT_DURATION = "2"
 EVENT_AMPLITUDE = "1"
 
-BOLD_RE = re.compile(
-    r"sub-pd(?P<sub>\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)_"
-    r"task-mv_bold_corrected_smoothed_mnireg-2mm(?:-upsampled)?\.nii\.gz$"
-)
+BOLD_RE = re.compile(r"sub-pd(?P<sub>\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)_" r"task-mv_bold_corrected_smoothed_mnireg-2mm(?:-upsampled)?\.nii\.gz$")
 
 
 class BoldRun:
@@ -74,9 +71,7 @@ class SessionSelection:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate first-level EV files and outputs/run_table.tsv."
-    )
+    parser = argparse.ArgumentParser(description="Generate first-level EV files and outputs/run_table.tsv.")
     parser.add_argument("--bold-dir", type=Path, default=DEFAULT_BOLD_DIR)
     parser.add_argument("--onset-dir", type=Path, default=DEFAULT_ONSET_DIR)
     parser.add_argument("--trial-dir", type=Path, default=DEFAULT_TRIAL_DIR)
@@ -92,14 +87,7 @@ def discover_bold_runs(bold_dir):
         match = BOLD_RE.match(bold.name)
         if not match:
             continue
-        runs.append(
-            BoldRun(
-                sub=match.group("sub"),
-                ses=int(match.group("ses")),
-                run=int(match.group("run")),
-                path=bold,
-            )
-        )
+        runs.append(BoldRun(sub=match.group("sub"), ses=int(match.group("ses")), run=int(match.group("run")), path=bold))
     return runs
 
 
@@ -179,13 +167,7 @@ def choose_session_selection(trial_dir, onset_dir, sub, ses):
         selected = preferred
 
     path, _ = states[selected]
-    return SessionSelection(
-        state=selected,
-        trial_file=path,
-        kept_by_run=kept_counts_by_state[selected],
-        ambiguous=len(matches) > 1,
-        matched_counts=selected in matches,
-    )
+    return SessionSelection(state=selected, trial_file=path, kept_by_run=kept_counts_by_state[selected], ambiguous=len(matches) > 1, matched_counts=selected in matches)
 
 
 def kept_ev_rows(source_rows, trials, run, source):
@@ -197,10 +179,7 @@ def kept_ev_rows(source_rows, trials, run, source):
     if len(source_rows) == n_kept:
         return source_rows, "source_already_kept_only"
 
-    raise ValueError(
-        f"{source} has {len(source_rows)} rows, but skipped-trials column run-{run} "
-        f"has {len(keep_mask)} trials and {n_kept} kept trials"
-    )
+    raise ValueError(f"{source} has {len(source_rows)} rows, but skipped-trials column run-{run} " f"has {len(keep_mask)} trials and {n_kept} kept trials")
 
 
 def write_ev(path, rows):
@@ -235,10 +214,7 @@ def main():
             continue
 
         try:
-            selection = selection_cache.setdefault(
-                (run.sub, run.ses),
-                choose_session_selection(trial_dir, onset_dir, run.sub, run.ses),
-            )
+            selection = selection_cache.setdefault((run.sub, run.ses), choose_session_selection(trial_dir, onset_dir, run.sub, run.ses))
             trials = load_trials(selection.trial_file)
             source_rows = read_ev_rows(source_ev)
             rows, selection_mode = kept_ev_rows(source_rows, trials, run.run, source_ev)
@@ -249,15 +225,7 @@ def main():
         out_ev = ev_dir / source_ev.name
         write_ev(out_ev, rows)
 
-        run_rows.append(
-            {
-                "sub": run.bids_sub,
-                "ses": run.bids_ses,
-                "run": run.bids_run,
-                "bold": str(run.path.resolve()),
-                "ev": str(out_ev),
-            }
-        )
+        run_rows.append({"sub": run.bids_sub, "ses": run.bids_ses, "run": run.bids_run, "bold": str(run.path.resolve()), "ev": str(out_ev)})
         summary_rows.append(
             {
                 "sub": run.bids_sub,
@@ -283,36 +251,13 @@ def main():
 
     run_table.parent.mkdir(parents=True, exist_ok=True)
     with run_table.open("w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            delimiter="\t",
-            fieldnames=["sub", "ses", "run", "bold", "ev"],
-            lineterminator="\n",
-        )
+        writer = csv.DictWriter(f, delimiter="\t", fieldnames=["sub", "ses", "run", "bold", "ev"], lineterminator="\n")
         writer.writeheader()
         writer.writerows(run_rows)
 
     summary.parent.mkdir(parents=True, exist_ok=True)
     with summary.open("w", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            delimiter="\t",
-            fieldnames=[
-                "sub",
-                "ses",
-                "run",
-                "trial_file",
-                "condition",
-                "source_ev",
-                "output_ev",
-                "source_rows",
-                "kept_rows",
-                "selection_mode",
-                "matched_session_counts",
-                "ambiguous_condition_match",
-            ],
-            lineterminator="\n",
-        )
+        writer = csv.DictWriter(f, delimiter="\t", fieldnames=["sub", "ses", "run", "trial_file", "condition", "source_ev", "output_ev", "source_rows", "kept_rows", "selection_mode", "matched_session_counts", "ambiguous_condition_match"], lineterminator="\n")
         writer.writeheader()
         writer.writerows(summary_rows)
 

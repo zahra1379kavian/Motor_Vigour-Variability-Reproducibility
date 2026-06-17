@@ -5,15 +5,7 @@ import numpy as np
 from scipy import ndimage
 from scipy.ndimage import distance_transform_edt
 
-from analyze_ablation_constraints import (
-    DEFAULT_TASK_ONLY_MAP,
-    DEFAULT_TASK_ONLY_Z_THRESHOLD,
-    MOTOR_CONTOUR_ROIS,
-    MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS,
-    _atlas_roi_mask,
-    _brainstem_mask,
-    _load_data,
-)
+from analyze_ablation_constraints import (DEFAULT_TASK_ONLY_MAP, DEFAULT_TASK_ONLY_Z_THRESHOLD, MOTOR_CONTOUR_ROIS, MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS, _atlas_roi_mask, _brainstem_mask, _load_data)
 
 
 def motor_overlap_masks(selected_mask, display_affine, task_only_map=DEFAULT_TASK_ONLY_MAP, task_z_threshold=DEFAULT_TASK_ONLY_Z_THRESHOLD):
@@ -32,14 +24,7 @@ def motor_overlap_masks(selected_mask, display_affine, task_only_map=DEFAULT_TAS
     brainstem_mask = _brainstem_mask(display_img)
     motor_mask = _atlas_roi_mask(display_img, MOTOR_CONTOUR_ROIS)
     shared_motor_mask = (selected_mask & ~brainstem_mask) & (task_mask & ~brainstem_mask) & motor_mask
-    display_mask = (
-        ndimage.binary_dilation(
-            shared_motor_mask,
-            structure=ndimage.generate_binary_structure(3, 1),
-            iterations=MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS,
-        )
-        & motor_mask
-    )
+    display_mask = (ndimage.binary_dilation(shared_motor_mask, structure=ndimage.generate_binary_structure(3, 1), iterations=MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS) & motor_mask)
     return display_mask, shared_motor_mask
 
 

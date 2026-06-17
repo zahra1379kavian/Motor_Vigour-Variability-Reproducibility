@@ -16,10 +16,7 @@ DEFAULT_SESSION_DIR = ROOT / "outputs/feat/session_fixed.gfeat"
 DEFAULT_OUTPUT_BASE = ROOT / "outputs/feat/mixed_model"
 DEFAULT_FSF_DIR = ROOT / "outputs/fsf/mixed_model"
 DEFAULT_LOG_DIR = ROOT / "outputs/logs/mixed_model"
-FALLBACK_TEMPLATE = Path(
-    "/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/"
-    "test_feat/2ndlevel_1.gfeat/design.fsf"
-)
+FALLBACK_TEMPLATE = Path("/usr/local/fsl/lib/python3.12/site-packages/fsl/tests/testdata/" "test_feat/2ndlevel_1.gfeat/design.fsf")
 
 SESSION_RE = re.compile(r"sub(?P<sub>\d+)-ses(?P<ses>\d+)\.gfeat$")
 
@@ -36,22 +33,14 @@ class SessionInput:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate and optionally run a mixed-effects FEAT across subject/session inputs."
-    )
+    parser = argparse.ArgumentParser(description="Generate and optionally run a mixed-effects FEAT across subject/session inputs.")
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--session-dir", type=Path, default=DEFAULT_SESSION_DIR)
     parser.add_argument("--output-base", type=Path, default=DEFAULT_OUTPUT_BASE)
     parser.add_argument("--fsf-dir", type=Path, default=DEFAULT_FSF_DIR)
     parser.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
     parser.add_argument("--feat-cmd", default="feat")
-    parser.add_argument(
-        "--exclude-sub",
-        type=int,
-        nargs="+",
-        default=[],
-        help="Subject numbers to omit from the mixed-effects model.",
-    )
+    parser.add_argument("--exclude-sub", type=int, nargs="+", default=[], help="Subject numbers to omit from the mixed-effects model.")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -68,11 +57,7 @@ def replace_setting(text, key, value, append_missing=False):
 
 
 def strip_input_settings(text):
-    patterns = (
-        r'^set feat_files\(\d+\)\s+.*\n?',
-        r'^set fmri\(evg\d+\.1\)\s+.*\n?',
-        r'^set fmri\(groupmem\.\d+\)\s+.*\n?',
-    )
+    patterns = (r'^set feat_files\(\d+\)\s+.*\n?', r'^set fmri\(evg\d+\.1\)\s+.*\n?', r'^set fmri\(groupmem\.\d+\)\s+.*\n?')
     for pattern in patterns:
         text = re.sub(pattern, "", text, flags=re.MULTILINE)
     return f"{text.rstrip()}\n"
@@ -94,22 +79,12 @@ def discover_inputs(session_dir):
         if not match:
             continue
         input_feat = gfeat / "cope1.feat"
-        required = (
-            input_feat / "report.html",
-            input_feat / "stats/cope1.nii.gz",
-            input_feat / "stats/varcope1.nii.gz",
-        )
+        required = (input_feat / "report.html", input_feat / "stats/cope1.nii.gz", input_feat / "stats/varcope1.nii.gz")
         missing = [str(path) for path in required if not path.exists()]
         if missing:
             warnings.append(f"Skipping incomplete {gfeat}: missing {', '.join(missing)}")
             continue
-        inputs.append(
-            SessionInput(
-                sub=int(match.group("sub")),
-                ses=int(match.group("ses")),
-                path=input_feat,
-            )
-        )
+        inputs.append(SessionInput(sub=int(match.group("sub")), ses=int(match.group("ses")), path=input_feat))
     return inputs, warnings
 
 
@@ -144,12 +119,7 @@ def make_fsf(template, inputs, output_base, overwrite):
         fsf = replace_setting(fsf, key, value)
 
     for index, item in enumerate(inputs, start=1):
-        fsf = replace_setting(
-            fsf,
-            f"feat_files({index})",
-            f'"{item.path.resolve()}"',
-            append_missing=True,
-        )
+        fsf = replace_setting(fsf, f"feat_files({index})", f'"{item.path.resolve()}"', append_missing=True)
         fsf = replace_setting(fsf, f"fmri(evg{index}.1)", "1", append_missing=True)
         fsf = replace_setting(fsf, f"fmri(groupmem.{index})", "1", append_missing=True)
 
@@ -169,12 +139,7 @@ def write_input_manifest(fsf_dir, inputs, excluded_inputs):
 def run_feat(fsf, log_path, feat_cmd):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as log:
-        result = subprocess.run(
-            [feat_cmd, str(fsf)],
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
+        result = subprocess.run([feat_cmd, str(fsf)], stdout=log, stderr=subprocess.STDOUT, text=True)
     return result.returncode
 
 
@@ -215,10 +180,7 @@ def main():
         missing_subjects = sorted(requested_exclusions - available_subjects)
         inputs = [item for item in inputs if item.sub not in requested_exclusions]
         if missing_subjects:
-            print(
-                "Warning: requested excluded subjects were not found in completed inputs: "
-                + ", ".join(f"sub{sub:02d}" for sub in missing_subjects)
-            )
+            print("Warning: requested excluded subjects were not found in completed inputs: " + ", ".join(f"sub{sub:02d}" for sub in missing_subjects))
         if not inputs:
             print("All completed inputs were excluded; no model generated.", file=sys.stderr)
             return 1

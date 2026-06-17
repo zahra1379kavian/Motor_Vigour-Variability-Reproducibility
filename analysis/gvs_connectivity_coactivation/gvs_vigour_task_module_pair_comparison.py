@@ -33,12 +33,7 @@ from scipy.stats import fisher_exact
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-INPUTS = {
-    "Vigour": ROOT / "figures/GVS_effects/GPT/08_connectivity_coactivation/"
-    "metric_sensitivity/edge_connectivity_metric_sensitivity_stats.csv",
-    "Task": ROOT / "figures/GVS_effects/GPT/08_connectivity_coactivation/"
-    "task_activation_z3p1/metric_sensitivity/edge_connectivity_metric_sensitivity_stats.csv",
-}
+INPUTS = {"Vigour": ROOT / "figures/GVS_effects/GPT/08_connectivity_coactivation/" "metric_sensitivity/edge_connectivity_metric_sensitivity_stats.csv", "Task": ROOT / "figures/GVS_effects/GPT/08_connectivity_coactivation/" "task_activation_z3p1/metric_sensitivity/edge_connectivity_metric_sensitivity_stats.csv"}
 
 FDR_SCOPE = "pool=ALL_SUBJECTS_BLOCKS;gvs=ANY_GVS"
 
@@ -47,8 +42,7 @@ def roi_group(roi):
     base = str(roi).rsplit("_", 1)[0]
     if base in {"Occipital", "Fusiform"}:
         return "Visual"
-    if base in {"Precentral", "Postcentral", "Paracentral_Lobule",
-                "Supp_Motor_Area", "Cerebellum", "Rolandic_Oper"}:
+    if base in {"Precentral", "Postcentral", "Paracentral_Lobule", "Supp_Motor_Area", "Cerebellum", "Rolandic_Oper"}:
         return "Somatomotor/Cerebellar"
     if base in {"Amygdala", "Hippocampus", "ParaHippocampal", "Olfactory", "Orbitofrontal"}:
         return "Limbic/MTL-Olfactory"
@@ -92,9 +86,7 @@ def module_pair_table(df):
         sub = df[df.pair == key]
         n = len(sub)
         s = int(sub.sig_fdr.sum())
-        rows.append({"pair": " -- ".join(sorted({a, b})) if a != b else f"{a} (within)",
-                     "key": key, "n_tested": n, "n_sig": s,
-                     "density": s / n if n else np.nan})
+        rows.append({"pair": " -- ".join(sorted({a, b})) if a != b else f"{a} (within)", "key": key, "n_tested": n, "n_sig": s, "density": s / n if n else np.nan})
     return pd.DataFrame(rows)
 
 
@@ -102,10 +94,7 @@ def fisher_network_contrast(vig, task, key):
     """2x2: rows = network (Vigour/Task), cols = (sig, not-sig) within target pair."""
     v = vig[vig.pair == key]
     t = task[task.pair == key]
-    table = np.array([
-        [int(v.sig_fdr.sum()), int((~v.sig_fdr).sum())],
-        [int(t.sig_fdr.sum()), int((~t.sig_fdr).sum())],
-    ])
+    table = np.array([[int(v.sig_fdr.sum()), int((~v.sig_fdr).sum())], [int(t.sig_fdr.sum()), int((~t.sig_fdr).sum())]])
     if table[:, 0].sum() == 0:
         return table, np.nan, np.nan
     or_, p = fisher_exact(table)
@@ -176,17 +165,7 @@ def run_metric(metric):
         trow = tt[tt.key == key].iloc[0]
         _table, or_f, p_f = fisher_network_contrast(vig, task, key)
         or_l, p_l = logistic_interaction(vig, task, key)
-        rows.append({
-            "metric": metric,
-            "module_pair": name,
-            "vig_sig": int(vrow.n_sig), "vig_tested": int(vrow.n_tested),
-            "vig_density": vrow.density,
-            "task_sig": int(trow.n_sig), "task_tested": int(trow.n_tested),
-            "task_density": trow.density,
-            "fisher_OR_vig_vs_task": or_f, "fisher_p": p_f,
-            "logit_interaction_OR": or_l,
-            "logit_interaction_p": p_l if isinstance(p_l, float) else np.nan,
-        })
+        rows.append({"metric": metric, "module_pair": name, "vig_sig": int(vrow.n_sig), "vig_tested": int(vrow.n_tested), "vig_density": vrow.density, "task_sig": int(trow.n_sig), "task_tested": int(trow.n_tested), "task_density": trow.density, "fisher_OR_vig_vs_task": or_f, "fisher_p": p_f, "logit_interaction_OR": or_l, "logit_interaction_p": p_l if isinstance(p_l, float) else np.nan})
     out = pd.DataFrame(rows)
     out["fisher_q_bh"] = fdr_bh(out.fisher_p.values)
     return out
@@ -197,25 +176,14 @@ def make_figure(all_out, metrics, omni, out_png):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-        "pdf.fonttype": 42, "ps.fonttype": 42,
-    })
+    plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
     VIG_C, TASK_C = "#7b3294", "#008837"
     pairs = list(TARGET_PAIRS.keys())
-    short = {
-        "Subcortical -- Somatomotor/Cerebellar": "Subcort.–\nSomatomotor/Cb",
-        "Subcortical -- Frontal-Parietal": "Subcort.–\nFront/Par",
-        "Somatomotor/Cerebellar (within)": "Somatomotor/Cb\n(within)",
-        "Frontal-Parietal -- Somatomotor/Cerebellar": "Front/Par–\nSomatomotor/Cb",
-        "Subcortical -- Cingulate-Temporal": "Subcort.–\nCing/Temp",
-    }
+    short = {"Subcortical -- Somatomotor/Cerebellar": "Subcort.–\nSomatomotor/Cb", "Subcortical -- Frontal-Parietal": "Subcort.–\nFront/Par", "Somatomotor/Cerebellar (within)": "Somatomotor/Cb\n(within)", "Frontal-Parietal -- Somatomotor/Cerebellar": "Front/Par–\nSomatomotor/Cb", "Subcortical -- Cingulate-Temporal": "Subcort.–\nCing/Temp"}
     fig, axes = plt.subplots(1, len(metrics), figsize=(5.4 * len(metrics), 4.6), sharey=True)
     if len(metrics) == 1:
         axes = [axes]
-    nice = {"mutual_info_quantile": "Mutual information (quantile)",
-            "spearman_rho": "Spearman rank correlation"}
+    nice = {"mutual_info_quantile": "Mutual information (quantile)", "spearman_rho": "Spearman rank correlation"}
     for ax, metric in zip(axes, metrics):
         sub = all_out[all_out.metric == metric].set_index("module_pair").loc[pairs]
         x = np.arange(len(pairs))
@@ -226,29 +194,19 @@ def make_figure(all_out, metrics, omni, out_png):
             top = max(r.vig_density, r.task_density) * 100
             p = r.fisher_p
             star = "*" if p < 0.05 else "ns"
-            ax.text(xi, top + 1.4, f"p={p:.2f}\n{star}", ha="center", va="bottom",
-                    fontsize=8, color="#444")
-            ax.text(xi - w / 2, r.vig_density * 100 + 0.3, f"{int(r.vig_sig)}/{int(r.vig_tested)}",
-                    ha="center", va="bottom", fontsize=6.5, color=VIG_C)
-            ax.text(xi + w / 2, r.task_density * 100 + 0.3, f"{int(r.task_sig)}/{int(r.task_tested)}",
-                    ha="center", va="bottom", fontsize=6.5, color=TASK_C)
+            ax.text(xi, top + 1.4, f"p={p:.2f}\n{star}", ha="center", va="bottom", fontsize=8, color="#444")
+            ax.text(xi - w / 2, r.vig_density * 100 + 0.3, f"{int(r.vig_sig)}/{int(r.vig_tested)}", ha="center", va="bottom", fontsize=6.5, color=VIG_C)
+            ax.text(xi + w / 2, r.task_density * 100 + 0.3, f"{int(r.task_sig)}/{int(r.task_tested)}", ha="center", va="bottom", fontsize=6.5, color=TASK_C)
         ax.set_xticks(x)
         ax.set_xticklabels([short[p] for p in pairs], fontsize=8)
-        ax.set_title(f"{nice.get(metric, metric)}\nomnibus network×module-pair LR "
-                     f"p = {omni[metric]['p_value']:.2f} (n.s.)", fontsize=10)
+        ax.set_title(f"{nice.get(metric, metric)}\nomnibus network×module-pair LR " f"p={omni[metric]['p_value']:.2f} (n.s.)", fontsize=10)
         ax.set_ylim(0, 50)
         ax.spines[["top", "right"]].set_visible(False)
         if ax is axes[0]:
             ax.set_ylabel("FDR-significant GVS edges (% of tested edges)")
         ax.legend(frameon=False, fontsize=9, loc="upper right")
-    fig.suptitle("GVS reorganisation of physiologically pre-registered module pairs: "
-                 "vigour vs task-activation network", fontsize=12, y=1.02)
-    fig.text(0.5, -0.04,
-             "No module pair survives FDR correction in either network or metric; the "
-             "omnibus test shows the two networks reorganise the same module pairs to the "
-             "same degree.\nLabels above bars give significant/tested edge counts. "
-             "ANY_GVS pooled contrast, all-subjects block pool.",
-             ha="center", fontsize=8, color="#555")
+    fig.suptitle("GVS reorganisation of physiologically pre-registered module pairs: " "vigour vs task-activation network", fontsize=12, y=1.02)
+    fig.text(0.5, -0.04, "No module pair survives FDR correction in either network or metric; the " "omnibus test shows the two networks reorganise the same module pairs to the " "same degree.\nLabels above bars give significant/tested edge counts. " "ANY_GVS pooled contrast, all-subjects block pool.", ha="center", fontsize=8, color="#555")
     fig.tight_layout()
     fig.savefig(out_png, dpi=200, bbox_inches="tight")
     fig.savefig(out_png.with_suffix(".pdf"), bbox_inches="tight")
@@ -259,11 +217,8 @@ def main():
     ap = argparse.ArgumentParser()
     # Only mutual_info_quantile and spearman_rho are available for BOTH networks
     # in the ALL_SUBJECTS_BLOCKS;ANY_GVS scope (task pipeline computed these two).
-    ap.add_argument("--metrics", nargs="*",
-                    default=["mutual_info_quantile", "spearman_rho"])
-    ap.add_argument("--out", default=str(ROOT / "figures/GVS_effects/main result/"
-                    "connectogram_network_comparison/"
-                    "vigour_task_module_pair_gvs_comparison.csv"))
+    ap.add_argument("--metrics", nargs="*", default=["mutual_info_quantile", "spearman_rho"])
+    ap.add_argument("--out", default=str(ROOT / "figures/GVS_effects/main result/" "connectogram_network_comparison/" "vigour_task_module_pair_gvs_comparison.csv"))
     args = ap.parse_args()
 
     all_out = pd.concat([run_metric(m) for m in args.metrics], ignore_index=True)
@@ -276,8 +231,7 @@ def main():
         vig = load_edges(INPUTS["Vigour"], metric)
         task = load_edges(INPUTS["Task"], metric)
         omni[metric] = omnibus_interaction(vig, task)
-        print(f"  {metric:24s}  LR={omni[metric]['lr_stat']:.2f}  "
-              f"df={omni[metric]['df']}  p={omni[metric]['p_value']:.3f}")
+        print(f" {metric:24s} LR={omni[metric]['lr_stat']:.2f} " f"df={omni[metric]['df']} p={omni[metric]['p_value']:.3f}")
 
     fig_png = Path(args.out).with_name("vigour_task_module_pair_gvs_comparison.png")
     make_figure(all_out, list(args.metrics), omni, fig_png)
@@ -286,10 +240,7 @@ def main():
     pd.set_option("display.width", 200, "display.max_columns", 30)
     primary = all_out[all_out.metric == "mutual_info_quantile"]
     print("\n=== PRIMARY METRIC (mutual_info_quantile) ===")
-    print(primary[["module_pair", "vig_sig", "vig_tested", "vig_density",
-                   "task_sig", "task_tested", "task_density",
-                   "fisher_OR_vig_vs_task", "fisher_p", "fisher_q_bh",
-                   "logit_interaction_OR", "logit_interaction_p"]].to_string(index=False))
+    print(primary[["module_pair", "vig_sig", "vig_tested", "vig_density", "task_sig", "task_tested", "task_density", "fisher_OR_vig_vs_task", "fisher_p", "fisher_q_bh", "logit_interaction_OR", "logit_interaction_p"]].to_string(index=False))
 
     print("\n=== CROSS-METRIC ROBUSTNESS (Fisher p per module pair) ===")
     piv = all_out.pivot(index="module_pair", columns="metric", values="fisher_p")

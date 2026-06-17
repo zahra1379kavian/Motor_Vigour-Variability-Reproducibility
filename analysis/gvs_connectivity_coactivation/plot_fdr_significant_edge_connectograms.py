@@ -36,37 +36,13 @@ GROUP_LABEL_RADIUS = 1.52
 COLORBAR_PAD = 0.006
 COLORBAR_WIDTH = 0.012
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"],
-        "font.weight": "bold",
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"], "font.weight": "bold", "pdf.fonttype": 42, "ps.fonttype": 42})
 
-GROUP_ORDER = [
-    "Frontal-Parietal",
-    "Subcortical",
-    "Cingulate-Temporal",
-    "Visual",
-    "Limbic/MTL-Olfactory",
-    "Somatomotor/Cerebellar",
-]
+GROUP_ORDER = ["Frontal-Parietal", "Subcortical", "Cingulate-Temporal", "Visual", "Limbic/MTL-Olfactory", "Somatomotor/Cerebellar"]
 
-GROUP_COLORS = {
-    "Frontal-Parietal": "#7cb342",
-    "Subcortical": "#c89b1f",
-    "Cingulate-Temporal": "#8e6bbd",
-    "Visual": "#d65f9e",
-    "Limbic/MTL-Olfactory": "#39a76d",
-    "Somatomotor/Cerebellar": "#2db7b5",
-}
+GROUP_COLORS = {"Frontal-Parietal": "#7cb342", "Subcortical": "#c89b1f", "Cingulate-Temporal": "#8e6bbd", "Visual": "#d65f9e", "Limbic/MTL-Olfactory": "#39a76d", "Somatomotor/Cerebellar": "#2db7b5"}
 
-GROUP_LABELS = {
-    "Limbic/MTL-Olfactory": "Limbic-Olfactory",
-}
+GROUP_LABELS = {"Limbic/MTL-Olfactory": "Limbic-Olfactory"}
 
 ROI_LABELS = {
     "Amygdala": "Amygdala",
@@ -210,30 +186,8 @@ def sector_label_rotation(theta):
 
 
 def draw_group_legend(fig):
-    handles = [
-        Line2D(
-            [0],
-            [0],
-            marker="s",
-            linestyle="none",
-            markersize=7.2,
-            markerfacecolor=color,
-            markeredgecolor="none",
-            label=GROUP_LABELS.get(group, group),
-        )
-        for group, color in GROUP_COLORS.items()
-    ]
-    fig.legend(
-        handles=handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.04),
-        ncol=len(handles),
-        frameon=False,
-        prop={"size": LEGEND_FONTSIZE, "weight": "bold"},
-        handletextpad=0.45,
-        columnspacing=1.0,
-        borderaxespad=0.0,
-    )
+    handles = [Line2D([0], [0], marker="s", linestyle="none", markersize=7.2, markerfacecolor=color, markeredgecolor="none", label=GROUP_LABELS.get(group, group)) for group, color in GROUP_COLORS.items()]
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, -0.04), ncol=len(handles), frameon=False, prop={"size": LEGEND_FONTSIZE, "weight": "bold"}, handletextpad=0.45, columnspacing=1.0, borderaxespad=0.0)
 
 
 def draw_connectogram_panel(ax, df, ordered_rois, angles, sectors, cmap, norm, max_abs, sparse_edges, show_sector_labels=True):
@@ -256,18 +210,7 @@ def draw_connectogram_panel(ax, df, ordered_rois, angles, sectors, cmap, norm, m
 
     for group, theta1, theta2 in sectors:
         mid = (theta1 + theta2) / 2
-        wedge = Wedge(
-            (0, 0),
-            1.17,
-            np.rad2deg(theta1),
-            np.rad2deg(theta2),
-            width=0.075,
-            facecolor=GROUP_COLORS[group],
-            edgecolor="white",
-            linewidth=1.4,
-            alpha=0.95,
-            zorder=3,
-        )
+        wedge = Wedge((0, 0), 1.17, np.rad2deg(theta1), np.rad2deg(theta2), width=0.075, facecolor=GROUP_COLORS[group], edgecolor="white", linewidth=1.4, alpha=0.95, zorder=3)
         ax.add_patch(wedge)
         if not show_sector_labels or np.cos(mid) > 0.2:
             continue
@@ -275,17 +218,7 @@ def draw_connectogram_panel(ax, df, ordered_rois, angles, sectors, cmap, norm, m
         label_point = pol2cart(mid, GROUP_LABEL_RADIUS)
         if group == "Frontal-Parietal":
             label_point[1] -= 0.10
-        ax.text(
-            *label_point,
-            GROUP_LABELS.get(group, group),
-            rotation=rot,
-            rotation_mode="anchor",
-            ha=ha,
-            va="center",
-            fontsize=GROUP_LABEL_FONTSIZE,
-            fontweight="bold",
-            color=GROUP_COLORS[group],
-        )
+        ax.text(*label_point, GROUP_LABELS.get(group, group), rotation=rot, rotation_mode="anchor", ha=ha, va="center", fontsize=GROUP_LABEL_FONTSIZE, fontweight="bold", color=GROUP_COLORS[group])
 
     for roi in ordered_rois:
         theta = angles[roi]
@@ -293,17 +226,7 @@ def draw_connectogram_panel(ax, df, ordered_rois, angles, sectors, cmap, norm, m
         p = pol2cart(theta, 1.01)
         ax.scatter([p[0]], [p[1]], s=42, color=GROUP_COLORS[group], edgecolor="white", linewidth=0.8, zorder=5)
         rot, ha = label_rotation(theta)
-        ax.text(
-            *pol2cart(theta, ROI_LABEL_RADIUS),
-            roi_display_label(roi),
-            rotation=rot,
-            rotation_mode="anchor",
-            ha=ha,
-            va="center",
-            fontsize=ROI_LABEL_FONTSIZE,
-            fontweight="bold",
-            color="#222222",
-        )
+        ax.text(*pol2cart(theta, ROI_LABEL_RADIUS), roi_display_label(roi), rotation=rot, rotation_mode="anchor", ha=ha, va="center", fontsize=ROI_LABEL_FONTSIZE, fontweight="bold", color="#222222")
 
     ax.set_xlim(-1.78, 1.78)
     ax.set_ylim(-1.30, 1.30)
@@ -330,21 +253,9 @@ def plot_connectogram(df, roi_order, path_base, save_pdf=True):
 
     sparse_edges = len(df) <= 30
 
-    panels = [
-        (df.loc[df["mean"] > 0].copy(), plt.get_cmap("Oranges"), "Improved connectivity"),
-        (df.loc[df["mean"] < 0].copy(), plt.get_cmap("Blues"), "Decreased connectivity"),
-    ]
+    panels = [(df.loc[df["mean"] > 0].copy(), plt.get_cmap("Oranges"), "Improved connectivity"), (df.loc[df["mean"] < 0].copy(), plt.get_cmap("Blues"), "Decreased connectivity")]
     fig = plt.figure(figsize=CONNECTOGRAM_FIGSIZE, facecolor="white")
-    grid = fig.add_gridspec(
-        1,
-        4,
-        width_ratios=[1.0, 0.026, 1.0, 0.026],
-        left=0.01,
-        right=0.99,
-        bottom=0.22,
-        top=0.98,
-        wspace=0.14,
-    )
+    grid = fig.add_gridspec(1, 4, width_ratios=[1.0, 0.026, 1.0, 0.026], left=0.01, right=0.99, bottom=0.22, top=0.98, wspace=0.14)
     axes = [fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 2])]
     cbar_slots = [fig.add_subplot(grid[0, 1]), fig.add_subplot(grid[0, 3])]
     draw_group_legend(fig)
@@ -355,18 +266,7 @@ def plot_connectogram(df, roi_order, path_base, save_pdf=True):
         max_abs = float(np.nanpercentile(panel_df["abs_mean"].astype(float), 95)) if panel_df["abs_mean"].notna().any() else 1.0
         if not np.isfinite(max_abs) or max_abs <= 0:
             max_abs = 1.0
-        draw_connectogram_panel(
-            ax,
-            panel_df,
-            ordered_rois,
-            angles,
-            sectors,
-            cmap,
-            norm,
-            max_abs,
-            sparse_edges,
-            show_sector_labels=False,
-        )
+        draw_connectogram_panel(ax, panel_df, ordered_rois, angles, sectors, cmap, norm, max_abs, sparse_edges, show_sector_labels=False)
         sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array([])
         cbar_slots[panel_idx].remove()
@@ -388,32 +288,11 @@ def node_involvement(df):
     rows = []
     for row in df.itertuples(index=False):
         for roi in [row.roi_i, row.roi_j]:
-            rows.append(
-                {
-                    "roi": roi,
-                    "group": roi_group(roi),
-                    "edge_label": row.edge_label,
-                    "mean": float(row.mean),
-                    "abs_mean": abs(float(row.mean)),
-                    "q_fdr": float(row.q_fdr),
-                    "positive": float(row.mean) > 0,
-                }
-            )
+            rows.append({"roi": roi, "group": roi_group(roi), "edge_label": row.edge_label, "mean": float(row.mean), "abs_mean": abs(float(row.mean)), "q_fdr": float(row.q_fdr), "positive": float(row.mean) > 0})
     long = pd.DataFrame(rows)
     if long.empty:
         return long
-    out = (
-        long.groupby(["roi", "group"], dropna=False)
-        .agg(
-            n_sig_edges=("edge_label", "count"),
-            n_positive=("positive", "sum"),
-            total_abs_delta=("abs_mean", "sum"),
-            mean_abs_delta=("abs_mean", "mean"),
-            signed_delta_sum=("mean", "sum"),
-            min_q_fdr=("q_fdr", "min"),
-        )
-        .reset_index()
-    )
+    out = (long.groupby(["roi", "group"], dropna=False) .agg(n_sig_edges=("edge_label", "count"), n_positive=("positive", "sum"), total_abs_delta=("abs_mean", "sum"), mean_abs_delta=("abs_mean", "mean"), signed_delta_sum=("mean", "sum"), min_q_fdr=("q_fdr", "min")) .reset_index())
     out["n_negative"] = out["n_sig_edges"] - out["n_positive"]
     return out.sort_values(["total_abs_delta", "n_sig_edges", "mean_abs_delta"], ascending=False)
 
@@ -424,15 +303,7 @@ def plot_node_involvement(node_df, path_base, title, subtitle):
     colors = [GROUP_COLORS.get(group, "#808080") for group in plot_df["group"]]
     ax.barh(plot_df["roi"].str.replace("_", " ", regex=False), plot_df["total_abs_delta"], color=colors, alpha=0.9)
     for y, row in enumerate(plot_df.itertuples(index=False)):
-        ax.text(
-            row.total_abs_delta,
-            y,
-            f"  {int(row.n_sig_edges)} edges",
-            va="center",
-            ha="left",
-            fontsize=8.5,
-            color="#333333",
-        )
+        ax.text(row.total_abs_delta, y, f" {int(row.n_sig_edges)} edges", va="center", ha="left", fontsize=8.5, color="#333333")
     ax.set_xlabel("Sum of absolute significant edge deltas")
     fig.text(0.08, 0.975, title, ha="left", va="top", fontsize=13, fontweight="bold")
     fig.text(0.08, 0.935, subtitle, ha="left", va="top", fontsize=9.5, color="#555555")
@@ -441,11 +312,7 @@ def plot_node_involvement(node_df, path_base, title, subtitle):
     ax.set_axisbelow(True)
     xmax = float(plot_df["total_abs_delta"].max()) if not plot_df.empty else 1.0
     ax.set_xlim(0, xmax * 1.32 if xmax > 0 else 1.0)
-    legend_handles = [
-        Line2D([0], [0], marker="s", linestyle="none", markersize=9, markerfacecolor=color, markeredgecolor="none", label=group)
-        for group, color in GROUP_COLORS.items()
-        if group in set(plot_df["group"])
-    ]
+    legend_handles = [Line2D([0], [0], marker="s", linestyle="none", markersize=9, markerfacecolor=color, markeredgecolor="none", label=group) for group, color in GROUP_COLORS.items() if group in set(plot_df["group"])]
     ax.legend(handles=legend_handles, loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False, fontsize=8.5)
     fig.subplots_adjust(left=0.24, right=0.76, top=0.84, bottom=0.12)
     fig.savefig(path_base.with_suffix(".png"), dpi=300, bbox_inches="tight")
@@ -513,31 +380,9 @@ def main():
     summary = pd.DataFrame(summary_rows).sort_values(["metric", "analysis_view", "fdr_scope"])
     summary.to_csv(OUT_DIR / "fdr_connectogram_summary.csv", index=False)
     top_df = pd.concat(top_rows, ignore_index=True) if top_rows else pd.DataFrame()
-    top_cols = [
-        "metric",
-        "metric_family",
-        "analysis_view",
-        "fdr_scope",
-        "edge_label",
-        "roi_i",
-        "roi_j",
-        "n",
-        "mean",
-        "t_stat",
-        "p_signflip",
-        "q_fdr",
-        "condition_label",
-        "medication",
-        "run",
-    ]
+    top_cols = ["metric", "metric_family", "analysis_view", "fdr_scope", "edge_label", "roi_i", "roi_j", "n", "mean", "t_stat", "p_signflip", "q_fdr", "condition_label", "medication", "run"]
     top_df[[c for c in top_cols if c in top_df.columns]].to_csv(OUT_DIR / "fdr_connectogram_top_edges.csv", index=False)
-    node_df = pd.concat(
-        [
-            node_involvement(group).assign(metric=metric, metric_family=metric_family, analysis_view=analysis_view, fdr_scope=fdr_scope)
-            for (metric, metric_family, analysis_view, fdr_scope), group in sig.groupby(group_cols, sort=False, dropna=False)
-        ],
-        ignore_index=True,
-    )
+    node_df = pd.concat([node_involvement(group).assign(metric=metric, metric_family=metric_family, analysis_view=analysis_view, fdr_scope=fdr_scope) for (metric, metric_family, analysis_view, fdr_scope), group in sig.groupby(group_cols, sort=False, dropna=False)], ignore_index=True)
     node_df.to_csv(OUT_DIR / "fdr_connectogram_roi_involvement.csv", index=False)
 
     lines = [
@@ -565,11 +410,7 @@ def main():
         rel_png = Path(row.plot_png).relative_to(OUT_ROOT)
         top_png = Path(row.top_edges_plot_png).relative_to(OUT_ROOT)
         node_png = Path(row.roi_involvement_plot_png).relative_to(OUT_ROOT)
-        lines.append(
-            f"- `{row.metric}` | `{row.analysis_view}` | `{row.fdr_scope}`: "
-            f"{row.n_sig_edges} edges ({row.n_positive} positive, {row.n_negative} negative), "
-            f"min q={row.min_q_fdr:.4g}. Full: `{rel_png}`; top edges: `{top_png}`; ROI involvement: `{node_png}`"
-        )
+        lines.append(f"- `{row.metric}` | `{row.analysis_view}` | `{row.fdr_scope}`: " f"{row.n_sig_edges} edges ({row.n_positive} positive, {row.n_negative} negative), " f"min q={row.min_q_fdr:.4g}. Full: `{rel_png}`; top edges: `{top_png}`; ROI involvement: `{node_png}`")
     lines.extend(["", "## Output Tables", ""])
     lines.append("- `fdr_connectogram_summary.csv`: one row per method/scope plot.")
     lines.append(f"- `fdr_connectogram_top_edges.csv`: top {TOP_N_EDGES} FDR-significant edges per method/scope.")

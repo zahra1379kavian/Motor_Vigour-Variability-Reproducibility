@@ -22,21 +22,8 @@ from matplotlib.ticker import FuncFormatter
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-DEFAULT_INPUT = (
-    ROOT
-    / "figures"
-    / "GVS_effects"
-    / "main result"
-    / "connectogram_network_comparison"
-    / "hemisphere_enrichment.csv"
-)
-DEFAULT_OUTPUT_BASE = (
-    ROOT
-    / "figures"
-    / "GVS_effects"
-    / "main result"
-    / "hemisphere_enrichment_forest"
-)
+DEFAULT_INPUT = (ROOT / "figures" / "GVS_effects" / "main result" / "connectogram_network_comparison" / "hemisphere_enrichment.csv")
+DEFAULT_OUTPUT_BASE = (ROOT / "figures" / "GVS_effects" / "main result" / "hemisphere_enrichment_forest")
 
 PAPER_FONT_FAMILY = "Liberation Sans"
 INCREMENT_COLOR = "#d95f02"
@@ -48,14 +35,7 @@ NETWORK_LABELS = {"main_result": "Vigour", "task_activation_z3p1": "Task"}
 DIRECTIONS = (("improved", "Increment", INCREMENT_COLOR), ("decreased", "Decrement", DECREMENT_COLOR))
 NETWORK_ORDER = ("main_result", "task_activation_z3p1")
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 
 
 def significance_label(p_value):
@@ -78,9 +58,7 @@ def build_rows(df, roi_set):
     y = 0.0
     for direction_key, direction_label, color in DIRECTIONS:
         for network_key in NETWORK_ORDER:
-            match = subset.loc[
-                subset["direction"].eq(direction_key) & subset["network"].eq(network_key)
-            ]
+            match = subset.loc[subset["direction"].eq(direction_key) & subset["network"].eq(network_key)]
             if match.empty:
                 raise ValueError(f"Missing row for {network_key} / {direction_key} in {roi_set}.")
             record = match.iloc[0]
@@ -117,23 +95,8 @@ def plot_forest(rows, output_base):
     for row in rows:
         y = row["y"]
         color = row["color"]
-        ax.plot(
-            [row["ci_low"], row["ci_high"]],
-            [y, y],
-            color=color,
-            linewidth=1.8,
-            solid_capstyle="round",
-            zorder=2,
-        )
-        ax.scatter(
-            [row["odds_ratio"]],
-            [y],
-            s=70,
-            color=color,
-            edgecolors="#303030",
-            linewidths=0.7,
-            zorder=3,
-        )
+        ax.plot([row["ci_low"], row["ci_high"]], [y, y], color=color, linewidth=1.8, solid_capstyle="round", zorder=2)
+        ax.scatter([row["odds_ratio"]], [y], s=70, color=color, edgecolors="#303030", linewidths=0.7, zorder=3)
 
     # x-axis: log scale because odds ratios are multiplicative.
     ax.set_xscale("log")
@@ -145,11 +108,7 @@ def plot_forest(rows, output_base):
     text_x = x_max * 1.02
     for row in rows:
         star = significance_label(row["fisher_p"])
-        label = (
-            f"{row['odds_ratio']:.2f} "
-            f"[{row['ci_low']:.2f}, {row['ci_high']:.2f}]"
-            f"{'  ' + star if star else ''}"
-        )
+        label = (f"{row['odds_ratio']:.2f} " f"[{row['ci_low']:.2f}, {row['ci_high']:.2f}]" f"{' ' + star if star else ''}")
         ax.text(text_x, row["y"], label, va="center", ha="left", fontsize=9.5, color="#202020")
 
     # y tick labels: network name; direction block labels added on the left.
@@ -161,18 +120,7 @@ def plot_forest(rows, output_base):
     for row in rows:
         block_centers.setdefault(row["direction_label"], []).append(row["y"])
     for direction_label, block_ys in block_centers.items():
-        ax.annotate(
-            direction_label,
-            xy=(-0.17, float(np.mean(block_ys))),
-            xycoords=("axes fraction", "data"),
-            va="center",
-            ha="center",
-            fontsize=12.0,
-            fontweight="bold",
-            rotation=90,
-            color="#303030",
-            annotation_clip=False,
-        )
+        ax.annotate(direction_label, xy=(-0.17, float(np.mean(block_ys))), xycoords=("axes fraction", "data"), va="center", ha="center", fontsize=12.0, fontweight="bold", rotation=90, color="#303030", annotation_clip=False)
 
     ax.set_ylim(min(ys) - 0.7, max(ys) + 0.7)
     ax.set_xlabel("Between- vs within-hemisphere odds ratio  (log scale)", fontsize=12.5)
@@ -188,12 +136,7 @@ def plot_forest(rows, output_base):
     ax.set_xlim(x_min, x_max * 1.9)
 
     # interpretation note as a subtitle above the panel (avoids x-label collision).
-    ax.set_title(
-        "OR > 1: between-hemisphere over-represented      OR < 1: within-hemisphere over-represented",
-        fontsize=9.0,
-        color="#5A5A5A",
-        pad=10,
-    )
+    ax.set_title("OR > 1: between-hemisphere over-represented OR < 1: within-hemisphere over-represented", fontsize=9.0, color="#5A5A5A", pad=10)
     fig.subplots_adjust(left=0.18)
 
     output_base.parent.mkdir(parents=True, exist_ok=True)
@@ -208,12 +151,7 @@ def plot_forest(rows, output_base):
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="hemisphere_enrichment.csv path.")
-    parser.add_argument(
-        "--roi-set",
-        default="full_network",
-        choices=("full_network", "common_roi_set"),
-        help="Which ROI set to plot.",
-    )
+    parser.add_argument("--roi-set", default="full_network", choices=("full_network", "common_roi_set"), help="Which ROI set to plot.")
     parser.add_argument("--output-base", type=Path, default=None, help="Output path without suffix.")
     return parser
 
@@ -223,9 +161,7 @@ def main():
     if not args.input.exists():
         raise FileNotFoundError(f"Missing enrichment CSV: {args.input}")
     df = pd.read_csv(args.input)
-    output_base = args.output_base or DEFAULT_OUTPUT_BASE.with_name(
-        f"{DEFAULT_OUTPUT_BASE.name}_{args.roi_set}"
-    )
+    output_base = args.output_base or DEFAULT_OUTPUT_BASE.with_name(f"{DEFAULT_OUTPUT_BASE.name}_{args.roi_set}")
     rows = build_rows(df, args.roi_set)
     png_path, pdf_path = plot_forest(rows, output_base)
     print(png_path)

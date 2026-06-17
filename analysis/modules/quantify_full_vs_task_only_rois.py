@@ -16,63 +16,22 @@ from scipy import ndimage
 import matplotlib
 
 matplotlib.use("Agg")
-matplotlib.rcParams.update(
-    {
-        "font.family": "DejaVu Sans",
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+matplotlib.rcParams.update({"font.family": "DejaVu Sans", "pdf.fonttype": 42, "ps.fonttype": 42})
 import matplotlib.pyplot as plt
 
-from analyze_ablation_constraints import (
-    DEFAULT_ATLAS_CACHE_DIR,
-    DEFAULT_FULL_MODEL_HTML,
-    DEFAULT_MAIN_MAP,
-    DEFAULT_TASK_ONLY_MAP,
-    DEFAULT_TASK_ONLY_Z_THRESHOLD,
-    _brainstem_mask,
-    _html_sprite_volumes,
-    _load_data,
-)
-from threshold_robustness_voxel_network import (
-    DEFAULT_AAL_VERSION,
-    UNASSIGNED_ROI,
-    _build_roi_groups,
-)
+from analyze_ablation_constraints import (DEFAULT_ATLAS_CACHE_DIR, DEFAULT_FULL_MODEL_HTML, DEFAULT_MAIN_MAP, DEFAULT_TASK_ONLY_MAP, DEFAULT_TASK_ONLY_Z_THRESHOLD, _brainstem_mask, _html_sprite_volumes, _load_data)
+from threshold_robustness_voxel_network import (DEFAULT_AAL_VERSION, UNASSIGNED_ROI, _build_roi_groups)
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUT_BASE = (
-    ROOT
-    / "results"
-    / "main"
-    / "figure_04_05_ablation"
-    / "ablation_full_vs_task_only_roi_quantification"
-)
+DEFAULT_OUT_BASE = (ROOT / "results" / "main" / "figure_04_05_ablation" / "ablation_full_vs_task_only_roi_quantification")
 HARVARD_OXFORD_CORTICAL = "cort-maxprob-thr25-2mm"
 HARVARD_OXFORD_SUBCORTICAL = "sub-maxprob-thr25-2mm"
 WHITE_MATTER_LABEL_FRAGMENT = "Cerebral White Matter"
-ATLAS_MODE_CHOICES = (
-    "aal3",
-    "aal3_ho_fill",
-    "aal3_ho_nearest",
-    "aal3_subregions",
-    "aal3_subregions_ho_fill",
-    "aal3_subregions_ho_nearest",
-)
-HO_FILL_ATLAS_MODES = {
-    "aal3_ho_fill",
-    "aal3_ho_nearest",
-    "aal3_subregions_ho_fill",
-    "aal3_subregions_ho_nearest",
-}
+ATLAS_MODE_CHOICES = ("aal3", "aal3_ho_fill", "aal3_ho_nearest", "aal3_subregions", "aal3_subregions_ho_fill", "aal3_subregions_ho_nearest")
+HO_FILL_ATLAS_MODES = {"aal3_ho_fill", "aal3_ho_nearest", "aal3_subregions_ho_fill", "aal3_subregions_ho_nearest"}
 NEAREST_FILL_ATLAS_MODES = {"aal3_ho_nearest", "aal3_subregions_ho_nearest"}
-COMPARISON_COLORS = {
-    "vigour_only": "#0072B2",
-    "task_only": "#D55E00",
-    "both": "#00A676",
-}
+COMPARISON_COLORS = {"vigour_only": "#0072B2", "task_only": "#D55E00", "both": "#00A676"}
 ROI_FULL_NAMES = {
     "Amygdala": "Amygdala",
     "Caudate": "Caudate nucleus",
@@ -111,13 +70,7 @@ class RegionMask:
 def _resample_labels(label_img, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         return np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
-    resampled = image.resample_to_img(
-        label_img,
-        reference_img,
-        interpolation="nearest",
-        force_resample=True,
-        copy_header=True,
-    )
+    resampled = image.resample_to_img(label_img, reference_img, interpolation="nearest", force_resample=True, copy_header=True)
     return np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
 
 
@@ -129,11 +82,7 @@ def _atlas_img(atlas):
 def _white_matter_mask(reference_img, cache_dir):
     atlas = datasets.fetch_atlas_harvard_oxford(HARVARD_OXFORD_SUBCORTICAL, data_dir=str(cache_dir), verbose=0)
     atlas_data = _resample_labels(_atlas_img(atlas), reference_img)
-    label_values = [
-        label_value
-        for label_value, label_name in enumerate(atlas.labels)
-        if WHITE_MATTER_LABEL_FRAGMENT in str(label_name)
-    ]
+    label_values = [label_value for label_value, label_name in enumerate(atlas.labels) if WHITE_MATTER_LABEL_FRAGMENT in str(label_name)]
     return np.isin(atlas_data, label_values)
 
 
@@ -151,14 +100,10 @@ def _exclude_white_matter(masks, white_matter, metadata):
 
     updated_metadata = dict(metadata)
     mask_definition = str(updated_metadata.get("mask_definition", "")).strip()
-    updated_metadata["mask_definition"] = (
-        f"{mask_definition} " if mask_definition else ""
-    ) + "Harvard-Oxford cerebral white-matter voxels are excluded from the ROI quantification."
+    updated_metadata["mask_definition"] = (f"{mask_definition} " if mask_definition else "") + "Harvard-Oxford cerebral white-matter voxels are excluded from the ROI quantification."
     updated_metadata["white_matter_mask_source"] = "Harvard-Oxford subcortical: Left/Right Cerebral White Matter"
     updated_metadata["white_matter_suppressed_vigour_voxels"] = int(np.count_nonzero(masks["vigour"] & white_matter))
-    updated_metadata["white_matter_suppressed_task_activation_voxels"] = int(
-        np.count_nonzero(masks["task"] & white_matter)
-    )
+    updated_metadata["white_matter_suppressed_task_activation_voxels"] = int(np.count_nonzero(masks["task"] & white_matter))
     updated_metadata["white_matter_suppressed_overlap_voxels"] = int(np.count_nonzero(masks["both"] & white_matter))
     return updated, updated_metadata
 
@@ -188,13 +133,7 @@ def _aal_subregion_name(label):
 def _ho_subregion_name(label, family):
     base = _strip_laterality(label)
     if family == "subcortical":
-        exact = {
-            "Cerebral White Matter": "Cerebral_White_Matter",
-            "Cerebral Cortex": "Cerebral_Cortex",
-            "Lateral Ventricle": "Lateral_Ventricle",
-            "Accumbens": "N_Acc",
-            "Brain-Stem": "Brainstem_HO",
-        }
+        exact = {"Cerebral White Matter": "Cerebral_White_Matter", "Cerebral Cortex": "Cerebral_Cortex", "Lateral Ventricle": "Lateral_Ventricle", "Accumbens": "N_Acc", "Brain-Stem": "Brainstem_HO"}
         return exact.get(base, _safe_subregion_name(base))
     return _safe_subregion_name(base)
 
@@ -204,19 +143,7 @@ def _ho_group_name(label, family):
     low = base.lower()
 
     if family == "subcortical":
-        exact = {
-            "Cerebral White Matter": "Cerebral_White_Matter",
-            "Cerebral Cortex": "Cerebral_Cortex",
-            "Lateral Ventricle": "Lateral_Ventricle",
-            "Thalamus": "Thalamus",
-            "Caudate": "Caudate",
-            "Putamen": "Putamen",
-            "Pallidum": "Pallidum",
-            "Hippocampus": "Hippocampus",
-            "Amygdala": "Amygdala",
-            "Accumbens": "N_Acc",
-            "Brain-Stem": "Brainstem_HO",
-        }
+        exact = {"Cerebral White Matter": "Cerebral_White_Matter", "Cerebral Cortex": "Cerebral_Cortex", "Lateral Ventricle": "Lateral_Ventricle", "Thalamus": "Thalamus", "Caudate": "Caudate", "Putamen": "Putamen", "Pallidum": "Pallidum", "Hippocampus": "Hippocampus", "Amygdala": "Amygdala", "Accumbens": "N_Acc", "Brain-Stem": "Brainstem_HO"}
         return exact.get(base, _safe_unknown_ho_name(base))
 
     if "precentral" in low:
@@ -262,11 +189,7 @@ def _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregion
         atlas = datasets.fetch_atlas_aal(version=DEFAULT_AAL_VERSION, data_dir=str(cache_dir), verbose=0)
         atlas_data = _resample_labels(_atlas_img(atlas), reference_img)
         atlas_source = f"AAL3v2 ({Path(str(atlas.maps)).name})"
-        label_pairs = [
-            (int(label_value), str(label_name))
-            for label_value, label_name in zip(atlas.indices, atlas.labels)
-            if int(label_value) != 0 and str(label_name).lower() != "background"
-        ]
+        label_pairs = [(int(label_value), str(label_name)) for label_value, label_name in zip(atlas.indices, atlas.labels) if int(label_value) != 0 and str(label_name).lower() != "background"]
         regions = {}
         assigned = np.zeros(reference_img.shape[:3], dtype=bool)
         for label_value, label_name in label_pairs:
@@ -276,15 +199,7 @@ def _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregion
         metadata = {
             "roi_definition": "aal3_bilateral_subregions",
             "priority_order": list(regions) + [UNASSIGNED_ROI],
-            "atlas_info": {
-                "name": "AAL3v2 bilateral subregions",
-                "description": atlas_source,
-                "version": DEFAULT_AAL_VERSION,
-                "map": str(atlas.maps),
-                "n_labels": len(label_pairs),
-                "n_regions": len(regions),
-                "grouping": "Left/right AAL labels merged only into bilateral subregions; broad anatomical groups are not used.",
-            },
+            "atlas_info": {"name": "AAL3v2 bilateral subregions", "description": atlas_source, "version": DEFAULT_AAL_VERSION, "map": str(atlas.maps), "n_labels": len(label_pairs), "n_regions": len(regions), "grouping": "Left/right AAL labels merged only into bilateral subregions; broad anatomical groups are not used."},
             "subregion_mode": True,
             "roi_sources": {name: "; ".join(sorted(region.sources)) for name, region in regions.items()},
             "roi_matched_labels": {name: tuple(region.matched_labels) for name, region in regions.items()},
@@ -302,10 +217,7 @@ def _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregion
 
 
 def _add_harvard_oxford_fill(regions, assigned, reference_img, cache_dir, analysis_space_mask, subregions=False):
-    fill_specs = (
-        (HARVARD_OXFORD_CORTICAL, "cortical", "Harvard-Oxford cortical maxprob-thr25 fill after AAL3"),
-        (HARVARD_OXFORD_SUBCORTICAL, "subcortical", "Harvard-Oxford subcortical maxprob-thr25 fill after AAL3"),
-    )
+    fill_specs = ((HARVARD_OXFORD_CORTICAL, "cortical", "Harvard-Oxford cortical maxprob-thr25 fill after AAL3"), (HARVARD_OXFORD_SUBCORTICAL, "subcortical", "Harvard-Oxford subcortical maxprob-thr25 fill after AAL3"))
     for atlas_name, family, source in fill_specs:
         atlas = datasets.fetch_atlas_harvard_oxford(atlas_name, data_dir=str(cache_dir), verbose=0)
         atlas_data = _resample_labels(_atlas_img(atlas), reference_img)
@@ -315,11 +227,7 @@ def _add_harvard_oxford_fill(regions, assigned, reference_img, cache_dir, analys
             fill_mask = (atlas_data == label_value) & analysis_space_mask & ~assigned
             if not np.any(fill_mask):
                 continue
-            group_name = (
-                _ho_subregion_name(str(label_name), family)
-                if subregions
-                else _ho_group_name(str(label_name), family)
-            )
+            group_name = (_ho_subregion_name(str(label_name), family) if subregions else _ho_group_name(str(label_name), family))
             _add_region(regions, group_name, fill_mask, source, str(label_name))
             assigned |= fill_mask
     return assigned
@@ -338,11 +246,7 @@ def _add_nearest_label_fill(regions, assigned, target_mask):
     for label_id, roi_name in enumerate(region_names, start=1):
         label_volume[regions[roi_name].mask & assigned] = label_id
 
-    nearest_indices = ndimage.distance_transform_edt(
-        ~assigned,
-        return_distances=False,
-        return_indices=True,
-    )
+    nearest_indices = ndimage.distance_transform_edt(~assigned, return_distances=False, return_indices=True)
     nearest_labels = label_volume[tuple(axis_indices[missing] for axis_indices in nearest_indices)]
     for label_id in np.unique(nearest_labels):
         if label_id <= 0:
@@ -362,27 +266,14 @@ def _build_regions(reference_img, cache_dir, analysis_space_mask, atlas_mode, ta
     subregions = atlas_mode.startswith("aal3_subregions")
     regions, assigned, metadata = _build_aal3_regions(reference_img, cache_dir, analysis_space_mask, subregions)
     if atlas_mode in HO_FILL_ATLAS_MODES:
-        assigned = _add_harvard_oxford_fill(
-            regions,
-            assigned,
-            reference_img,
-            cache_dir,
-            analysis_space_mask,
-            subregions,
-        )
+        assigned = _add_harvard_oxford_fill(regions, assigned, reference_img, cache_dir, analysis_space_mask, subregions)
         metadata = dict(metadata)
         if subregions:
             metadata["roi_definition"] = "aal3_bilateral_subregions_with_harvard_oxford_subregion_fill"
-            metadata["fill_rule"] = (
-                "AAL3 bilateral subregions are assigned first; only AAL3-unassigned voxels are "
-                "filled from exact Harvard-Oxford cortical and subcortical maxprob-thr25 labels."
-            )
+            metadata["fill_rule"] = ("AAL3 bilateral subregions are assigned first; only AAL3-unassigned voxels are " "filled from exact Harvard-Oxford cortical and subcortical maxprob-thr25 labels.")
         else:
             metadata["roi_definition"] = "aal3_bilateral_coarse_groups_with_harvard_oxford_fill"
-            metadata["fill_rule"] = (
-                "AAL3 coarse bilateral regions are assigned first; only AAL3-unassigned voxels are "
-                "filled from Harvard-Oxford cortical and subcortical maxprob-thr25 labels."
-            )
+            metadata["fill_rule"] = ("AAL3 coarse bilateral regions are assigned first; only AAL3-unassigned voxels are " "filled from Harvard-Oxford cortical and subcortical maxprob-thr25 labels.")
         metadata["subregion_mode"] = bool(subregions)
     if atlas_mode in NEAREST_FILL_ATLAS_MODES:
         if target_fill_mask is None:
@@ -390,21 +281,11 @@ def _build_regions(reference_img, cache_dir, analysis_space_mask, atlas_mode, ta
         assigned, n_nearest_filled = _add_nearest_label_fill(regions, assigned, target_fill_mask & analysis_space_mask)
         metadata = dict(metadata)
         if subregions:
-            metadata["roi_definition"] = (
-                "aal3_bilateral_subregions_with_harvard_oxford_subregions_and_nearest_selected_voxel_fill"
-            )
-            metadata["fill_rule"] = (
-                "AAL3 bilateral subregions are assigned first; AAL3-unassigned voxels are filled from "
-                "exact Harvard-Oxford cortical and subcortical maxprob-thr25 labels; remaining selected "
-                "voxels are assigned to the nearest existing anatomical subregion label."
-            )
+            metadata["roi_definition"] = ("aal3_bilateral_subregions_with_harvard_oxford_subregions_and_nearest_selected_voxel_fill")
+            metadata["fill_rule"] = ("AAL3 bilateral subregions are assigned first; AAL3-unassigned voxels are filled from " "exact Harvard-Oxford cortical and subcortical maxprob-thr25 labels; remaining selected " "voxels are assigned to the nearest existing anatomical subregion label.")
         else:
             metadata["roi_definition"] = "aal3_bilateral_coarse_groups_with_harvard_oxford_and_nearest_selected_voxel_fill"
-            metadata["fill_rule"] = (
-                "AAL3 coarse bilateral regions are assigned first; AAL3-unassigned voxels are filled from "
-                "Harvard-Oxford cortical and subcortical maxprob-thr25 labels; remaining selected voxels "
-                "are assigned to the nearest existing anatomical label."
-            )
+            metadata["fill_rule"] = ("AAL3 coarse bilateral regions are assigned first; AAL3-unassigned voxels are filled from " "Harvard-Oxford cortical and subcortical maxprob-thr25 labels; remaining selected voxels " "are assigned to the nearest existing anatomical label.")
         metadata["subregion_mode"] = bool(subregions)
         metadata["nearest_label_filled_selected_voxels"] = int(n_nearest_filled)
     return regions, assigned, metadata
@@ -432,27 +313,13 @@ def _load_figure_masks(reference_map, full_html, task_map, task_z_threshold):
     raw_task = task_mask.copy()
     full = raw_full & ~brainstem
     task = raw_task & ~brainstem
-    masks = {
-        "raw_vigour": raw_full,
-        "raw_task": raw_task,
-        "brainstem": brainstem,
-        "vigour": full,
-        "task": task,
-        "vigour_only": full & ~task,
-        "task_only": task & ~full,
-        "both": full & task,
-        "union": full | task,
-    }
+    masks = {"raw_vigour": raw_full, "raw_task": raw_task, "brainstem": brainstem, "vigour": full, "task": task, "vigour_only": full & ~task, "task_only": task & ~full, "both": full & task, "union": full | task}
     metadata = {
         "reference_map": str(reference_map),
         "full_model_html": str(full_html),
         "task_activation_map": str(task_map),
         "task_activation_threshold": f"z >= {task_z_threshold:g}",
-        "mask_definition": (
-            "Vigour network uses the selected overlay embedded in the thresholded full-model HTML; "
-            "task activation uses the standard-GLM z map thresholded at z >= threshold; both masks "
-            "then exclude the brainstem mask used by the anatomy figure."
-        ),
+        "mask_definition": ("Vigour network uses the selected overlay embedded in the thresholded full-model HTML; " "task activation uses the standard-GLM z map thresholded at z >= threshold; both masks " "then exclude the brainstem mask used by the anatomy figure."),
         "raw_vigour_voxels": int(np.count_nonzero(raw_full)),
         "raw_task_activation_voxels": int(np.count_nonzero(raw_task)),
         "brainstem_suppressed_vigour_voxels": int(np.count_nonzero(raw_full & brainstem)),
@@ -479,14 +346,7 @@ def _roi_quantification(regions, assigned_mask, masks, reference_img):
     all_regions = list(regions.values())
     unassigned_selected = masks["union"] & ~assigned_mask
     if np.any(unassigned_selected):
-        all_regions.append(
-            RegionMask(
-                name=UNASSIGNED_ROI,
-                mask=~assigned_mask,
-                sources={"Outside selected atlas labels"},
-                matched_labels=[],
-            )
-        )
+        all_regions.append(RegionMask(name=UNASSIGNED_ROI, mask=~assigned_mask, sources={"Outside selected atlas labels"}, matched_labels=[]))
 
     for region in all_regions:
         region_union = masks["union"] & region.mask
@@ -564,19 +424,9 @@ def _atlas_assigned_masks(reference_img, cache_dir, analysis_space_mask):
     sub = datasets.fetch_atlas_harvard_oxford(HARVARD_OXFORD_SUBCORTICAL, data_dir=str(cache_dir), verbose=0)
     ho = ((_resample_labels(_atlas_img(cort), reference_img) > 0) | (_resample_labels(_atlas_img(sub), reference_img) > 0)) & analysis_space_mask
 
-    schaefer = datasets.fetch_atlas_schaefer_2018(
-        n_rois=100,
-        yeo_networks=7,
-        resolution_mm=2,
-        data_dir=str(cache_dir),
-        verbose=0,
-    )
+    schaefer = datasets.fetch_atlas_schaefer_2018(n_rois=100, yeo_networks=7, resolution_mm=2, data_dir=str(cache_dir), verbose=0)
     schaefer_mask = (_resample_labels(_atlas_img(schaefer), reference_img) > 0) & analysis_space_mask
-    return {
-        "AAL3v2 coarse": aal3,
-        "Harvard-Oxford cortical+subcortical": ho,
-        "Schaefer2018 100 parcels": schaefer_mask,
-    }
+    return {"AAL3v2 coarse": aal3, "Harvard-Oxford cortical+subcortical": ho, "Schaefer2018 100 parcels": schaefer_mask}
 
 
 def _coverage_table(reference_img, cache_dir, analysis_space_mask, selected_assigned_mask, atlas_mode, masks):
@@ -585,10 +435,7 @@ def _coverage_table(reference_img, cache_dir, analysis_space_mask, selected_assi
     assigned_masks[selected_name] = selected_assigned_mask
     rows = []
     for atlas_name, assigned in assigned_masks.items():
-        row = {
-            "atlas_name": atlas_name,
-            "atlas_voxels_in_analysis_space": int(np.count_nonzero(assigned)),
-        }
+        row = {"atlas_name": atlas_name, "atlas_voxels_in_analysis_space": int(np.count_nonzero(assigned))}
         for mask_name in ("vigour", "task", "vigour_only", "task_only", "both", "union"):
             total = int(np.count_nonzero(masks[mask_name]))
             n_assigned = int(np.count_nonzero(masks[mask_name] & assigned))
@@ -605,15 +452,9 @@ def _set_summary(roi_df):
         ("regions_with_vigour_only_voxels", roi_df["vigour_only_voxels"].gt(0)),
         ("regions_with_task_only_voxels", roi_df["task_only_voxels"].gt(0)),
         ("regions_with_same_voxel_overlap", roi_df["both_voxels"].gt(0)),
-        (
-            "regions_with_both_maps_but_no_same_voxel_overlap",
-            roi_df["roi_membership"].eq("both_maps") & roi_df["both_voxels"].eq(0),
-        ),
+        ("regions_with_both_maps_but_no_same_voxel_overlap", roi_df["roi_membership"].eq("both_maps") & roi_df["both_voxels"].eq(0)),
         ("regions_present_only_in_vigour_map", roi_df["roi_membership"].eq("vigour_region_not_task_region")),
-        (
-            "regions_present_only_in_task_activation_map",
-            roi_df["roi_membership"].eq("task_activation_region_not_vigour_region"),
-        ),
+        ("regions_present_only_in_task_activation_map", roi_df["roi_membership"].eq("task_activation_region_not_vigour_region")),
     )
     rows = []
     for set_name, selector in specs:
@@ -669,31 +510,8 @@ def _clean_roi_table(roi_df):
     clean["same_voxel_overlap_voxels"] = clean["both_voxels"].astype(int)
     clean["same_voxel_overlap_pct_of_roi"] = clean["both_pct_of_roi"]
     clean["roi_status"] = clean.apply(_roi_status, axis=1)
-    clean = clean.rename(
-        columns={
-            "vigour_network_voxels": "vigour_total_voxels",
-            "task_activation_voxels": "task_total_voxels",
-            "priority_roi_voxels": "roi_total_voxels",
-            "union_pct_of_roi": "selected_union_pct_of_roi",
-        }
-    )
-    cols = [
-        "roi_name",
-        "roi_total_voxels",
-        "vigour_only_voxels",
-        "vigour_only_pct_of_roi",
-        "task_only_voxels",
-        "task_only_pct_of_roi",
-        "same_voxel_overlap_voxels",
-        "same_voxel_overlap_pct_of_roi",
-        "vigour_total_voxels",
-        "vigour_network_pct_of_roi",
-        "task_total_voxels",
-        "task_activation_pct_of_roi",
-        "union_voxels",
-        "selected_union_pct_of_roi",
-        "roi_status",
-    ]
+    clean = clean.rename(columns={"vigour_network_voxels": "vigour_total_voxels", "task_activation_voxels": "task_total_voxels", "priority_roi_voxels": "roi_total_voxels", "union_pct_of_roi": "selected_union_pct_of_roi"})
+    cols = ["roi_name", "roi_total_voxels", "vigour_only_voxels", "vigour_only_pct_of_roi", "task_only_voxels", "task_only_pct_of_roi", "same_voxel_overlap_voxels", "same_voxel_overlap_pct_of_roi", "vigour_total_voxels", "vigour_network_pct_of_roi", "task_total_voxels", "task_activation_pct_of_roi", "union_voxels", "selected_union_pct_of_roi", "roi_status"]
     return clean[cols].sort_values(["union_voxels", "roi_name"], ascending=[False, True])
 
 
@@ -720,10 +538,7 @@ def _roi_full_name(label):
 
 
 def _plot_summary_image(out_path, clean_df, totals, atlas_mode):
-    plot_df = clean_df[clean_df["union_voxels"].gt(0)].sort_values(
-        ["vigour_only_pct_of_roi", "roi_name"],
-        ascending=[True, True],
-    )
+    plot_df = clean_df[clean_df["union_voxels"].gt(0)].sort_values(["vigour_only_pct_of_roi", "roi_name"], ascending=[True, True])
     roi_label_fontsize = 15.0
     axis_label_fontsize = 14.5
     tick_fontsize = 13.5
@@ -737,13 +552,7 @@ def _plot_summary_image(out_path, clean_df, totals, atlas_mode):
 
     vigour_bars = ax.barh(y, vigour_only, color=COMPARISON_COLORS["vigour_only"], label="vigour network")
     overlap_bars = ax.barh(y, both, left=vigour_only, color=COMPARISON_COLORS["both"], label="overlap")
-    task_bars = ax.barh(
-        y,
-        task_only,
-        left=vigour_only + both,
-        color=COMPARISON_COLORS["task_only"],
-        label="task-activation map",
-    )
+    task_bars = ax.barh(y, task_only, left=vigour_only + both, color=COMPARISON_COLORS["task_only"], label="task-activation map")
 
     ax.set_yticks(y)
     ax.set_yticklabels(plot_df["roi_name"].map(_roi_full_name), fontsize=roi_label_fontsize, fontweight="bold")
@@ -753,16 +562,7 @@ def _plot_summary_image(out_path, clean_df, totals, atlas_mode):
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.tick_params(axis="y", length=0)
     ax.tick_params(axis="x", labelsize=tick_fontsize)
-    ax.legend(
-        handles=[vigour_bars, task_bars, overlap_bars],
-        labels=["vigour network", "task-activation map", "overlap"],
-        loc="lower right",
-        frameon=False,
-        prop={"size": legend_fontsize, "weight": "bold"},
-        handlelength=2.4,
-        handleheight=1.4,
-        labelspacing=0.8,
-    )
+    ax.legend(handles=[vigour_bars, task_bars, overlap_bars], labels=["vigour network", "task-activation map", "overlap"], loc="lower right", frameon=False, prop={"size": legend_fontsize, "weight": "bold"}, handlelength=2.4, handleheight=1.4, labelspacing=0.8)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=260, bbox_inches="tight")
@@ -772,49 +572,17 @@ def _plot_summary_image(out_path, clean_df, totals, atlas_mode):
 def _plot_clean_table_image(out_path, clean_df, totals, atlas_mode):
     display_df = clean_df[clean_df["union_voxels"].gt(0)].copy()
     display_df = display_df.sort_values(["selected_union_pct_of_roi", "roi_name"], ascending=[False, True])
-    display_df = display_df[
-        [
-            "roi_name",
-            "vigour_only_voxels",
-            "vigour_only_pct_of_roi",
-            "same_voxel_overlap_voxels",
-            "same_voxel_overlap_pct_of_roi",
-            "task_only_voxels",
-            "task_only_pct_of_roi",
-            "roi_status",
-        ]
-    ]
+    display_df = display_df[["roi_name", "vigour_only_voxels", "vigour_only_pct_of_roi", "same_voxel_overlap_voxels", "same_voxel_overlap_pct_of_roi", "task_only_voxels", "task_only_pct_of_roi", "roi_status"]]
 
     table_rows = []
     for row in display_df.itertuples(index=False):
-        table_rows.append(
-            [
-                row.roi_name,
-                _format_count_pct(row.same_voxel_overlap_voxels, row.same_voxel_overlap_pct_of_roi),
-                _format_count_pct(row.vigour_only_voxels, row.vigour_only_pct_of_roi),
-                _format_count_pct(row.task_only_voxels, row.task_only_pct_of_roi),
-                row.roi_status,
-            ]
-        )
+        table_rows.append([row.roi_name, _format_count_pct(row.same_voxel_overlap_voxels, row.same_voxel_overlap_pct_of_roi), _format_count_pct(row.vigour_only_voxels, row.vigour_only_pct_of_roi), _format_count_pct(row.task_only_voxels, row.task_only_pct_of_roi), row.roi_status])
 
     row_height = 0.26
     fig_height = max(6.3, row_height * (len(table_rows) + 2.0))
     fig, ax = plt.subplots(figsize=(11.2, fig_height), facecolor="white")
     ax.axis("off")
-    table = ax.table(
-        cellText=table_rows,
-        colLabels=[
-            "ROI",
-            "Shared voxel n (% ROI)",
-            "Vigour network n (% ROI)",
-            "Task activation network n (% ROI)",
-            "Voxel-level relation",
-        ],
-        colLoc="center",
-        cellLoc="center",
-        loc="upper left",
-        colWidths=[0.14, 0.19, 0.20, 0.23, 0.26],
-    )
+    table = ax.table(cellText=table_rows, colLabels=["ROI", "Shared voxel n (% ROI)", "Vigour network n (% ROI)", "Task activation network n (% ROI)", "Voxel-level relation"], colLoc="center", cellLoc="center", loc="upper left", colWidths=[0.14, 0.19, 0.20, 0.23, 0.26])
     table.auto_set_font_size(False)
     table.set_fontsize(7.9)
     table.scale(1.0, 1.25)
@@ -854,11 +622,7 @@ def _write_report(out_base, roi_df, set_df, coverage_df, metadata, totals, atlas
     selected_atlas = _selected_atlas_name(atlas_mode)
     coverage_lines = []
     for _, row in coverage_df.iterrows():
-        coverage_lines.append(
-            f"- {row.atlas_name}: union {int(row.union_assigned_voxels):,}/{int(row.union_total_voxels):,} "
-            f"({_fmt_pct(row.union_assigned_pct)}), vigour {_fmt_pct(row.vigour_assigned_pct)}, "
-            f"task {_fmt_pct(row.task_assigned_pct)}"
-        )
+        coverage_lines.append(f"- {row.atlas_name}: union {int(row.union_assigned_voxels):,}/{int(row.union_total_voxels):,} " f"({_fmt_pct(row.union_assigned_pct)}), vigour {_fmt_pct(row.vigour_assigned_pct)}, " f"task {_fmt_pct(row.task_assigned_pct)}")
     set_lines = []
     for _, row in set_df.iterrows():
         regions = row.regions if row.regions else "None"
@@ -911,42 +675,18 @@ def _write_report(out_base, roi_df, set_df, coverage_df, metadata, totals, atlas
 
 
 def run(args):
-    reference_img, masks, mask_metadata = _load_figure_masks(
-        args.reference_map,
-        args.full_html,
-        args.task_map,
-        args.task_z_threshold,
-    )
+    reference_img, masks, mask_metadata = _load_figure_masks(args.reference_map, args.full_html, args.task_map, args.task_z_threshold)
     if args.exclude_white_matter:
-        masks, mask_metadata = _exclude_white_matter(
-            masks,
-            _white_matter_mask(reference_img, args.atlas_cache_dir) & ~masks["brainstem"],
-            mask_metadata,
-        )
+        masks, mask_metadata = _exclude_white_matter(masks, _white_matter_mask(reference_img, args.atlas_cache_dir) & ~masks["brainstem"], mask_metadata)
     analysis_space_mask = ~masks["brainstem"] & ~masks.get("white_matter", np.zeros(reference_img.shape[:3], dtype=bool))
-    regions, assigned_mask, atlas_metadata = _build_regions(
-        reference_img,
-        args.atlas_cache_dir,
-        analysis_space_mask,
-        args.atlas_mode,
-        masks["union"],
-    )
+    regions, assigned_mask, atlas_metadata = _build_regions(reference_img, args.atlas_cache_dir, analysis_space_mask, args.atlas_mode, masks["union"])
     roi_df = _roi_quantification(regions, assigned_mask, masks, reference_img)
     if not roi_df["roi_name"].eq(UNASSIGNED_ROI).any() and "priority_order" in atlas_metadata:
         atlas_metadata = dict(atlas_metadata)
-        atlas_metadata["priority_order"] = [
-            roi_name for roi_name in atlas_metadata["priority_order"] if roi_name != UNASSIGNED_ROI
-        ]
+        atlas_metadata["priority_order"] = [roi_name for roi_name in atlas_metadata["priority_order"] if roi_name != UNASSIGNED_ROI]
     set_df = _set_summary(roi_df)
     clean_df = _clean_roi_table(roi_df)
-    coverage_df = _coverage_table(
-        reference_img,
-        args.atlas_cache_dir,
-        analysis_space_mask,
-        assigned_mask,
-        args.atlas_mode,
-        masks,
-    )
+    coverage_df = _coverage_table(reference_img, args.atlas_cache_dir, analysis_space_mask, assigned_mask, args.atlas_mode, masks)
     totals = {name: int(np.count_nonzero(mask)) for name, mask in masks.items()}
 
     args.out_base.parent.mkdir(parents=True, exist_ok=True)
@@ -971,31 +711,11 @@ def run(args):
         "atlas_mode": args.atlas_mode,
         "exclude_white_matter": bool(args.exclude_white_matter),
         "totals": totals,
-        "outputs": {
-            "by_roi": str(by_roi_path),
-            "region_sets": str(sets_path),
-            "clean_table": str(clean_table_path),
-            "summary_image": str(summary_image_path),
-            "summary_pdf": str(summary_pdf_path),
-            "clean_table_image": str(clean_table_image_path),
-            "atlas_coverage": str(coverage_path),
-            "metadata": str(metadata_path),
-            "report": str(args.out_base.with_name(args.out_base.name + "_report.md")),
-        },
+        "outputs": {"by_roi": str(by_roi_path), "region_sets": str(sets_path), "clean_table": str(clean_table_path), "summary_image": str(summary_image_path), "summary_pdf": str(summary_pdf_path), "clean_table_image": str(clean_table_image_path), "atlas_coverage": str(coverage_path), "metadata": str(metadata_path), "report": str(args.out_base.with_name(args.out_base.name + "_report.md"))},
     }
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     _write_report(args.out_base, roi_df, set_df, coverage_df, mask_metadata, totals, args.atlas_mode)
-    return {
-        "by_roi": by_roi_path,
-        "region_sets": sets_path,
-        "clean_table": clean_table_path,
-        "summary_image": summary_image_path,
-        "summary_pdf": summary_pdf_path,
-        "clean_table_image": clean_table_image_path,
-        "atlas_coverage": coverage_path,
-        "metadata": metadata_path,
-        "report": args.out_base.with_name(args.out_base.name + "_report.md"),
-    }
+    return {"by_roi": by_roi_path, "region_sets": sets_path, "clean_table": clean_table_path, "summary_image": summary_image_path, "summary_pdf": summary_pdf_path, "clean_table_image": clean_table_image_path, "atlas_coverage": coverage_path, "metadata": metadata_path, "report": args.out_base.with_name(args.out_base.name + "_report.md")}
 
 
 def parse_args():
@@ -1005,21 +725,8 @@ def parse_args():
     parser.add_argument("--task-map", type=Path, default=DEFAULT_TASK_ONLY_MAP)
     parser.add_argument("--task-z-threshold", type=float, default=DEFAULT_TASK_ONLY_Z_THRESHOLD)
     parser.add_argument("--atlas-cache-dir", type=Path, default=DEFAULT_ATLAS_CACHE_DIR)
-    parser.add_argument(
-        "--atlas-mode",
-        choices=ATLAS_MODE_CHOICES,
-        default="aal3_ho_nearest",
-        help=(
-            "Use coarse AAL3 groups, finer bilateral AAL3 subregions, optional Harvard-Oxford fill, "
-            "or additionally assign remaining selected voxels to the nearest existing anatomical label."
-        ),
-    )
-    parser.add_argument(
-        "--include-white-matter",
-        action="store_false",
-        dest="exclude_white_matter",
-        help="Include Harvard-Oxford cerebral white-matter voxels in the ROI quantification.",
-    )
+    parser.add_argument("--atlas-mode", choices=ATLAS_MODE_CHOICES, default="aal3_ho_nearest", help=("Use coarse AAL3 groups, finer bilateral AAL3 subregions, optional Harvard-Oxford fill, " "or additionally assign remaining selected voxels to the nearest existing anatomical label."))
+    parser.add_argument("--include-white-matter", action="store_false", dest="exclude_white_matter", help="Include Harvard-Oxford cerebral white-matter voxels in the ROI quantification.")
     parser.add_argument("--out-base", type=Path, default=DEFAULT_OUT_BASE)
     return parser.parse_args()
 

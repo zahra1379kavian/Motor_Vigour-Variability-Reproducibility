@@ -44,12 +44,7 @@ def _task_activation_roi_setup(args, reference_img):
         roi_names = [group.name for group in groups]
         source_roi_names = roi_names
         min_roi_voxels = int(args.min_report_voxels)
-    metadata.update({
-        'split_hemispheres': bool(args.split_hemispheres),
-        'source_roi_names': source_roi_names,
-        'excluded_rois': sorted(excluded_rois),
-        'min_roi_voxels': int(min_roi_voxels),
-    })
+    metadata.update({'split_hemispheres': bool(args.split_hemispheres), 'source_roi_names': source_roi_names, 'excluded_rois': sorted(excluded_rois), 'min_roi_voxels': int(min_roi_voxels)})
     return groups, metadata, roi_names, min_roi_voxels
 
 
@@ -67,12 +62,7 @@ def _build_task_activation_rois(task_values, roi_names, groups, z_threshold, min
         n_voxels = int(np.count_nonzero(mask))
         if n_voxels < int(min_roi_voxels):
             continue
-        rois.append(M.WeightedROI(
-            name=name,
-            mask=mask,
-            weights=np.ones(n_voxels, dtype=np.float64),
-            n_voxels=n_voxels,
-        ))
+        rois.append(M.WeightedROI(name=name, mask=mask, weights=np.ones(n_voxels, dtype=np.float64), n_voxels=n_voxels))
     rois = sorted(rois, key=lambda roi: (-roi.n_voxels, roi.name))
     if len(rois) < 2:
         raise ValueError('At least two task-activation ROI masks are required for edge-network analysis')
@@ -100,14 +90,7 @@ def _missing_inputs(args):
 
 
 def _roi_summary(rois, z_threshold):
-    summary = pd.DataFrame({
-        'roi_name': [roi.name for roi in rois],
-        'n_voxels': [roi.n_voxels for roi in rois],
-        'task_activation_voxels': [roi.n_voxels for roi in rois],
-        'voxel_selection': TASK_VOXEL_SELECTION,
-        'voxel_weighting': 'unit_weights',
-        'task_z_threshold': float(z_threshold),
-    })
+    summary = pd.DataFrame({'roi_name': [roi.name for roi in rois], 'n_voxels': [roi.n_voxels for roi in rois], 'task_activation_voxels': [roi.n_voxels for roi in rois], 'voxel_selection': TASK_VOXEL_SELECTION, 'voxel_weighting': 'unit_weights', 'task_z_threshold': float(z_threshold)})
     summary['n_weighted_voxels'] = summary['n_voxels']
     return summary
 
@@ -150,13 +133,7 @@ def _prepare_task_rois(args):
     task_img = nib.load(str(args.task_activation_map))
     task_values = np.asarray(task_img.get_fdata(), dtype=np.float64)
     groups, metadata, roi_names, min_roi_voxels = _task_activation_roi_setup(args, task_img)
-    rois = _build_task_activation_rois(
-        task_values=task_values,
-        roi_names=roi_names,
-        groups=groups,
-        z_threshold=args.task_z_threshold,
-        min_roi_voxels=min_roi_voxels,
-    )
+    rois = _build_task_activation_rois(task_values=task_values, roi_names=roi_names, groups=groups, z_threshold=args.task_z_threshold, min_roi_voxels=min_roi_voxels)
     return task_img, task_values, metadata, rois, min_roi_voxels
 
 
@@ -256,13 +233,7 @@ def main():
         session_df.to_csv(timeseries_dir / f'{spec.label}.csv', index=False)
         cleaned = M._clean_timeseries(session_df)
         networks[spec.label] = M._connectivity_matrix(cleaned, n_neighbors=args.mi_neighbors, random_state=args.random_state)
-        session_fc_row = {
-            'label': spec.label,
-            'subject': spec.subject,
-            'session': spec.session,
-            'state': spec.state,
-            'connectivity_metric': M.INTRA_BETWEEN_FC_METRIC,
-        }
+        session_fc_row = {'label': spec.label, 'subject': spec.subject, 'session': spec.session, 'state': spec.state, 'connectivity_metric': M.INTRA_BETWEEN_FC_METRIC}
         session_fc_row.update(M._between_roi_fc_summary(cleaned, mi_quantile_bins=args.mi_quantile_bins))
         try:
             voxel_timeseries = M._load_session_voxel_timeseries(spec, task_img, rois)
@@ -279,14 +250,7 @@ def main():
     pairwise.to_csv(pairwise_path, index=False)
     paired_stats, paired_subject_path, paired_stats_path = M._save_paired_similarity_tests(pairwise, out_dir)
     figure_path = M._plot_cross_subject_distribution(pairwise, out_dir, paired_stats=paired_stats)
-    node_strength_summary, node_strength_values_path, node_strength_summary_path, node_strength_figure_path = M._save_node_strength_analysis(
-        specs,
-        networks,
-        roi_names,
-        out_dir,
-        paired_stats=paired_stats,
-        top_n=args.node_strength_top_n,
-    )
+    node_strength_summary, node_strength_values_path, node_strength_summary_path, node_strength_figure_path = M._save_node_strength_analysis(specs, networks, roi_names, out_dir, paired_stats=paired_stats, top_n=args.node_strength_top_n)
 
     hemisphere_fc_paths = None
     hemisphere_fc_skipped = None
@@ -299,13 +263,7 @@ def main():
 
     intra_between_paths = None
     if intra_between_session_rows:
-        intra_between_paths = M._save_intra_between_fc_analysis(
-            intra_between_session_rows,
-            intra_between_roi_rows,
-            out_dir,
-            voxel_selection=TASK_VOXEL_SELECTION,
-            mi_quantile_bins=args.mi_quantile_bins,
-        )
+        intra_between_paths = M._save_intra_between_fc_analysis(intra_between_session_rows, intra_between_roi_rows, out_dir, voxel_selection=TASK_VOXEL_SELECTION, mi_quantile_bins=args.mi_quantile_bins)
         _write_task_intra_between_method(intra_between_paths['method'], args.task_z_threshold, metric=M.INTRA_BETWEEN_FC_METRIC, mi_quantile_bins=args.mi_quantile_bins)
     elif intra_between_fc_skipped:
         warnings.warn('Skipped intra-vs-between FC analysis because no sessions had voxel-level beta or BOLD inputs.', RuntimeWarning)
@@ -343,15 +301,7 @@ def main():
         'within_vs_between_hemisphere_fc_outputs': {key: str(value) for key, value in hemisphere_fc_paths.items() if key != 'summary'} if hemisphere_fc_paths else None,
         'within_vs_between_hemisphere_fc_primary_p': hemisphere_fc_paths['summary']['tests']['within_minus_between_hemisphere_delta']['paired_t_p_value_two_sided'] if hemisphere_fc_paths else None,
         'within_vs_between_hemisphere_fc_primary_effect': hemisphere_fc_paths['summary']['tests']['within_minus_between_hemisphere_delta']['mean'] if hemisphere_fc_paths else None,
-        'sessions': [{
-            'label': spec.label,
-            'subject': spec.subject,
-            'session': spec.session,
-            'state': spec.state,
-            'bold_path': str(spec.bold_path) if spec.bold_path else None,
-            'timeseries_path': str(spec.timeseries_path) if spec.timeseries_path else None,
-            'beta_paths': [str(path) for path in spec.beta_paths],
-        } for spec in specs],
+        'sessions': [{'label': spec.label, 'subject': spec.subject, 'session': spec.session, 'state': spec.state, 'bold_path': str(spec.bold_path) if spec.bold_path else None, 'timeseries_path': str(spec.timeseries_path) if spec.timeseries_path else None, 'beta_paths': [str(path) for path in spec.beta_paths]} for spec in specs],
     })
     (out_dir / 'metadata.json').write_text(json.dumps(metadata, indent=2), encoding='utf-8')
 

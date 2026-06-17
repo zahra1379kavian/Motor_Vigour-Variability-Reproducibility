@@ -12,14 +12,7 @@ import matplotlib
 
 warnings.filterwarnings("ignore", message="Unable to import Axes3D.*")
 matplotlib.use("Agg")
-matplotlib.rcParams.update(
-    {
-        "font.family": "Liberation Sans",
-        "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+matplotlib.rcParams.update({"font.family": "Liberation Sans", "font.sans-serif": ["Liberation Sans", "Arial", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -35,10 +28,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_BEHAVIOUR_ROOT = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/"
-    "PRECISIONSTIM_PD_Data_Results/Behaviour"
-)
+DEFAULT_BEHAVIOUR_ROOT = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/" "PRECISIONSTIM_PD_Data_Results/Behaviour")
 DEFAULT_OUT_DIR = ROOT / "results" / "supplementary" / "figure_03_reward_effects"
 DEFAULT_LOW_REWARD_CODES = (0, 1)
 DEFAULT_HIGH_REWARD_CODES = (5,)
@@ -46,10 +36,7 @@ DEFAULT_RT_COLUMN_ONE_BASED = 2
 CONSOLIDATED_RE = re.compile(r"^(?P<subject>PSPD\d+)_(?P<medication>ON|OFF)_consolidated_behavdata\.mat$")
 GVS_LABELS = ["Sham"] + [f"GVS{i}" for i in range(2, 10)]
 SESSION_BY_MEDICATION = {"OFF": 1, "ON": 2}
-SUBJECT_MEDICATION_SESSION_OVERRIDES = {
-    (17, "OFF"): 2,
-    (17, "ON"): 1,
-}
+SUBJECT_MEDICATION_SESSION_OVERRIDES = {(17, "OFF"): 2, (17, "ON"): 1}
 DEFAULT_EXCLUDED_SUBJECT_SESSIONS = ((17, 1),)
 SUBJECT_FIGURE_COLOR = "#F28B82"
 MEDICATION_FIGURE_COLOR = "#8FD19E"
@@ -65,22 +52,12 @@ def _bold_figure_text(fig):
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Load PRECISIONSTIM behaviour .mat files and compare low- vs "
-            "high-reward inverse reaction time trials."
-        )
-    )
+    parser = argparse.ArgumentParser(description=("Load PRECISIONSTIM behaviour .mat files and compare low- vs " "high-reward inverse reaction time trials."))
     parser.add_argument("--behaviour-root", type=Path, default=DEFAULT_BEHAVIOUR_ROOT)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--low-reward-codes", type=float, nargs="+", default=list(DEFAULT_LOW_REWARD_CODES))
     parser.add_argument("--high-reward-codes", type=float, nargs="+", default=list(DEFAULT_HIGH_REWARD_CODES))
-    parser.add_argument(
-        "--rt-column",
-        type=int,
-        default=DEFAULT_RT_COLUMN_ONE_BASED,
-        help="One-based behaviour metric column containing RT values to invert. Default: 2.",
-    )
+    parser.add_argument("--rt-column", type=int, default=DEFAULT_RT_COLUMN_ONE_BASED, help="One-based behaviour metric column containing RT values to invert. Default: 2.")
     parser.add_argument("--min-rt", type=float, default=0.0, help="Minimum RT value to include before inversion.")
     parser.add_argument("--max-rt", type=float, default=None, help="Maximum RT value to include before inversion.")
     return parser.parse_args()
@@ -177,14 +154,7 @@ def _discover_pairs(behaviour_root):
         metrics_path = metrics_dir / f"{stem}_behav_metrics.mat"
         if not metrics_path.exists():
             raise FileNotFoundError(f"Missing paired behaviour metrics file for {reward_path.name}: {metrics_path}")
-        pairs.append(
-            {
-                "subject": match.group("subject"),
-                "medication": match.group("medication"),
-                "reward_path": reward_path,
-                "metrics_path": metrics_path,
-            }
-        )
+        pairs.append({"subject": match.group("subject"), "medication": match.group("medication"), "reward_path": reward_path, "metrics_path": metrics_path})
     if not pairs:
         raise ValueError(f"No paired behaviour .mat files found under {behaviour_root}")
     return pairs
@@ -196,24 +166,16 @@ def _build_trial_table(pairs, rt_column_index, low_codes, high_codes, min_rt, ma
         reward = _load_reward(Path(pair["reward_path"]))
         metrics = _load_behav_metrics(Path(pair["metrics_path"]))
         if len(metrics) < reward.shape[1]:
-            raise ValueError(
-                f"{pair['metrics_path']} has {len(metrics)} GVS cells but reward has {reward.shape[1]} columns"
-            )
+            raise ValueError(f"{pair['metrics_path']} has {len(metrics)} GVS cells but reward has {reward.shape[1]} columns")
         for gvs_index in range(reward.shape[1]):
             gvs_number = gvs_index + 1
             metric = metrics[gvs_index]
             if metric.ndim != 2:
                 raise ValueError(f"{pair['metrics_path']} GVS{gvs_number} metric must be 2D, got {metric.shape}")
             if metric.shape[1] <= rt_column_index:
-                raise ValueError(
-                    f"{pair['metrics_path']} GVS{gvs_number} has {metric.shape[1]} columns; "
-                    f"cannot read RT column {rt_column_index + 1}"
-                )
+                raise ValueError(f"{pair['metrics_path']} GVS{gvs_number} has {metric.shape[1]} columns; " f"cannot read RT column {rt_column_index + 1}")
             if metric.shape[0] != reward.shape[0]:
-                raise ValueError(
-                    f"{pair['subject']} {pair['medication']} GVS{gvs_number}: "
-                    f"reward rows {reward.shape[0]} != behaviour rows {metric.shape[0]}"
-                )
+                raise ValueError(f"{pair['subject']} {pair['medication']} GVS{gvs_number}: " f"reward rows {reward.shape[0]} != behaviour rows {metric.shape[0]}")
             rt = metric[:, rt_column_index]
             for row_index, (reward_code, rt_value) in enumerate(zip(reward[:, gvs_index], rt), start=1):
                 level = _reward_level(float(reward_code), low_codes=low_codes, high_codes=high_codes)
@@ -229,12 +191,7 @@ def _build_trial_table(pairs, rt_column_index, low_codes, high_codes, min_rt, ma
                     {
                         "subject": pair["subject"],
                         "medication": pair["medication"],
-                        "session": int(
-                            pair.get(
-                                "session",
-                                _session_from_subject_medication(str(pair["subject"]), str(pair["medication"])),
-                            )
-                        ),
+                        "session": int(pair.get("session", _session_from_subject_medication(str(pair["subject"]), str(pair["medication"])))),
                         "gvs": gvs_number,
                         "gvs_label": GVS_LABELS[gvs_index] if gvs_index < len(GVS_LABELS) else f"GVS{gvs_number}",
                         "run": 1 if row_index <= 10 else 2,
@@ -255,11 +212,7 @@ def _build_trial_table(pairs, rt_column_index, low_codes, high_codes, min_rt, ma
 
 
 def _paired_summary(df, group_cols):
-    grouped = (
-        df.groupby(group_cols + ["reward_level"], dropna=False)
-        .agg(mean_inv_rt=("inv_rt", "mean"), median_inv_rt=("inv_rt", "median"), n_trials=("inv_rt", "size"))
-        .reset_index()
-    )
+    grouped = (df.groupby(group_cols + ["reward_level"], dropna=False) .agg(mean_inv_rt=("inv_rt", "mean"), median_inv_rt=("inv_rt", "median"), n_trials=("inv_rt", "size")) .reset_index())
     mean_pivot = grouped.pivot(index=group_cols, columns="reward_level", values="mean_inv_rt")
     median_pivot = grouped.pivot(index=group_cols, columns="reward_level", values="median_inv_rt")
     n_pivot = grouped.pivot(index=group_cols, columns="reward_level", values="n_trials")
@@ -302,15 +255,7 @@ def _one_sample_stats(values, analysis, unit):
         sem = float(stats.sem(values))
         ci_low, ci_high = stats.t.interval(0.95, values.size - 1, loc=float(np.mean(values)), scale=sem)
         t_result = stats.ttest_1samp(values, 0.0)
-        row.update(
-            {
-                "ci95_low": float(ci_low),
-                "ci95_high": float(ci_high),
-                "cohen_dz": float(float(np.mean(values)) / sd) if sd > 0 else float("nan"),
-                "t_statistic": float(t_result.statistic),
-                "p_ttest_two_sided": float(t_result.pvalue),
-            }
-        )
+        row.update({"ci95_low": float(ci_low), "ci95_high": float(ci_high), "cohen_dz": float(float(np.mean(values)) / sd) if sd > 0 else float("nan"), "t_statistic": float(t_result.statistic), "p_ttest_two_sided": float(t_result.pvalue)})
         if np.any(values != 0):
             try:
                 wilcoxon = stats.wilcoxon(values, alternative="two-sided")
@@ -323,50 +268,18 @@ def _one_sample_stats(values, analysis, unit):
 
 def _paired_difference_stats(summary):
     rows = [
-        _one_sample_stats(
-            summary["subject"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
-            "primary_subject_collapsed_across_medication_and_gvs",
-            "subject",
-        ),
-        _one_sample_stats(
-            summary["subject_medication"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
-            "secondary_session_collapsed_across_gvs",
-            "subject_medication_session",
-        ),
-        _one_sample_stats(
-            summary["subject_medication_gvs"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
-            "exploratory_session_gvs",
-            "subject_medication_gvs",
-        ),
+        _one_sample_stats(summary["subject"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64), "primary_subject_collapsed_across_medication_and_gvs", "subject"),
+        _one_sample_stats(summary["subject_medication"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64), "secondary_session_collapsed_across_gvs", "subject_medication_session"),
+        _one_sample_stats(summary["subject_medication_gvs"]["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64), "exploratory_session_gvs", "subject_medication_gvs"),
     ]
     for medication, group in summary["subject_medication"].groupby("medication", sort=True):
-        rows.append(
-            _one_sample_stats(
-                group["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
-                f"secondary_{medication.lower()}_sessions",
-                f"subject_{medication.lower()}_session",
-            )
-        )
+        rows.append(_one_sample_stats(group["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64), f"secondary_{medication.lower()}_sessions", f"subject_{medication.lower()}_session"))
     for gvs, group in summary["subject_gvs"].groupby("gvs", sort=True):
         label = str(group["gvs_label"].iloc[0])
-        rows.append(
-            _one_sample_stats(
-                group["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64),
-                f"exploratory_{label.lower().replace('/', '_')}",
-                "subject_gvs",
-            )
-        )
-    medication_pivot = summary["subject_medication"].pivot(
-        index="subject", columns="medication", values="delta_inv_rt_high_minus_low"
-    )
+        rows.append(_one_sample_stats(group["delta_inv_rt_high_minus_low"].to_numpy(dtype=np.float64), f"exploratory_{label.lower().replace('/', '_')}", "subject_gvs"))
+    medication_pivot = summary["subject_medication"].pivot(index="subject", columns="medication", values="delta_inv_rt_high_minus_low")
     if {"OFF", "ON"}.issubset(set(medication_pivot.columns)):
-        rows.append(
-            _one_sample_stats(
-                (medication_pivot["ON"] - medication_pivot["OFF"]).to_numpy(dtype=np.float64),
-                "reward_delta_medication_interaction_on_minus_off",
-                "subject",
-            )
-        )
+        rows.append(_one_sample_stats((medication_pivot["ON"] - medication_pivot["OFF"]).to_numpy(dtype=np.float64), "reward_delta_medication_interaction_on_minus_off", "subject"))
         rows[-1]["contrast"] = "(high_minus_low_ON) - (high_minus_low_OFF)"
     return pd.DataFrame(rows)
 
@@ -376,19 +289,11 @@ def _regression_tables(trials):
         return pd.DataFrame([{"model": "trial_fixed_effects", "status": "skipped", "reason": "statsmodels is unavailable"}])
     model_data = trials.copy()
     model_data["medication"] = pd.Categorical(model_data["medication"], categories=["OFF", "ON"])
-    formulas = {
-        "reward_main_subject_fixed_effects": "inv_rt ~ reward_high + C(subject) + C(medication) + C(gvs) + C(run)",
-        "reward_by_medication_subject_fixed_effects": (
-            "inv_rt ~ reward_high * C(medication) + C(subject) + C(gvs) + C(run)"
-        ),
-    }
+    formulas = {"reward_main_subject_fixed_effects": "inv_rt ~ reward_high + C(subject) + C(medication) + C(gvs) + C(run)", "reward_by_medication_subject_fixed_effects": ("inv_rt ~ reward_high * C(medication) + C(subject) + C(gvs) + C(run)")}
     rows = []
     for model_name, formula in formulas.items():
         try:
-            fit = smf.ols(formula, data=model_data).fit(
-                cov_type="cluster",
-                cov_kwds={"groups": model_data["subject"]},
-            )
+            fit = smf.ols(formula, data=model_data).fit(cov_type="cluster", cov_kwds={"groups": model_data["subject"]})
         except Exception as exc:  # pragma: no cover - depends on statsmodels/patsy
             rows.append({"model": model_name, "status": "failed", "reason": str(exc)})
             continue
@@ -425,30 +330,15 @@ def _format_p_value(value):
 def _format_t_test(row, label):
     n = int(row["n"])
     df = n - 1
-    return (
-        f"{label}: mean={row['mean_delta_inv_rt']:.4f}\n"
-        f"t({df})={row['t_statistic']:.2f}, {_format_p_value(float(row['p_ttest_two_sided']))}"
-    )
+    return (f"{label}: mean={row['mean_delta_inv_rt']:.4f}\n" f"t({df})={row['t_statistic']:.2f}, {_format_p_value(float(row['p_ttest_two_sided']))}")
 
 
 def _add_stat_annotation(ax, text, x=0.98, y=0.98, ha="right", va="top", fontsize=9):
-    ax.text(
-        x,
-        y,
-        text,
-        transform=ax.transAxes,
-        ha=ha,
-        va=va,
-        fontsize=fontsize,
-        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.75, "pad": 1.0},
-    )
+    ax.text(x, y, text, transform=ax.transAxes, ha=ha, va=va, fontsize=fontsize, bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.75, "pad": 1.0})
 
 
 def _gvs_stat_annotation(stats_df):
-    rows = stats_df.loc[
-        stats_df["analysis"].astype(str).str.startswith("exploratory_")
-        & stats_df["unit"].astype(str).eq("subject_gvs")
-    ].copy()
+    rows = stats_df.loc[stats_df["analysis"].astype(str).str.startswith("exploratory_") & stats_df["unit"].astype(str).eq("subject_gvs")].copy()
     rows = rows.loc[np.isfinite(rows["p_ttest_two_sided"].to_numpy(dtype=float))]
     if rows.empty:
         return "GVS tests: p = n/a"
@@ -497,9 +387,7 @@ def _subject_rt_range_stats(trials):
                 "max_rt_high": float(np.max(high)) if high.size else float("nan"),
                 "sem_rt_low": float(stats.sem(low)) if low.size > 1 else float("nan"),
                 "sem_rt_high": float(stats.sem(high)) if high.size > 1 else float("nan"),
-                "delta_rt_high_minus_low": (
-                    float(np.mean(high) - np.mean(low)) if low.size and high.size else float("nan")
-                ),
+                "delta_rt_high_minus_low": (float(np.mean(high) - np.mean(low)) if low.size and high.size else float("nan")),
                 "t_statistic_welch": t_statistic,
                 "p_ttest_welch_two_sided": p_value,
                 "significance": _significance_stars(p_value),
@@ -522,29 +410,12 @@ def _save_subject_rt_bar_range_figure(subject_rt_stats, out_dir):
         sems = np.array([row["sem_rt_low"], row["sem_rt_high"]], dtype=np.float64)
         yerr = np.nan_to_num(sems, nan=0.0)
         upper = means + yerr
-        ax.bar(
-            x,
-            means,
-            width=0.58,
-            color=[low_color, high_color],
-            edgecolor="#374151",
-            linewidth=0.6,
-            yerr=yerr,
-            capsize=3,
-            error_kw={"ecolor": "#374151", "elinewidth": 0.8, "capthick": 0.8},
-            zorder=2,
-        )
+        ax.bar(x, means, width=0.58, color=[low_color, high_color], edgecolor="#374151", linewidth=0.6, yerr=yerr, capsize=3, error_kw={"ecolor": "#374151", "elinewidth": 0.8, "capthick": 0.8}, zorder=2)
         stars = "" if pd.isna(row["significance"]) else str(row["significance"])
         if stars:
             bracket_y = float(np.nanmax(upper)) * 1.08
             tick = max(float(np.nanmax(upper)) * 0.02, 0.04)
-            ax.plot(
-                [x[0], x[0], x[1], x[1]],
-                [bracket_y, bracket_y + tick, bracket_y + tick, bracket_y],
-                color="#111827",
-                linewidth=0.8,
-                clip_on=False,
-            )
+            ax.plot([x[0], x[0], x[1], x[1]], [bracket_y, bracket_y + tick, bracket_y + tick, bracket_y], color="#111827", linewidth=0.8, clip_on=False)
             star_y = bracket_y + tick * (0.55 if panel_index == 1 else 1.0)
             ax.text(np.mean(x), star_y, stars, ha="center", va="bottom", fontsize=15, fontweight="bold")
         y_max = float(np.nanmax(upper))
@@ -571,53 +442,18 @@ def _save_paired_subject_figure(subject_summary, stats_df, out_dir):
     fig, ax = plt.subplots(figsize=PAIRED_FIGURE_SIZE)
     x = PAIRED_COLUMN_X
     for _, row in subject_summary.iterrows():
-        ax.plot(
-            x,
-            [row["mean_inv_rt_low"], row["mean_inv_rt_high"]],
-            color=SUBJECT_FIGURE_COLOR,
-            linewidth=1.1,
-            alpha=0.24,
-            zorder=1,
-        )
-        ax.scatter(
-            x,
-            [row["mean_inv_rt_low"], row["mean_inv_rt_high"]],
-            color=SUBJECT_FIGURE_COLOR,
-            s=18,
-            alpha=0.35,
-            zorder=2,
-        )
+        ax.plot(x, [row["mean_inv_rt_low"], row["mean_inv_rt_high"]], color=SUBJECT_FIGURE_COLOR, linewidth=1.1, alpha=0.24, zorder=1)
+        ax.scatter(x, [row["mean_inv_rt_low"], row["mean_inv_rt_high"]], color=SUBJECT_FIGURE_COLOR, s=18, alpha=0.35, zorder=2)
 
     means = subject_summary[["mean_inv_rt_low", "mean_inv_rt_high"]].mean().to_numpy(dtype=float)
     sems = subject_summary[["mean_inv_rt_low", "mean_inv_rt_high"]].sem().to_numpy(dtype=float)
-    ax.errorbar(
-        x,
-        means,
-        yerr=sems,
-        color=SUBJECT_FIGURE_COLOR,
-        marker="o",
-        markerfacecolor=SUBJECT_FIGURE_COLOR,
-        markeredgecolor=SUBJECT_FIGURE_COLOR,
-        markeredgewidth=1.2,
-        markersize=7,
-        linewidth=2.2,
-        capsize=4,
-        zorder=4,
-    )
+    ax.errorbar(x, means, yerr=sems, color=SUBJECT_FIGURE_COLOR, marker="o", markerfacecolor=SUBJECT_FIGURE_COLOR, markeredgecolor=SUBJECT_FIGURE_COLOR, markeredgewidth=1.2, markersize=7, linewidth=2.2, capsize=4, zorder=4)
     ax.set_xticks(x)
     ax.set_xticklabels(["Low reward", "High reward"])
     ax.set_xlim(-0.03, 0.70)
     ax.set_ylabel("RT (s)")
     primary = stats_df.loc[stats_df["analysis"] == "primary_subject_collapsed_across_medication_and_gvs"].iloc[0]
-    _add_stat_annotation(
-        ax,
-        _format_t_test(primary, "High-low"),
-        x=0.94,
-        y=0.62,
-        ha="right",
-        va="center",
-        fontsize=9,
-    )
+    _add_stat_annotation(ax, _format_t_test(primary, "High-low"), x=0.94, y=0.62, ha="right", va="center", fontsize=9)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="#E5E7EB", linewidth=0.8)
     fig.tight_layout()
@@ -634,20 +470,7 @@ def _save_medication_delta_figure(subject_medication, stats_df, out_dir):
         ax.scatter(x, [row["OFF"], row["ON"]], color=MEDICATION_FIGURE_COLOR, s=18, alpha=0.35, zorder=2)
     means = paired_pivot[["OFF", "ON"]].mean().to_numpy(dtype=float)
     sems = paired_pivot[["OFF", "ON"]].sem().to_numpy(dtype=float)
-    ax.errorbar(
-        x,
-        means,
-        yerr=sems,
-        color=MEDICATION_FIGURE_COLOR,
-        marker="o",
-        markerfacecolor=MEDICATION_FIGURE_COLOR,
-        markeredgecolor=MEDICATION_FIGURE_COLOR,
-        markeredgewidth=1.2,
-        markersize=7,
-        linewidth=2.2,
-        capsize=4,
-        zorder=4,
-    )
+    ax.errorbar(x, means, yerr=sems, color=MEDICATION_FIGURE_COLOR, marker="o", markerfacecolor=MEDICATION_FIGURE_COLOR, markeredgecolor=MEDICATION_FIGURE_COLOR, markeredgewidth=1.2, markersize=7, linewidth=2.2, capsize=4, zorder=4)
     ax.axhline(0, color=MEDICATION_FIGURE_COLOR, linewidth=1.0, linestyle="--", alpha=0.65)
     ax.set_xticks(x)
     ax.set_xticklabels(["OFF medication", "ON medication"])
@@ -664,26 +487,10 @@ def _save_medication_delta_figure(subject_medication, stats_df, out_dir):
 
 def _save_gvs_delta_figure(subject_gvs, stats_df, out_dir):
     fig, ax = plt.subplots(figsize=(8.2, 4.6))
-    summary = (
-        subject_gvs.groupby(["gvs", "gvs_label"], sort=True)["delta_inv_rt_high_minus_low"]
-        .agg(["mean", "count", "std"])
-        .reset_index()
-    )
+    summary = (subject_gvs.groupby(["gvs", "gvs_label"], sort=True)["delta_inv_rt_high_minus_low"] .agg(["mean", "count", "std"]) .reset_index())
     summary["sem"] = summary["std"] / np.sqrt(summary["count"])
     x = summary["gvs"].to_numpy(dtype=float)
-    ax.errorbar(
-        x,
-        summary["mean"].to_numpy(dtype=float),
-        yerr=summary["sem"].to_numpy(dtype=float),
-        color=GVS_FIGURE_COLOR,
-        marker="o",
-        markerfacecolor=GVS_FIGURE_COLOR,
-        markeredgecolor=GVS_FIGURE_COLOR,
-        markeredgewidth=1.1,
-        markersize=6,
-        linewidth=1.8,
-        capsize=4,
-    )
+    ax.errorbar(x, summary["mean"].to_numpy(dtype=float), yerr=summary["sem"].to_numpy(dtype=float), color=GVS_FIGURE_COLOR, marker="o", markerfacecolor=GVS_FIGURE_COLOR, markeredgecolor=GVS_FIGURE_COLOR, markeredgewidth=1.1, markersize=6, linewidth=1.8, capsize=4)
     ax.axhline(0, color=GVS_FIGURE_COLOR, linewidth=1.0, linestyle="--", alpha=0.65)
     ax.set_xticks(x)
     ax.set_xticklabels(summary["gvs_label"].tolist(), rotation=35, ha="right")
@@ -706,21 +513,12 @@ def _save_figure(fig, stem, pad_inches=0.1):
 
 def _write_report(out_dir, trials, summary, stats_df, regression_df, low_codes, high_codes, excluded_codes, excluded_subject_sessions):
     primary = stats_df.loc[stats_df["analysis"] == "primary_subject_collapsed_across_medication_and_gvs"].iloc[0]
-    regression_reward = regression_df.loc[
-        (regression_df.get("model", "") == "reward_main_subject_fixed_effects")
-        & (regression_df.get("term", "") == "reward_high")
-    ]
+    regression_reward = regression_df.loc[(regression_df.get("model", "") == "reward_main_subject_fixed_effects") & (regression_df.get("term", "") == "reward_high")]
     regression_line = "Trial-level fixed-effect regression was not available or did not fit."
     if not regression_reward.empty:
         row = regression_reward.iloc[0]
-        regression_line = (
-            f"Trial-level fixed-effect regression reward_high beta = {row['coefficient']:.4f} 1/s "
-            f"(95% CI {row['ci95_low']:.4f}, {row['ci95_high']:.4f}; p = {row['p_value']:.3g}), "
-            "adjusted for subject, medication, GVS, and run with subject-clustered standard errors."
-        )
-    excluded_subject_session_text = ", ".join(
-        f"{row['subject']} session {row['session']} ({row['medication']})" for row in excluded_subject_sessions
-    )
+        regression_line = (f"Trial-level fixed-effect regression reward_high beta={row['coefficient']:.4f} 1/s " f"(95% CI {row['ci95_low']:.4f}, {row['ci95_high']:.4f}; p={row['p_value']:.3g}), " "adjusted for subject, medication, GVS, and run with subject-clustered standard errors.")
+    excluded_subject_session_text = ", ".join(f"{row['subject']} session {row['session']} ({row['medication']})" for row in excluded_subject_sessions)
     if not excluded_subject_session_text:
         excluded_subject_session_text = "none"
 
@@ -736,12 +534,7 @@ def _write_report(out_dir, trials, summary, stats_df, regression_df, low_codes, 
         "",
         "## Primary Paired Result",
         "",
-        (
-            f"Subject-level inverse RT high - low reward delta = {primary['mean_delta_inv_rt']:.4f} 1/s "
-            f"(95% CI {primary['ci95_low']:.4f}, {primary['ci95_high']:.4f}; "
-            f"paired t p = {primary['p_ttest_two_sided']:.3g}; "
-            f"Wilcoxon p = {primary['p_wilcoxon_two_sided']:.3g}; n = {int(primary['n'])})."
-        ),
+        (f"Subject-level inverse RT high - low reward delta={primary['mean_delta_inv_rt']:.4f} 1/s " f"(95% CI {primary['ci95_low']:.4f}, {primary['ci95_high']:.4f}; " f"paired t p={primary['p_ttest_two_sided']:.3g}; " f"Wilcoxon p={primary['p_wilcoxon_two_sided']:.3g}; n={int(primary['n'])})."),
         "",
         regression_line,
         "",
@@ -766,14 +559,7 @@ def main():
         raise ValueError(f"Low/high reward code sets overlap: {sorted(low_codes & high_codes)}")
 
     pairs, excluded_pairs = _apply_subject_session_exclusions(_discover_pairs(args.behaviour_root))
-    trials = _build_trial_table(
-        pairs,
-        rt_column_index=args.rt_column - 1,
-        low_codes=low_codes,
-        high_codes=high_codes,
-        min_rt=args.min_rt,
-        max_rt=args.max_rt,
-    )
+    trials = _build_trial_table(pairs, rt_column_index=args.rt_column - 1, low_codes=low_codes, high_codes=high_codes, min_rt=args.min_rt, max_rt=args.max_rt)
     observed_codes = sorted(float(code) for code in trials["reward_code"].unique())
     all_reward_codes = []
     for pair in pairs:
@@ -781,12 +567,7 @@ def main():
         all_reward_codes.extend(float(code) for code in np.ravel(reward[np.isfinite(reward)]))
     excluded_codes = sorted(set(float(int(round(code))) for code in all_reward_codes) - low_codes - high_codes)
 
-    summary = {
-        "subject": _paired_summary(trials, ["subject"]),
-        "subject_medication": _paired_summary(trials, ["subject", "medication"]),
-        "subject_gvs": _paired_summary(trials, ["subject", "gvs", "gvs_label"]),
-        "subject_medication_gvs": _paired_summary(trials, ["subject", "medication", "gvs", "gvs_label"]),
-    }
+    summary = {"subject": _paired_summary(trials, ["subject"]), "subject_medication": _paired_summary(trials, ["subject", "medication"]), "subject_gvs": _paired_summary(trials, ["subject", "gvs", "gvs_label"]), "subject_medication_gvs": _paired_summary(trials, ["subject", "medication", "gvs", "gvs_label"])}
     stats_df = _paired_difference_stats(summary)
     regression_df = _regression_tables(trials)
     subject_rt_stats = _subject_rt_range_stats(trials)
@@ -804,25 +585,8 @@ def main():
     figures.extend(_save_medication_delta_figure(summary["subject_medication"], stats_df, out_dir))
     figures.extend(_save_gvs_delta_figure(summary["subject_gvs"], stats_df, out_dir))
 
-    excluded_subject_sessions = [
-        {
-            "subject": str(pair["subject"]),
-            "session": int(pair["session"]),
-            "medication": str(pair["medication"]),
-        }
-        for pair in excluded_pairs
-    ]
-    _write_report(
-        out_dir,
-        trials,
-        summary,
-        stats_df,
-        regression_df,
-        low_codes,
-        high_codes,
-        excluded_codes,
-        excluded_subject_sessions,
-    )
+    excluded_subject_sessions = [{"subject": str(pair["subject"]), "session": int(pair["session"]), "medication": str(pair["medication"])} for pair in excluded_pairs]
+    _write_report(out_dir, trials, summary, stats_df, regression_df, low_codes, high_codes, excluded_codes, excluded_subject_sessions)
 
     metadata = {
         "behaviour_root": str(args.behaviour_root),
@@ -845,10 +609,7 @@ def main():
 
     primary = stats_df.loc[stats_df["analysis"] == "primary_subject_collapsed_across_medication_and_gvs"].iloc[0]
     print(f"Wrote reward effect outputs to {out_dir}")
-    print(
-        "Primary subject-level high-low inverse RT delta: "
-        f"{primary['mean_delta_inv_rt']:.4f} 1/s, p={primary['p_ttest_two_sided']:.3g}, n={int(primary['n'])}"
-    )
+    print("Primary subject-level high-low inverse RT delta: " f"{primary['mean_delta_inv_rt']:.4f} 1/s, p={primary['p_ttest_two_sided']:.3g}, n={int(primary['n'])}")
 
 
 if __name__ == "__main__":

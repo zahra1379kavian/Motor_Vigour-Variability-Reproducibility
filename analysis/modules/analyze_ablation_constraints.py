@@ -27,12 +27,7 @@ from nilearn import datasets, image
 from scipy import ndimage
 from scipy.stats import spearmanr, wilcoxon
 
-from threshold_robustness_voxel_network import (
-    DEFAULT_AAL_VERSION,
-    UNASSIGNED_ROI,
-    _build_roi_groups,
-    _display_region_name,
-)
+from threshold_robustness_voxel_network import (DEFAULT_AAL_VERSION, UNASSIGNED_ROI, _build_roi_groups, _display_region_name)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,10 +37,7 @@ DEFAULT_TASK_ONLY_MAP = ROOT / "data" / "derived_maps" / "standard_glm_task_z_ma
 DEFAULT_TASK_ONLY_Z_THRESHOLD = 3.5
 DEFAULT_ABLATION_DIR = ROOT / "data" / "model_ablation"
 DEFAULT_OUT_DIR = ROOT / "results" / "main" / "figure_04_05_ablation"
-DEFAULT_LOGS = (
-    ROOT / "data" / "model_ablation" / "slurm-11460024.out",
-    ROOT / "data" / "model_ablation" / "slurm-11445550.out",
-)
+DEFAULT_LOGS = (ROOT / "data" / "model_ablation" / "slurm-11460024.out", ROOT / "data" / "model_ablation" / "slurm-11445550.out")
 DEFAULT_ATLAS_CACHE_DIR = Path("/home/zkavian/nilearn_data")
 PAPER_FONT_FAMILY = "Liberation Sans"
 PAPER_TITLE_FONT_SIZE = 18
@@ -58,44 +50,14 @@ EPS = 1e-8
 HARVARD_OXFORD_SUBCORTICAL_ATLAS = "sub-maxprob-thr25-2mm"
 BRAINSTEM_ATLAS_LABELS = ("Brain-Stem",)
 BRAINSTEM_AAL_ROIS = ("VTA", "SN_pc", "SN_pr", "Red_N", "LC", "Raphe")
-BRAINSTEM_MNI_BOUNDS_MM = {
-    "x_abs": 20.0,
-    "y_min": -50.0,
-    "y_max": -4.0,
-    "z_min": -36.0,
-    "z_max": 10.0,
-}
+BRAINSTEM_MNI_BOUNDS_MM = {"x_abs": 20.0, "y_min": -50.0, "y_max": -4.0, "z_min": -36.0, "z_max": 10.0}
 MOTOR_CONTOUR_ROIS = ("Precentral", "Supp_Motor_Area", "Paracentral_Lobule", "Postcentral")
 MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS = 1
-MIXED_LOG_FINAL_CANDIDATE_KEYS = {
-    (0.0, 0.0, 0.0, 0.0, 1.5),
-    (1.0, 0.0, 0.0, 0.0, 1.5),
-}
-LOG_CANDIDATE_ALLOWLISTS = {
-    "slurm-11445550.out": MIXED_LOG_FINAL_CANDIDATE_KEYS,
-}
-STALE_UNRELATED_OUTPUTS = (
-    "ablation_balanced_score_broad.png",
-    "ablation_balanced_score_broad.pdf",
-    "ablation_broad_leave_one_out_summary.png",
-    "ablation_broad_leave_one_out_summary.pdf",
-    "ablation_cv_tradeoff_broad.png",
-    "ablation_cv_tradeoff_broad.pdf",
-)
+MIXED_LOG_FINAL_CANDIDATE_KEYS = {(0.0, 0.0, 0.0, 0.0, 1.5), (1.0, 0.0, 0.0, 0.0, 1.5)}
+LOG_CANDIDATE_ALLOWLISTS = {"slurm-11445550.out": MIXED_LOG_FINAL_CANDIDATE_KEYS}
+STALE_UNRELATED_OUTPUTS = ("ablation_balanced_score_broad.png", "ablation_balanced_score_broad.pdf", "ablation_broad_leave_one_out_summary.png", "ablation_broad_leave_one_out_summary.pdf", "ablation_cv_tradeoff_broad.png", "ablation_cv_tradeoff_broad.pdf")
 
-COLORS = {
-    "Full model": "#1f77b4",
-    "Full ablation map": "#1f77b4",
-    "No task": "#d95f02",
-    "No BOLD stability": "#1b9e77",
-    "No beta stability": "#7570b3",
-    "No smoothness": "#e7298a",
-    "Task-only reference": "#666666",
-    "BOLD-only": "#66a61e",
-    "Beta-only": "#e6ab02",
-    "Smooth-only": "#a6761d",
-    "No objective penalties": "#8c8c8c",
-}
+COLORS = {"Full model": "#1f77b4", "Full ablation map": "#1f77b4", "No task": "#d95f02", "No BOLD stability": "#1b9e77", "No beta stability": "#7570b3", "No smoothness": "#e7298a", "Task-only reference": "#666666", "BOLD-only": "#66a61e", "Beta-only": "#e6ab02", "Smooth-only": "#a6761d", "No objective penalties": "#8c8c8c"}
 
 
 class Candidate:
@@ -126,11 +88,7 @@ def _fmt_float(value):
 
 
 def _candidate_id(candidate):
-    return (
-        f"task{_fmt_float(candidate.task)}_bold{_fmt_float(candidate.bold)}_"
-        f"beta{_fmt_float(candidate.beta)}_smooth{_fmt_float(candidate.smooth)}_"
-        f"gamma{_fmt_float(candidate.gamma)}"
-    )
+    return (f"task{_fmt_float(candidate.task)}_bold{_fmt_float(candidate.bold)}_" f"beta{_fmt_float(candidate.beta)}_smooth{_fmt_float(candidate.smooth)}_" f"gamma{_fmt_float(candidate.gamma)}")
 
 
 def _candidate_from_match(match):
@@ -172,15 +130,8 @@ def _analysis_group(candidate, source_log):
 
 
 def parse_slurm_logs(log_paths):
-    start_re = re.compile(
-        r"^Fold (?P<fold>\d+): optimization with task=(?P<task>-?\d+(?:\.\d+)?), "
-        r"bold=(?P<bold>-?\d+(?:\.\d+)?), beta=(?P<beta>-?\d+(?:\.\d+)?), "
-        r"smooth=(?P<smooth>-?\d+(?:\.\d+)?), gamma=(?P<gamma>-?\d+(?:\.\d+)?)"
-    )
-    loss_terms_re = re.compile(
-        r"Loss terms -> C_task: (?P<task>[-+0-9.eE]+), C_bold: (?P<bold>[-+0-9.eE]+), "
-        r"C_beta: (?P<beta>[-+0-9.eE]+), C_smooth: (?P<smooth>[-+0-9.eE]+)"
-    )
+    start_re = re.compile(r"^Fold (?P<fold>\d+): optimization with task=(?P<task>-?\d+(?:\.\d+)?), " r"bold=(?P<bold>-?\d+(?:\.\d+)?), beta=(?P<beta>-?\d+(?:\.\d+)?), " r"smooth=(?P<smooth>-?\d+(?:\.\d+)?), gamma=(?P<gamma>-?\d+(?:\.\d+)?)")
+    loss_terms_re = re.compile(r"Loss terms -> C_task: (?P<task>[-+0-9.eE]+), C_bold: (?P<bold>[-+0-9.eE]+), " r"C_beta: (?P<beta>[-+0-9.eE]+), C_smooth: (?P<smooth>[-+0-9.eE]+)")
     test_term_re = re.compile(r"^\[test\] (?P<term>task|bold|beta|smooth)_penalty: (?P<value>[-+0-9.eE]+)")
     train_loss_re = re.compile(r"Total loss \(train objective\): (?P<value>[-+0-9.eE]+)")
     test_loss_re = re.compile(r"Total loss \(test objective\):\s+(?P<value>[-+0-9.eE]+)")
@@ -197,23 +148,14 @@ def parse_slurm_logs(log_paths):
             return
         required = {"fold", "train_corr", "test_corr", "train_total_loss", "test_total_loss"}
         if required.issubset(current):
-            candidate = Candidate(
-                float(current["task"]),
-                float(current["bold"]),
-                float(current["beta"]),
-                float(current["smooth"]),
-                float(current["gamma"]),
-            )
+            candidate = Candidate(float(current["task"]), float(current["bold"]), float(current["beta"]), float(current["smooth"]), float(current["gamma"]))
             current["candidate_id"] = _candidate_id(candidate)
             current["analysis_group"] = _analysis_group(candidate, str(current["source_log"]))
             current["candidate_label"] = _candidate_label(candidate, str(current["analysis_group"]))
             current["abs_train_corr"] = abs(float(current["train_corr"]))
             current["abs_test_corr"] = abs(float(current["test_corr"]))
             current["corr_generalization_gap"] = abs(float(current["abs_train_corr"]) - float(current["abs_test_corr"]))
-            current["relative_loss_gap"] = (
-                (float(current["test_total_loss"]) - float(current["train_total_loss"]))
-                / (abs(float(current["train_total_loss"])) + EPS)
-            )
+            current["relative_loss_gap"] = ((float(current["test_total_loss"]) - float(current["train_total_loss"])) / (abs(float(current["train_total_loss"])) + EPS))
             rows.append(current)
         current = None
 
@@ -230,15 +172,7 @@ def parse_slurm_logs(log_paths):
                 if allowlist is not None and candidate.key not in allowlist:
                     current = None
                     continue
-                current = {
-                    "source_log": log_path.name,
-                    "fold": int(start.group("fold")),
-                    "task": candidate.task,
-                    "bold": candidate.bold,
-                    "beta": candidate.beta,
-                    "smooth": candidate.smooth,
-                    "gamma": candidate.gamma,
-                }
+                current = {"source_log": log_path.name, "fold": int(start.group("fold")), "task": candidate.task, "bold": candidate.bold, "beta": candidate.beta, "smooth": candidate.smooth, "gamma": candidate.gamma}
                 continue
             if current is None:
                 continue
@@ -282,28 +216,14 @@ def add_balanced_scores(metrics):
     weight_rows = []
 
     for group, group_df in metrics.groupby("analysis_group", sort=False):
-        means = group_df.groupby("candidate_id", as_index=False)[
-            ["score_corr_term", "score_corr_gap_term", "score_loss_gap_term"]
-        ].mean()
+        means = group_df.groupby("candidate_id", as_index=False)[["score_corr_term", "score_corr_gap_term", "score_loss_gap_term"]].mean()
         weights = {}
         for term in ("score_corr_term", "score_corr_gap_term", "score_loss_gap_term"):
             value_range = float(means[term].max() - means[term].min())
             weights[term] = 1.0 / value_range if np.isfinite(value_range) and value_range > 0 else 1.0
         selector = metrics["analysis_group"].eq(group)
-        metrics.loc[selector, "balanced_score"] = (
-            weights["score_corr_term"] * metrics.loc[selector, "score_corr_term"]
-            + weights["score_corr_gap_term"] * metrics.loc[selector, "score_corr_gap_term"]
-            + weights["score_loss_gap_term"] * metrics.loc[selector, "score_loss_gap_term"]
-        )
-        weight_rows.append(
-            {
-                "analysis_group": group,
-                "corr_weight": weights["score_corr_term"],
-                "corr_gap_weight": weights["score_corr_gap_term"],
-                "loss_gap_weight": weights["score_loss_gap_term"],
-                "definition": "inverse range of candidate-mean score components within analysis_group",
-            }
-        )
+        metrics.loc[selector, "balanced_score"] = (weights["score_corr_term"] * metrics.loc[selector, "score_corr_term"] + weights["score_corr_gap_term"] * metrics.loc[selector, "score_corr_gap_term"] + weights["score_loss_gap_term"] * metrics.loc[selector, "score_loss_gap_term"])
+        weight_rows.append({"analysis_group": group, "corr_weight": weights["score_corr_term"], "corr_gap_weight": weights["score_corr_gap_term"], "loss_gap_weight": weights["score_loss_gap_term"], "definition": "inverse range of candidate-mean score components within analysis_group"})
     return metrics, pd.DataFrame(weight_rows)
 
 
@@ -311,27 +231,9 @@ def summarize_metrics(metrics):
     if metrics.empty:
         return pd.DataFrame()
     rows = []
-    metric_cols = [
-        "abs_train_corr",
-        "abs_test_corr",
-        "corr_generalization_gap",
-        "train_total_loss",
-        "test_total_loss",
-        "relative_loss_gap",
-        "balanced_score",
-    ]
+    metric_cols = ["abs_train_corr", "abs_test_corr", "corr_generalization_gap", "train_total_loss", "test_total_loss", "relative_loss_gap", "balanced_score"]
     for (group, candidate_id), sub in metrics.groupby(["analysis_group", "candidate_id"], sort=False):
-        row = {
-            "analysis_group": group,
-            "candidate_id": candidate_id,
-            "candidate_label": sub["candidate_label"].iloc[0],
-            "task": float(sub["task"].iloc[0]),
-            "bold": float(sub["bold"].iloc[0]),
-            "beta": float(sub["beta"].iloc[0]),
-            "smooth": float(sub["smooth"].iloc[0]),
-            "gamma": float(sub["gamma"].iloc[0]),
-            "fold_count": int(sub["fold"].nunique()),
-        }
+        row = {"analysis_group": group, "candidate_id": candidate_id, "candidate_label": sub["candidate_label"].iloc[0], "task": float(sub["task"].iloc[0]), "bold": float(sub["bold"].iloc[0]), "beta": float(sub["beta"].iloc[0]), "smooth": float(sub["smooth"].iloc[0]), "gamma": float(sub["gamma"].iloc[0]), "fold_count": int(sub["fold"].nunique())}
         for col in metric_cols:
             values = pd.to_numeric(sub[col], errors="coerce").dropna().to_numpy(dtype=float)
             row[f"{col}_mean"] = float(np.mean(values)) if values.size else np.nan
@@ -348,9 +250,7 @@ def compare_scores_to_full(metrics):
         full_candidates = group_df[group_df["candidate_label"].eq("Full model")]["candidate_id"].unique()
         if len(full_candidates) != 1:
             continue
-        full = group_df[group_df["candidate_id"].eq(full_candidates[0])][["fold", "balanced_score"]].rename(
-            columns={"balanced_score": "full_score"}
-        )
+        full = group_df[group_df["candidate_id"].eq(full_candidates[0])][["fold", "balanced_score"]].rename(columns={"balanced_score": "full_score"})
         for candidate_id, sub in group_df.groupby("candidate_id", sort=False):
             if candidate_id == full_candidates[0]:
                 continue
@@ -365,16 +265,7 @@ def compare_scores_to_full(metrics):
                     p_value = float(wilcoxon(delta).pvalue)
                 except ValueError:
                     p_value = np.nan
-            rows.append(
-                {
-                    "analysis_group": group,
-                    "candidate_id": candidate_id,
-                    "candidate_label": sub["candidate_label"].iloc[0],
-                    "n_paired_folds": int(paired.shape[0]),
-                    "median_score_minus_full": median_delta,
-                    "wilcoxon_p": p_value,
-                }
-            )
+            rows.append({"analysis_group": group, "candidate_id": candidate_id, "candidate_label": sub["candidate_label"].iloc[0], "n_paired_folds": int(paired.shape[0]), "median_score_minus_full": median_delta, "wilcoxon_p": p_value})
     out = pd.DataFrame(rows)
     if out.empty:
         return out
@@ -424,43 +315,18 @@ def _component_stats(mask):
 
 
 def _discover_map_specs(main_map, ablation_dir):
-    specs = [
-        MapSpec(
-            map_id="main_result_p90",
-            label="Full model",
-            path=main_map,
-            candidate=Candidate(1.0, 0.6, 0.6, 1.25, 1.5),
-            source="main_result_top90_nonzero_weights",
-            threshold_percentile=REFERENCE_PERCENTILE,
-        )
-    ]
-    pattern = re.compile(
-        r"task(?P<task>\d+(?:\.\d+)?)_bold(?P<bold>\d+(?:\.\d+)?)_"
-        r"beta(?P<beta>\d+(?:\.\d+)?)_smooth(?P<smooth>\d+(?:\.\d+)?)_"
-        r"gamma(?P<gamma>\d+(?:\.\d+)?)_bold_thr90\.nii\.gz$"
-    )
+    specs = [MapSpec(map_id="main_result_p90", label="Full model", path=main_map, candidate=Candidate(1.0, 0.6, 0.6, 1.25, 1.5), source="main_result_top90_nonzero_weights", threshold_percentile=REFERENCE_PERCENTILE)]
+    pattern = re.compile(r"task(?P<task>\d+(?:\.\d+)?)_bold(?P<bold>\d+(?:\.\d+)?)_" r"beta(?P<beta>\d+(?:\.\d+)?)_smooth(?P<smooth>\d+(?:\.\d+)?)_" r"gamma(?P<gamma>\d+(?:\.\d+)?)_bold_thr90\.nii\.gz$")
     for path in sorted(ablation_dir.glob("voxel_weights_mean_foldavg_sub9_ses1_*.nii.gz")):
         match = pattern.search(path.name)
         if not match:
             continue
         candidate = _candidate_from_match(match)
-        group = "final_0p6" if (
-            candidate.bold in {0.0, 0.6}
-            and candidate.beta in {0.0, 0.6}
-            and candidate.smooth in {0.0, 1.25}
-        ) else "other"
+        group = "final_0p6" if (candidate.bold in {0.0, 0.6} and candidate.beta in {0.0, 0.6} and candidate.smooth in {0.0, 1.25}) else "other"
         label = _candidate_label(candidate, group)
         if candidate.key == (1.0, 0.6, 0.6, 1.25, 1.5):
             label = "Full ablation map"
-        specs.append(
-            MapSpec(
-                map_id=_candidate_id(candidate),
-                label=label,
-                path=path,
-                candidate=candidate,
-                source="cluster_filtered_ablation_thr90",
-            )
-        )
+        specs.append(MapSpec(map_id=_candidate_id(candidate), label=label, path=path, candidate=candidate, source="cluster_filtered_ablation_thr90"))
     return specs
 
 
@@ -479,14 +345,7 @@ def summarize_maps(map_specs, out_dir):
         if img.shape[:3] != reference_img.shape[:3] or not np.allclose(img.affine, reference_img.affine):
             raise ValueError(f"{spec.path} is not on the same grid as {map_specs[0].path}.")
         mask, threshold = _mask_from_map(data, spec.threshold_percentile)
-        loaded[spec.map_id] = {
-            "spec": spec,
-            "img": img,
-            "data": data,
-            "mask": mask,
-            "threshold": threshold,
-            "center_mm": _weighted_center(mask, data, img.affine),
-        }
+        loaded[spec.map_id] = {"spec": spec, "img": img, "data": data, "mask": mask, "threshold": threshold, "center_mm": _weighted_center(mask, data, img.affine)}
         if spec.map_id == "main_result_p90":
             reference_mask = mask
             reference_values = data
@@ -524,16 +383,7 @@ def summarize_maps(map_specs, out_dir):
             "z_mm": float(center[2]),
         }
         if spec.candidate is not None:
-            row.update(
-                {
-                    "candidate_id": _candidate_id(spec.candidate),
-                    "task": spec.candidate.task,
-                    "bold": spec.candidate.bold,
-                    "beta": spec.candidate.beta,
-                    "smooth": spec.candidate.smooth,
-                    "gamma": spec.candidate.gamma,
-                }
-            )
+            row.update({"candidate_id": _candidate_id(spec.candidate), "task": spec.candidate.task, "bold": spec.candidate.bold, "beta": spec.candidate.beta, "smooth": spec.candidate.smooth, "gamma": spec.candidate.gamma})
         map_rows.append(row)
 
         intersection = int(np.count_nonzero(reference_mask & mask))
@@ -542,13 +392,7 @@ def summarize_maps(map_specs, out_dir):
         n_map = int(np.count_nonzero(mask))
         union_mask = reference_mask | mask
         if np.count_nonzero(union_mask) > 2:
-            rho = float(
-                spearmanr(
-                    np.abs(reference_values[union_mask]),
-                    np.abs(data[union_mask]),
-                    nan_policy="omit",
-                ).statistic
-            )
+            rho = float(spearmanr(np.abs(reference_values[union_mask]), np.abs(data[union_mask]), nan_policy="omit").statistic)
         else:
             rho = np.nan
         overlap_rows.append(
@@ -607,11 +451,7 @@ def summarize_maps(map_specs, out_dir):
                     "n_voxels": int(positions.size),
                     "percent_of_map": float(positions.size / total) if total else np.nan,
                     "atlas_region_voxels_in_analysis": atlas_region_voxels,
-                    "percent_of_analysis_roi": (
-                        float(positions.size / atlas_region_voxels)
-                        if roi_name != UNASSIGNED_ROI and atlas_region_voxels
-                        else np.nan
-                    ),
+                    "percent_of_analysis_roi": (float(positions.size / atlas_region_voxels) if roi_name != UNASSIGNED_ROI and atlas_region_voxels else np.nan),
                     "mean_value": float(np.mean(roi_values)),
                     "mean_abs_value": float(np.mean(np.abs(roi_values))),
                     "x_mm": float(np.mean(roi_coords[:, 0])),
@@ -626,18 +466,7 @@ def summarize_maps(map_specs, out_dir):
 
 def _ordered_candidates(summary, group, primary_only=False):
     rows = summary[summary["analysis_group"].eq(group)].copy()
-    preferred = [
-        "Full model",
-        "No task",
-        "No BOLD stability",
-        "No beta stability",
-        "No smoothness",
-        "Task-only reference",
-        "BOLD-only",
-        "Beta-only",
-        "Smooth-only",
-        "No objective penalties",
-    ]
+    preferred = ["Full model", "No task", "No BOLD stability", "No beta stability", "No smoothness", "Task-only reference", "BOLD-only", "Beta-only", "Smooth-only", "No objective penalties"]
     if primary_only:
         preferred = preferred[:6]
     labels = []
@@ -657,10 +486,7 @@ def plot_balanced_score(metrics, group, out_base):
     labels = _ordered_candidates(summarize_metrics(metrics), group)
     if not labels:
         return
-    data = [
-        metrics[(metrics["analysis_group"].eq(group)) & (metrics["candidate_label"].eq(label))]["balanced_score"].to_numpy(dtype=float)
-        for label in labels
-    ]
+    data = [metrics[(metrics["analysis_group"].eq(group)) & (metrics["candidate_label"].eq(label))]["balanced_score"].to_numpy(dtype=float) for label in labels]
     fig, ax = plt.subplots(figsize=(max(8.0, 0.75 * len(labels)), 4.8), facecolor="white")
     positions = np.arange(len(labels))
     bp = ax.boxplot(data, positions=positions, widths=0.55, patch_artist=True, showfliers=False)
@@ -697,26 +523,8 @@ def plot_tradeoff(summary, group, out_base, title):
     fig, ax = plt.subplots(figsize=(7.0, 5.2), facecolor="white")
     for row in sub.itertuples(index=False):
         color = COLORS.get(row.candidate_label, "#9ecae1")
-        ax.errorbar(
-            row.relative_loss_gap_mean,
-            row.abs_test_corr_mean,
-            xerr=row.relative_loss_gap_sem,
-            yerr=row.abs_test_corr_sem,
-            fmt="o",
-            ms=8,
-            color=color,
-            ecolor=color,
-            capsize=2.5,
-            alpha=0.9,
-        )
-        ax.text(
-            row.relative_loss_gap_mean,
-            row.abs_test_corr_mean + 0.0025,
-            row.candidate_label,
-            fontsize=8,
-            ha="center",
-            va="bottom",
-        )
+        ax.errorbar(row.relative_loss_gap_mean, row.abs_test_corr_mean, xerr=row.relative_loss_gap_sem, yerr=row.abs_test_corr_sem, fmt="o", ms=8, color=color, ecolor=color, capsize=2.5, alpha=0.9)
+        ax.text(row.relative_loss_gap_mean, row.abs_test_corr_mean + 0.0025, row.candidate_label, fontsize=8, ha="center", va="bottom")
     ax.set_xlabel("Relative train-test loss gap")
     ax.set_ylabel("Held-out |RT correlation|")
     ax.set_title(title, fontsize=12, weight="bold")
@@ -728,17 +536,7 @@ def plot_tradeoff(summary, group, out_base, title):
 
 
 def plot_spatial_similarity(map_specs, out_base):
-    keep = [
-        "Full ablation map",
-        "No task",
-        "No BOLD stability",
-        "No beta stability",
-        "Task-only reference",
-        "BOLD-only",
-        "Beta-only",
-        "Smooth-only",
-        "No objective penalties",
-    ]
+    keep = ["Full ablation map", "No task", "No BOLD stability", "No beta stability", "Task-only reference", "BOLD-only", "Beta-only", "Smooth-only", "No objective penalties"]
     reference_label = "Full ablation map"
     specs = [spec for spec in map_specs if spec.label in keep and spec.path and spec.path.exists()]
     reference_specs = [spec for spec in specs if spec.label == reference_label]
@@ -759,16 +557,7 @@ def plot_spatial_similarity(map_specs, out_base):
         center = _weighted_center(mask, data, img.affine)
         intersection = int(np.count_nonzero(reference_mask & mask))
         n_map = int(np.count_nonzero(mask))
-        rows.append(
-            {
-                "map_id": spec.map_id,
-                "label": spec.label,
-                "dice": float(2 * intersection / (n_ref + n_map)) if n_ref + n_map else np.nan,
-                "center_of_mass_distance_mm": float(
-                    np.linalg.norm(np.asarray(center) - np.asarray(reference_center))
-                ),
-            }
-        )
+        rows.append({"map_id": spec.map_id, "label": spec.label, "dice": float(2 * intersection / (n_ref + n_map)) if n_ref + n_map else np.nan, "center_of_mass_distance_mm": float(np.linalg.norm(np.asarray(center) - np.asarray(reference_center)))})
 
     sub = pd.DataFrame(rows)
     sub = sub[~sub["label"].eq(reference_label)].copy()
@@ -817,30 +606,15 @@ def plot_spatial_similarity(map_specs, out_base):
     axes[0].set_xlim(0, 1)
     axes[0].set_yticks(y)
     axes[0].set_yticklabels(sub["label"].map(display_labels))
-    axes[1].barh(
-        y,
-        sub["center_of_mass_distance_mm"],
-        color=distance_colors,
-        alpha=0.9,
-    )
+    axes[1].barh(y, sub["center_of_mass_distance_mm"], color=distance_colors, alpha=0.9)
     axes[1].set_xlabel("Center-of-mass distance from Vigour Network (mm)")
     axes[1].set_yticks(y)
     axes[1].tick_params(labelleft=False)
     for ax in axes:
         ax.grid(axis="x", color="#dddddd", linewidth=0.8, alpha=0.7)
     axes[0].invert_yaxis()
-    for ax, mappable, label, tick_format in (
-        (axes[0], dice_mappable, "Dice", "{:.2f}"),
-        (axes[1], distance_mappable, "Distance (mm)", "{:.1f}"),
-    ):
-        cbar = fig.colorbar(
-            mappable,
-            ax=ax,
-            orientation="vertical",
-            fraction=0.035,
-            pad=0.02,
-            aspect=25,
-        )
+    for ax, mappable, label, tick_format in ((axes[0], dice_mappable, "Dice", "{:.2f}"), (axes[1], distance_mappable, "Distance (mm)", "{:.1f}")):
+        cbar = fig.colorbar(mappable, ax=ax, orientation="vertical", fraction=0.035, pad=0.02, aspect=25)
         ticks = np.linspace(mappable.norm.vmin, mappable.norm.vmax, 4)
         cbar.set_ticks(ticks)
         cbar.set_ticklabels([tick_format.format(tick) for tick in ticks])
@@ -945,9 +719,7 @@ def plot_publication_summary(metrics, summary, overlap_df, region_df, out_base):
             bar.set_hatch(hatch)
             bar.set_edgecolor("#555555" if hatch else "#333333")
         for i, row in enumerate(sub.itertuples(index=False)):
-            fold_vals = metrics[
-                metrics["analysis_group"].eq(group) & metrics["candidate_label"].eq(row.candidate_label)
-            ][fold_col].to_numpy(dtype=float)
+            fold_vals = metrics[metrics["analysis_group"].eq(group) & metrics["candidate_label"].eq(row.candidate_label)][fold_col].to_numpy(dtype=float)
             ax.scatter(np.full(fold_vals.size, i), fold_vals, s=16, color="#222222", alpha=0.45, zorder=3)
         if len(primary_labels) < len(all_ab_labels):
             ax.axvline(sep_x, color="#aaaaaa", lw=1.0, linestyle="--", alpha=0.7)
@@ -957,10 +729,8 @@ def plot_publication_summary(metrics, summary, overlap_df, region_df, out_base):
         ax.set_title(title, loc="left", fontsize=11, weight="bold")
         ax.grid(axis="y", color="#dddddd", alpha=0.7)
 
-    _draw_panels(ax_a, "abs_test_corr_mean", "abs_test_corr_sem", "abs_test_corr",
-                 "Held-out |RT correlation|", "A. Behavioural generalization")
-    _draw_panels(ax_b, "relative_loss_gap_mean", "relative_loss_gap_sem", "relative_loss_gap",
-                 "Relative train-test loss gap", "B. Cross-fold stability")
+    _draw_panels(ax_a, "abs_test_corr_mean", "abs_test_corr_sem", "abs_test_corr", "Held-out |RT correlation|", "A. Behavioural generalization")
+    _draw_panels(ax_b, "relative_loss_gap_mean", "relative_loss_gap_sem", "relative_loss_gap", "Relative train-test loss gap", "B. Cross-fold stability")
 
     spatial_labels = ["Full ablation map", "No task", "No BOLD stability", "No beta stability", "Task-only reference"]
     spatial = overlap_df[overlap_df["label"].isin(spatial_labels) & ~overlap_df["map_id"].eq("main_result_p90")].copy()
@@ -1038,9 +808,7 @@ def _html_sprite_volumes(html_path):
 def _html_overlay_mask(html_path, reference_img):
     _, mask, html_affine = _html_sprite_volumes(html_path)
     if mask.shape != reference_img.shape[:3]:
-        raise ValueError(
-            f"{html_path} overlay shape {mask.shape} does not match reference shape {reference_img.shape[:3]}."
-        )
+        raise ValueError(f"{html_path} overlay shape {mask.shape} does not match reference shape {reference_img.shape[:3]}.")
     for axis in range(3):
         html_step = float(html_affine[axis, axis])
         ref_step = float(reference_img.affine[axis, axis])
@@ -1053,13 +821,7 @@ def _resampled_label_mask(label_img, label_values, reference_img):
     if label_img.shape[:3] == reference_img.shape[:3] and np.allclose(label_img.affine, reference_img.affine):
         data = np.rint(label_img.get_fdata()).astype(np.int32, copy=False)
     else:
-        resampled = image.resample_to_img(
-            label_img,
-            reference_img,
-            interpolation="nearest",
-            force_resample=True,
-            copy_header=True,
-        )
+        resampled = image.resample_to_img(label_img, reference_img, interpolation="nearest", force_resample=True, copy_header=True)
         data = np.rint(resampled.get_fdata()).astype(np.int32, copy=False)
     return np.isin(data, label_values)
 
@@ -1077,24 +839,14 @@ def _atlas_roi_mask(reference_img, roi_names):
 def _mni_box_mask(reference_img, bounds):
     coords_ijk = np.column_stack(np.nonzero(np.ones(reference_img.shape[:3], dtype=bool)))
     coords_mm = nib.affines.apply_affine(reference_img.affine, coords_ijk)
-    in_box = (
-        (np.abs(coords_mm[:, 0]) <= bounds["x_abs"])
-        & (coords_mm[:, 1] >= bounds["y_min"])
-        & (coords_mm[:, 1] <= bounds["y_max"])
-        & (coords_mm[:, 2] >= bounds["z_min"])
-        & (coords_mm[:, 2] <= bounds["z_max"])
-    )
+    in_box = ((np.abs(coords_mm[:, 0]) <= bounds["x_abs"]) & (coords_mm[:, 1] >= bounds["y_min"]) & (coords_mm[:, 1] <= bounds["y_max"]) & (coords_mm[:, 2] >= bounds["z_min"]) & (coords_mm[:, 2] <= bounds["z_max"]))
     mask = np.zeros(reference_img.shape[:3], dtype=bool)
     mask[tuple(coords_ijk[in_box].T)] = True
     return mask
 
 
 def _brainstem_mask(reference_img):
-    atlas = datasets.fetch_atlas_harvard_oxford(
-        HARVARD_OXFORD_SUBCORTICAL_ATLAS,
-        data_dir=str(DEFAULT_ATLAS_CACHE_DIR),
-        verbose=0,
-    )
+    atlas = datasets.fetch_atlas_harvard_oxford(HARVARD_OXFORD_SUBCORTICAL_ATLAS, data_dir=str(DEFAULT_ATLAS_CACHE_DIR), verbose=0)
     atlas_img = atlas.maps if isinstance(atlas.maps, nib.Nifti1Image) else nib.load(atlas.maps)
     label_values = [idx for idx, label in enumerate(atlas.labels) if str(label) in BRAINSTEM_ATLAS_LABELS]
     mask = _resampled_label_mask(atlas_img, label_values, reference_img)
@@ -1145,10 +897,7 @@ def _crop_slices(background, masks):
         return _pad_slice(background), [_pad_slice(mask) for mask in masks]
     y0, y1 = max(int(y.min()) - 4, 0), min(int(y.max()) + 5, background.shape[0])
     x0, x1 = max(int(x.min()) - 4, 0), min(int(x.max()) + 5, background.shape[1])
-    return (
-        _pad_slice(background[y0:y1, x0:x1]),
-        [_pad_slice(mask[y0:y1, x0:x1]) for mask in masks],
-    )
+    return (_pad_slice(background[y0:y1, x0:x1]), [_pad_slice(mask[y0:y1, x0:x1]) for mask in masks])
 
 
 def _anatomy_rgba(background, vmax):
@@ -1180,9 +929,7 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
     full_bg, full_mask, html_affine = _html_sprite_volumes(full_html)
     task_img, task_data = _load_data(task_only_map)
     if full_mask.shape != reference_img.shape[:3]:
-        raise ValueError(
-            f"{full_html} overlay shape {full_mask.shape} does not match reference shape {reference_img.shape[:3]}."
-        )
+        raise ValueError(f"{full_html} overlay shape {full_mask.shape} does not match reference shape {reference_img.shape[:3]}.")
     if task_img.shape[:3] != full_mask.shape:
         raise ValueError(f"{task_only_map} shape {task_img.shape[:3]} differs from {full_html}.")
 
@@ -1208,14 +955,7 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
 
     shared_mask = full_mask & task_mask
     motor_shared_mask = shared_mask & motor_mask
-    motor_shared_display_mask = (
-        ndimage.binary_dilation(
-            motor_shared_mask,
-            structure=ndimage.generate_binary_structure(3, 1),
-            iterations=MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS,
-        )
-        & motor_mask
-    )
+    motor_shared_display_mask = (ndimage.binary_dilation(motor_shared_mask, structure=ndimage.generate_binary_structure(3, 1), iterations=MOTOR_OVERLAP_DISPLAY_DILATION_VOXELS) & motor_mask)
     full_only_mask = full_mask & ~task_mask
     task_only_unique_mask = task_mask & ~full_mask
 
@@ -1232,10 +972,7 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
     n_motor_shared = int(np.count_nonzero(motor_shared_mask))
     mode_specs = [("x", 0), ("y", 1), ("z", 2)]
     cuts_by_mode = {mode: _cut_indices_for_mask(union_mask, axis, n_cuts=9, min_gap=4) for mode, axis in mode_specs}
-    cut_summary = "|".join(
-        f"{mode}:{';'.join(f'{_coord_mm(html_affine, axis, index):g}' for index in cuts_by_mode[mode])}"
-        for mode, axis in mode_specs
-    )
+    cut_summary = "|".join(f"{mode}:{';'.join(f'{_coord_mm(html_affine, axis, index):g}' for index in cuts_by_mode[mode])}" for mode, axis in mode_specs)
     summary = pd.DataFrame(
         [
             {
@@ -1265,13 +1002,7 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
     )
     summary.to_csv(f"{out_base}_summary.csv", index=False)
 
-    colors = {
-        "full": "#0072B2",
-        "task": "#D55E00",
-        "shared": "#00A676",
-        "shared_edge": "#00A676",
-        "shared_halo": "#FFFFFF",
-    }
+    colors = {"full": "#0072B2", "task": "#D55E00", "shared": "#00A676", "shared_edge": "#00A676", "shared_halo": "#FFFFFF"}
     full_bg = np.nan_to_num(full_bg, nan=0.0)
     vmax = float(np.percentile(full_bg[full_bg > 0], 99.5)) if np.any(full_bg > 0) else 1.0
 
@@ -1290,13 +1021,7 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
             "ps.fonttype": 42,
         }
     ):
-        fig, axes = plt.subplots(
-            3,
-            n_cols,
-            figsize=(11.4, 5.6),
-            facecolor="white",
-            gridspec_kw={"height_ratios": [0.68, 1.0, 1.0]},
-        )
+        fig, axes = plt.subplots(3, n_cols, figsize=(11.4, 5.6), facecolor="white", gridspec_kw={"height_ratios": [0.68, 1.0, 1.0]})
         for row, (mode, axis) in enumerate(mode_specs):
             cuts = cuts_by_mode[mode]
             for col in range(n_cols):
@@ -1305,99 +1030,25 @@ def plot_full_vs_task_only_anatomy(reference_map, full_html, task_only_map, out_
                     ax.set_axis_off()
                     continue
                 index = cuts[col]
-                bg_slice, mask_slices = _crop_slices(
-                    _plane_slice(full_bg, axis, index),
-                    [
-                        _plane_slice(full_only_mask, axis, index),
-                        _plane_slice(task_only_unique_mask, axis, index),
-                        _plane_slice(motor_shared_display_mask, axis, index),
-                        _plane_slice(shared_mask, axis, index),
-                        _plane_slice(motor_shared_mask, axis, index),
-                    ],
-                )
+                bg_slice, mask_slices = _crop_slices(_plane_slice(full_bg, axis, index), [_plane_slice(full_only_mask, axis, index), _plane_slice(task_only_unique_mask, axis, index), _plane_slice(motor_shared_display_mask, axis, index), _plane_slice(shared_mask, axis, index), _plane_slice(motor_shared_mask, axis, index)])
                 full_only_slice, task_only_unique_slice, motor_shared_display_slice, shared_slice, motor_shared_slice = mask_slices
                 ax.imshow(_anatomy_rgba(bg_slice, vmax), interpolation="nearest")
                 _add_mask_overlay(ax, full_only_slice, colors["full"], 0.95, 0.42)
                 _add_mask_overlay(ax, task_only_unique_slice, colors["task"], 0.95, 0.46)
-                _add_mask_overlay(
-                    ax,
-                    motor_shared_display_slice,
-                    colors["shared"],
-                    1.25,
-                    0.50,
-                    edge_color=colors["shared_edge"],
-                    halo_color=colors["shared_halo"],
-                    halo_linewidth=2.45,
-                )
-                _add_mask_overlay(
-                    ax,
-                    shared_slice,
-                    colors["shared"],
-                    1.55,
-                    0.90,
-                    edge_color=colors["shared_edge"],
-                    halo_color=colors["shared_halo"],
-                    halo_linewidth=2.85,
-                )
-                _add_mask_overlay(
-                    ax,
-                    motor_shared_slice,
-                    colors["shared"],
-                    2.6,
-                    0.0,
-                    edge_color=colors["shared_edge"],
-                    halo_color=colors["shared_halo"],
-                    halo_linewidth=3.6,
-                )
+                _add_mask_overlay(ax, motor_shared_display_slice, colors["shared"], 1.25, 0.50, edge_color=colors["shared_edge"], halo_color=colors["shared_halo"], halo_linewidth=2.45)
+                _add_mask_overlay(ax, shared_slice, colors["shared"], 1.55, 0.90, edge_color=colors["shared_edge"], halo_color=colors["shared_halo"], halo_linewidth=2.85)
+                _add_mask_overlay(ax, motor_shared_slice, colors["shared"], 2.6, 0.0, edge_color=colors["shared_edge"], halo_color=colors["shared_halo"], halo_linewidth=3.6)
                 coord = _coord_mm(html_affine, axis, index)
-                ax.text(
-                    0.5,
-                    -0.015,
-                    f"{mode}={coord:g}",
-                    transform=ax.transAxes,
-                    ha="center",
-                    va="top",
-                    fontsize=PAPER_AXIS_TICK_FONT_SIZE,
-                    fontweight="bold",
-                )
+                ax.text(0.5, -0.015, f"{mode}={coord:g}", transform=ax.transAxes, ha="center", va="top", fontsize=PAPER_AXIS_TICK_FONT_SIZE, fontweight="bold")
                 if row == 0:
-                    ax.text(
-                        0.12,
-                        0.96,
-                        "L",
-                        transform=ax.transAxes,
-                        ha="center",
-                        va="top",
-                        fontsize=PAPER_AXIS_TICK_FONT_SIZE,
-                        fontweight="bold",
-                    )
-                    ax.text(
-                        0.88,
-                        0.96,
-                        "R",
-                        transform=ax.transAxes,
-                        ha="center",
-                        va="top",
-                        fontsize=PAPER_AXIS_TICK_FONT_SIZE,
-                        fontweight="bold",
-                    )
+                    ax.text(0.12, 0.96, "L", transform=ax.transAxes, ha="center", va="top", fontsize=PAPER_AXIS_TICK_FONT_SIZE, fontweight="bold")
+                    ax.text(0.88, 0.96, "R", transform=ax.transAxes, ha="center", va="top", fontsize=PAPER_AXIS_TICK_FONT_SIZE, fontweight="bold")
                 ax.set_facecolor("none")
                 ax.patch.set_alpha(0)
                 ax.set_axis_off()
 
-        handles = [
-            Patch(facecolor=colors["full"], edgecolor=colors["full"], alpha=0.42, label="Vigour Network"),
-            Patch(facecolor=colors["task"], edgecolor=colors["task"], alpha=0.46, label="Task-activation map"),
-            Patch(facecolor=colors["shared"], edgecolor=colors["shared_edge"], alpha=0.90, label="Overlap of networks"),
-        ]
-        fig.legend(
-            handles=handles,
-            loc="lower center",
-            ncol=3,
-            frameon=False,
-            bbox_to_anchor=(0.5, 0.01),
-            prop={"size": PAPER_AXIS_TICK_FONT_SIZE + 2, "weight": "bold"},
-        )
+        handles = [Patch(facecolor=colors["full"], edgecolor=colors["full"], alpha=0.42, label="Vigour Network"), Patch(facecolor=colors["task"], edgecolor=colors["task"], alpha=0.46, label="Task-activation map"), Patch(facecolor=colors["shared"], edgecolor=colors["shared_edge"], alpha=0.90, label="Overlap of networks")]
+        fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 0.01), prop={"size": PAPER_AXIS_TICK_FONT_SIZE + 2, "weight": "bold"})
         fig.subplots_adjust(left=0.01, right=0.995, top=0.995, bottom=0.16, wspace=0.02, hspace=0.04)
         fig.savefig(f"{out_base}.png", dpi=300, bbox_inches="tight")
         fig.savefig(f"{out_base}.pdf", bbox_inches="tight")
@@ -1450,16 +1101,7 @@ def plot_map_montage(map_specs, out_base):
             if row == 0:
                 ax.set_title(f"z={z_mm:g}", fontsize=8, pad=2)
             ax.set_axis_off()
-        axes[row, 0].text(
-            -0.08,
-            0.5,
-            spec.label,
-            transform=axes[row, 0].transAxes,
-            ha="right",
-            va="center",
-            fontsize=9,
-            weight="bold",
-        )
+        axes[row, 0].text(-0.08, 0.5, spec.label, transform=axes[row, 0].transAxes, ha="right", va="center", fontsize=9, weight="bold")
     fig.subplots_adjust(left=0.18, right=0.99, top=0.96, bottom=0.02, wspace=0.02, hspace=0.06)
     fig.savefig(f"{out_base}.png", dpi=300, bbox_inches="tight")
     fig.savefig(f"{out_base}.pdf", bbox_inches="tight")
@@ -1467,25 +1109,12 @@ def plot_map_montage(map_specs, out_base):
 
 
 def expected_missing_maps(ablation_dir):
-    expected = [
-        ("final_0p6", "No smoothness", Candidate(1.0, 0.6, 0.6, 0.0, 1.5)),
-    ]
+    expected = [("final_0p6", "No smoothness", Candidate(1.0, 0.6, 0.6, 0.0, 1.5))]
     rows = []
     for group, label, candidate in expected:
         expected_name = f"voxel_weights_mean_foldavg_sub9_ses1_{_candidate_id(candidate)}_bold_thr90.nii.gz"
         path = ablation_dir / expected_name
-        rows.append(
-            {
-                "analysis_group": group,
-                "candidate_label": label,
-                "candidate_id": _candidate_id(candidate),
-                "expected_path": str(path),
-                "exists": path.exists(),
-                "note": ""
-                if path.exists()
-                else "Final no-smooth map and metrics were not available in the retained final-parameter results.",
-            }
-        )
+        rows.append({"analysis_group": group, "candidate_label": label, "candidate_id": _candidate_id(candidate), "expected_path": str(path), "exists": path.exists(), "note": "" if path.exists() else "Final no-smooth map and metrics were not available in the retained final-parameter results."})
     return pd.DataFrame(rows)
 
 
@@ -1529,14 +1158,7 @@ def write_report(out_dir, metric_summary, overlap_df, missing_maps, balanced_wei
     ]
 
     if not metric_summary.empty:
-        cols = [
-            "analysis_group",
-            "candidate_label",
-            "abs_test_corr_mean",
-            "corr_generalization_gap_mean",
-            "relative_loss_gap_mean",
-            "balanced_score_mean",
-        ]
+        cols = ["analysis_group", "candidate_label", "abs_test_corr_mean", "corr_generalization_gap_mean", "relative_loss_gap_mean", "balanced_score_mean"]
         lines.extend(["## Metric Summary", "", metric_summary[cols].to_markdown(index=False), ""])
     if not overlap_df.empty:
         cols = ["label", "map_voxels", "shared_voxels", "dice", "center_of_mass_distance_mm"]
@@ -1581,22 +1203,12 @@ def main():
     missing_maps.to_csv(args.out_dir / "ablation_missing_expected_maps.csv", index=False)
     (args.out_dir / "ablation_atlas_metadata.json").write_text(json.dumps(atlas_metadata, indent=2), encoding="utf-8")
 
-    plot_tradeoff(
-        metric_summary,
-        "final_0p6",
-        args.out_dir / "ablation_cv_tradeoff_final",
-        "Final-weight ablation tradeoff",
-    )
+    plot_tradeoff(metric_summary, "final_0p6", args.out_dir / "ablation_cv_tradeoff_final", "Final-weight ablation tradeoff")
     plot_balanced_score(metrics, "final_0p6", args.out_dir / "ablation_balanced_score_final")
     plot_spatial_similarity(map_specs, args.out_dir / "ablation_spatial_similarity")
     plot_roi_heatmaps(region_df, args.out_dir / "ablation_roi_heatmap")
     plot_publication_summary(metrics, metric_summary, overlap_df, region_df, args.out_dir / "ablation_publication_summary")
-    plot_full_vs_task_only_anatomy(
-        args.main_map,
-        DEFAULT_FULL_MODEL_HTML,
-        DEFAULT_TASK_ONLY_MAP,
-        args.out_dir / "ablation_full_vs_task_only_anatomy",
-    )
+    plot_full_vs_task_only_anatomy(args.main_map, DEFAULT_FULL_MODEL_HTML, DEFAULT_TASK_ONLY_MAP, args.out_dir / "ablation_full_vs_task_only_anatomy")
     plot_map_montage(map_specs, args.out_dir / "ablation_map_montage")
 
     write_report(args.out_dir, metric_summary, overlap_df, missing_maps, balanced_weights)

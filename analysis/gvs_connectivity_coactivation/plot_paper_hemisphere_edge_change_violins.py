@@ -21,36 +21,8 @@ ROOT = HERE.parent
 REPORT_STEM = "mutual_info_quantile__all_subjects_block_pool_pool_all_subjects_blocks_gvs_any_gvs"
 EDGE_CHANGE_SUFFIX = "__all_significant_hemisphere_edge_changes.csv"
 
-DEFAULT_INPUTS = (
-    (
-        "Vigour",
-        ROOT
-        / "figures"
-        / "GVS_effects"
-        / "main result"
-        / "metric_sensitivity"
-        / "connectogram_reports"
-        / f"{REPORT_STEM}{EDGE_CHANGE_SUFFIX}",
-    ),
-    (
-        "Task result",
-        ROOT
-        / "figures"
-        / "GVS_effects"
-        / "main result"
-        / "task_activation_z3p1"
-        / "metric_sensitivity"
-        / "connectogram_reports"
-        / f"{REPORT_STEM}{EDGE_CHANGE_SUFFIX}",
-    ),
-)
-DEFAULT_OUTPUT_BASE = (
-    ROOT
-    / "figures"
-    / "GVS_effects"
-    / "main result"
-    / "mutual_info_quantile_vigour_task_hemisphere_edge_change_violins"
-)
+DEFAULT_INPUTS = (("Vigour", ROOT / "figures" / "GVS_effects" / "main result" / "metric_sensitivity" / "connectogram_reports" / f"{REPORT_STEM}{EDGE_CHANGE_SUFFIX}"), ("Task result", ROOT / "figures" / "GVS_effects" / "main result" / "task_activation_z3p1" / "metric_sensitivity" / "connectogram_reports" / f"{REPORT_STEM}{EDGE_CHANGE_SUFFIX}"))
+DEFAULT_OUTPUT_BASE = (ROOT / "figures" / "GVS_effects" / "main result" / "mutual_info_quantile_vigour_task_hemisphere_edge_change_violins")
 
 PAPER_FONT_FAMILY = "Liberation Sans"
 INCREMENT_COLOR = "#d95f02"
@@ -58,14 +30,7 @@ DECREMENT_COLOR = "#2166ac"
 DIRECTION_ORDER = (("Improved", "Increment"), ("Decrement", "Decrement"))
 RELATION_ORDER = (("Between hemispheres", "Inter"), ("Within hemisphere", "intra"))
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    }
-)
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": [PAPER_FONT_FAMILY, "Arial", "Helvetica", "DejaVu Sans"], "pdf.fonttype": 42, "ps.fonttype": 42})
 
 
 def load_edge_changes(label, path):
@@ -92,28 +57,11 @@ def build_groups(data, result_labels):
         for direction_index, (direction_key, direction_label) in enumerate(DIRECTION_ORDER):
             for relation_index, (relation_key, relation_label) in enumerate(RELATION_ORDER):
                 position = base_position + direction_index * 2.0 + relation_index
-                values = data.loc[
-                    (data["result_set"] == result_label)
-                    & (data["direction"] == direction_key)
-                    & (data["hemisphere_relation"] == relation_key),
-                    "mean",
-                ].to_numpy(dtype=np.float64)
+                values = data.loc[(data["result_set"] == result_label) & (data["direction"] == direction_key) & (data["hemisphere_relation"] == relation_key), "mean"].to_numpy(dtype=np.float64)
                 values = np.abs(values[np.isfinite(values)])
                 if values.size == 0:
-                    raise ValueError(
-                        f"No rows for {result_label}, {direction_label}, {relation_key}."
-                    )
-                groups.append(
-                    {
-                        "result_set": result_label,
-                        "direction_key": direction_key,
-                        "direction": direction_label,
-                        "hemisphere_relation": relation_key,
-                        "relation_label": relation_label,
-                        "position": position,
-                        "values": values,
-                    }
-                )
+                    raise ValueError(f"No rows for {result_label}, {direction_label}, {relation_key}.")
+                groups.append({"result_set": result_label, "direction_key": direction_key, "direction": direction_label, "hemisphere_relation": relation_key, "relation_label": relation_label, "position": position, "values": values})
     return groups
 
 
@@ -125,20 +73,7 @@ def write_group_summary(groups, output_base):
     rows = []
     for group in groups:
         values = np.asarray(group["values"], dtype=np.float64)
-        rows.append(
-            {
-                "result_set": group["result_set"],
-                "direction": group["direction"],
-                "hemisphere_relation": group["hemisphere_relation"],
-                "n_edges": int(values.size),
-                "mean": float(np.mean(values)),
-                "median": float(np.median(values)),
-                "q1": float(np.percentile(values, 25)),
-                "q3": float(np.percentile(values, 75)),
-                "min": float(np.min(values)),
-                "max": float(np.max(values)),
-            }
-        )
+        rows.append({"result_set": group["result_set"], "direction": group["direction"], "hemisphere_relation": group["hemisphere_relation"], "n_edges": int(values.size), "mean": float(np.mean(values)), "median": float(np.median(values)), "q1": float(np.percentile(values, 25)), "q3": float(np.percentile(values, 75)), "min": float(np.min(values)), "max": float(np.max(values))})
     summary = pd.DataFrame(rows)
     path = output_base.with_name(f"{output_base.name}_summary.csv")
     summary.to_csv(path, index=False)
@@ -202,11 +137,7 @@ def inter_intra_tests(groups):
 def write_test_summary(test_rows, output_base):
     export_rows = []
     for row in test_rows:
-        export_row = {
-            key: value
-            for key, value in row.items()
-            if key not in {"left_position", "right_position", "direction_key", "pair_max_abs"}
-        }
+        export_row = {key: value for key, value in row.items() if key not in {"left_position", "right_position", "direction_key", "pair_max_abs"}}
         export_rows.append(export_row)
     path = output_base.with_name(f"{output_base.name}_inter_intra_tests.csv")
     pd.DataFrame(export_rows).to_csv(path, index=False)
@@ -234,22 +165,8 @@ def add_test_annotation(ax, row, y_limit):
     bracket_height = y_limit * 0.018
     y = min(float(row["pair_max_abs"]) + y_limit * 0.075, y_limit * 0.9)
     text_y = y + y_limit * 0.035
-    ax.plot(
-        [x_left, x_left, x_right, x_right],
-        [y, y + bracket_height, y + bracket_height, y],
-        color="#303030",
-        linewidth=0.9,
-        clip_on=False,
-    )
-    ax.text(
-        (x_left + x_right) / 2,
-        text_y,
-        label,
-        ha="center",
-        va="bottom",
-        fontsize=13.0,
-        color="#202020",
-    )
+    ax.plot([x_left, x_left, x_right, x_right], [y, y + bracket_height, y + bracket_height, y], color="#303030", linewidth=0.9, clip_on=False)
+    ax.text((x_left + x_right) / 2, text_y, label, ha="center", va="bottom", fontsize=13.0, color="#202020")
 
 
 def plot_violin_summary(groups, test_rows, output_base):
@@ -258,40 +175,20 @@ def plot_violin_summary(groups, test_rows, output_base):
     colors = [group_color(group) for group in groups]
 
     max_abs = max(float(np.max(group_values)) for group_values in values)
-    significant_pair_max = [
-        float(row["pair_max_abs"])
-        for row in test_rows
-        if significance_label(float(row["p_value_two_sided"]))
-    ]
+    significant_pair_max = [float(row["pair_max_abs"]) for row in test_rows if significance_label(float(row["p_value_two_sided"]))]
     annotation_limit = max((pair_max / 0.86 for pair_max in significant_pair_max), default=0.0)
     y_limit = np.ceil(max(max_abs * 1.06, annotation_limit) / 0.005) * 0.005
     y_limit = max(y_limit, 0.01)
 
     fig, ax = plt.subplots(figsize=(9.6, 4.2))
 
-    violins = ax.violinplot(
-        values,
-        positions=positions,
-        widths=0.78,
-        showmeans=False,
-        showmedians=False,
-        showextrema=False,
-    )
+    violins = ax.violinplot(values, positions=positions, widths=0.78, showmeans=False, showmedians=False, showextrema=False)
     for body, color in zip(violins["bodies"], colors, strict=True):
         body.set_facecolor(color)
         body.set_edgecolor("none")
         body.set_alpha(0.18)
 
-    box = ax.boxplot(
-        values,
-        positions=positions,
-        widths=0.25,
-        patch_artist=True,
-        showfliers=False,
-        medianprops={"color": "#ffffff", "linewidth": 1.45},
-        whiskerprops={"color": "#444444", "linewidth": 0.9},
-        capprops={"color": "#444444", "linewidth": 0.9},
-    )
+    box = ax.boxplot(values, positions=positions, widths=0.25, patch_artist=True, showfliers=False, medianprops={"color": "#ffffff", "linewidth": 1.45}, whiskerprops={"color": "#444444", "linewidth": 0.9}, capprops={"color": "#444444", "linewidth": 0.9})
     for patch, color in zip(box["boxes"], colors, strict=True):
         patch.set_facecolor(color)
         patch.set_alpha(0.86)
@@ -301,23 +198,12 @@ def plot_violin_summary(groups, test_rows, output_base):
     rng = np.random.default_rng(20260610)
     for position, group_values, color in zip(positions, values, colors, strict=True):
         jitter = rng.normal(loc=position, scale=0.052, size=group_values.size)
-        ax.scatter(
-            jitter,
-            group_values,
-            s=15,
-            color=color,
-            alpha=0.38,
-            linewidths=0.0,
-            zorder=2,
-        )
+        ax.scatter(jitter, group_values, s=15, color=color, alpha=0.38, linewidths=0.0, zorder=2)
     ax.axvline(3.925, color="#B8B8B8", linewidth=0.85, zorder=0)
     for row in test_rows:
         add_test_annotation(ax, row, y_limit)
 
-    tick_labels = [
-        f"{group['relation_label']}"
-        for group in groups
-    ]
+    tick_labels = [f"{group['relation_label']}" for group in groups]
     ax.set_xticks(positions)
     ax.set_xticklabels(tick_labels, fontsize=12.0)
     ax.set_xlim(-0.55, 8.4)
@@ -343,19 +229,8 @@ def plot_violin_summary(groups, test_rows, output_base):
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output-base",
-        type=Path,
-        default=DEFAULT_OUTPUT_BASE,
-        help="Output path without suffix. PNG, PDF, and summary CSV are written.",
-    )
-    parser.add_argument(
-        "--input",
-        nargs=2,
-        action="append",
-        metavar=("LABEL", "CSV"),
-        help="Result label and all_significant_hemisphere_edge_changes CSV. Repeat twice.",
-    )
+    parser.add_argument("--output-base", type=Path, default=DEFAULT_OUTPUT_BASE, help="Output path without suffix. PNG, PDF, and summary CSV are written.")
+    parser.add_argument("--input", nargs=2, action="append", metavar=("LABEL", "CSV"), help="Result label and all_significant_hemisphere_edge_changes CSV. Repeat twice.")
     return parser
 
 

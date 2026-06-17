@@ -21,19 +21,12 @@ import statsmodels.formula.api as smf
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_DIR = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed"
-)
-DEFAULT_BEHAVIOUR_DIR = Path(
-    "/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/behaviour"
-)
+DEFAULT_DATA_DIR = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/results_beta_preprocessed")
+DEFAULT_BEHAVIOUR_DIR = Path("/mnt/TeamShare/Data_Masterfile/H20-00572_All-Dressed/Zahra-Thesis-Data/fmri_opt_group/behaviour")
 DEFAULT_WEIGHT_MAP = ROOT / "data" / "derived_maps" / "vigour_network_weights.nii.gz"
 DEFAULT_OUT_DIR = ROOT / "results" / "main" / "figure_02a_behavior_projection"
 DEFAULT_FIGURE_STEM = "projection_behavior_subject_panel(main)"
-SESSION_FIGURE_SPECS = {
-    1: "medication_off",
-    2: "medication_on",
-}
+SESSION_FIGURE_SPECS = {1: "medication_off", 2: "medication_on"}
 PROJECTION_TRIAL_CHUNK_SIZE = 8
 PROJECTION_VOXEL_CHUNK_SIZE = 4096
 VARIABILITY_AXIS_LABEL = "Consecutive-trial variability"
@@ -49,49 +42,21 @@ AXIS_TICK_FONT_SIZE = 13
 CELL_VALUE_FONT_SIZE = 12
 FOOTER_NOTE_FONT_SIZE = 11
 
-BETA_RE = re.compile(
-    r"cleaned_beta_volume_(?P<sub>sub-pd\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.npy$"
-)
-ACTIVE_BOLD_RE = re.compile(
-    r"active_bold_(?P<sub>sub-pd\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.npy\.npy$"
-)
+BETA_RE = re.compile(r"cleaned_beta_volume_(?P<sub>sub-pd\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.npy$")
+ACTIVE_BOLD_RE = re.compile(r"active_bold_(?P<sub>sub-pd\d+)_ses-(?P<ses>\d+)_run-(?P<run>\d+)\.npy\.npy$")
 BEHAVIOUR_RE = re.compile(r"PSPD(?P<digits>\d+)_ses_(?P<ses>\d+)_run_(?P<run>\d+)\.npy$")
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Project BOLD or beta data through a voxel-weight map, then compare "
-            "adjacent-trial variability with behaviour RT."
-        )
-    )
+    parser = argparse.ArgumentParser(description=("Project BOLD or beta data through a voxel-weight map, then compare " "adjacent-trial variability with behaviour RT."))
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--behaviour-dir", type=Path, default=DEFAULT_BEHAVIOUR_DIR)
     parser.add_argument("--weight-map", type=Path, default=DEFAULT_WEIGHT_MAP)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument(
-        "--projection-source",
-        choices=("bold", "beta"),
-        default="bold",
-        help="Use active BOLD trial time series or cleaned beta volumes for the weighted projection.",
-    )
-    parser.add_argument(
-        "--bold-trial-reducer",
-        choices=("median", "mean"),
-        default="median",
-        help="Reducer applied across each trial's BOLD time points after projection.",
-    )
-    parser.add_argument(
-        "--behaviour-column",
-        type=int,
-        default=1,
-        help="Zero-based RT column for 2D behaviour arrays; default 1 uses the second column.",
-    )
-    parser.add_argument(
-        "--save-session-figures",
-        action="store_true",
-        help="Also save separate session 1 medication-off and session 2 medication-on figures.",
-    )
+    parser.add_argument("--projection-source", choices=("bold", "beta"), default="bold", help="Use active BOLD trial time series or cleaned beta volumes for the weighted projection.")
+    parser.add_argument("--bold-trial-reducer", choices=("median", "mean"), default="median", help="Reducer applied across each trial's BOLD time points after projection.")
+    parser.add_argument("--behaviour-column", type=int, default=1, help="Zero-based RT column for 2D behaviour arrays; default 1 uses the second column.")
+    parser.add_argument("--save-session-figures", action="store_true", help="Also save separate session 1 medication-off and session 2 medication-on figures.")
     return parser.parse_args()
 
 
@@ -133,11 +98,7 @@ def _align_trials(projected_signal, behaviour_rt, label):
         return projected_signal, behaviour_rt
 
     n_keep = min(n_projection, n_behaviour)
-    warnings.warn(
-        f"{label}: projection has {n_projection} trials and behaviour has {n_behaviour}; "
-        f"truncating both to {n_keep}.",
-        stacklevel=2,
-    )
+    warnings.warn(f"{label}: projection has {n_projection} trials and behaviour has {n_behaviour}; " f"truncating both to {n_keep}.", stacklevel=2)
     return projected_signal[:n_keep], behaviour_rt[:n_keep]
 
 
@@ -204,10 +165,7 @@ def _project_bold(active_bold_path, active_flat_indices_path, weights, reducer):
 
     flat_indices = np.asarray(np.load(active_flat_indices_path, allow_pickle=False), dtype=np.int64).ravel()
     if flat_indices.size != active_bold.shape[0]:
-        raise ValueError(
-            f"Active index count mismatch for {active_bold_path}: "
-            f"{flat_indices.size} indices vs {active_bold.shape[0]} BOLD voxels"
-        )
+        raise ValueError(f"Active index count mismatch for {active_bold_path}: " f"{flat_indices.size} indices vs {active_bold.shape[0]} BOLD voxels")
 
     flat_weights = weights.ravel()[flat_indices].astype(np.float64)
     n_voxels, n_trials, trial_length = active_bold.shape
@@ -274,10 +232,7 @@ def _behaviour_path(behaviour_dir, sub, ses, run):
 
 
 def _warn_unmatched_behaviour_runs(behaviour_dir, projection_runs):
-    projection_keys = {
-        (_subject_digits(str(item["sub"])), int(item["ses"]), int(item["run"]))
-        for item in projection_runs
-    }
+    projection_keys = {(_subject_digits(str(item["sub"])), int(item["ses"]), int(item["run"])) for item in projection_runs}
     projection_subjects = {key[0] for key in projection_keys}
     unmatched = []
     for path in sorted(behaviour_dir.glob("PSPD*_ses_*_run_*.npy")):
@@ -358,11 +313,7 @@ def _build_run_metric_table(data_dir, behaviour_dir, weights, projection_source,
 
 
 def _mixedlm_projection_effect(paired_df):
-    row = {
-        "lme_coef_projection_minus_behavior": np.nan,
-        "lme_z_projection_minus_behavior": np.nan,
-        "lme_p_two_sided": np.nan,
-    }
+    row = {"lme_coef_projection_minus_behavior": np.nan, "lme_z_projection_minus_behavior": np.nan, "lme_p_two_sided": np.nan}
     if paired_df["sub_tag"].nunique() < 2:
         return row
 
@@ -381,9 +332,7 @@ def _mixedlm_projection_effect(paired_df):
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                fit = smf.mixedlm("value ~ signal", data=long_df, groups=long_df["subject_id"], re_formula="1").fit(
-                    reml=False, method=method, disp=False
-                )
+                fit = smf.mixedlm("value ~ signal", data=long_df, groups=long_df["subject_id"], re_formula="1").fit(reml=False, method=method, disp=False)
             break
         except Exception:
             fit = None
@@ -460,35 +409,13 @@ def _draw_mean_ci(ax, x, values, color, markersize=5.2):
     yerr = None
     if np.isfinite(ci_low) and np.isfinite(ci_high):
         yerr = np.array([[mean - ci_low], [ci_high - mean]], dtype=np.float64)
-    ax.errorbar(
-        [x],
-        [mean],
-        yerr=yerr,
-        fmt=MEAN_MARKER,
-        markersize=markersize,
-        markerfacecolor="white",
-        markeredgecolor=color,
-        markeredgewidth=1.15,
-        ecolor=color,
-        elinewidth=1.15,
-        capsize=3.2,
-        capthick=1.0,
-        zorder=5,
-    )
+    ax.errorbar([x], [mean], yerr=yerr, fmt=MEAN_MARKER, markersize=markersize, markerfacecolor="white", markeredgecolor=color, markeredgewidth=1.15, ecolor=color, elinewidth=1.15, capsize=3.2, capthick=1.0, zorder=5)
     return mean, ci_low, ci_high
 
 
 def _draw_boxplot(ax, values, positions, colors, width):
     finite_values = [np.asarray(value, dtype=np.float64)[np.isfinite(value)] for value in values]
-    box = ax.boxplot(
-        finite_values,
-        positions=positions,
-        widths=width,
-        patch_artist=True,
-        showfliers=False,
-        whis=1.5,
-        zorder=2,
-    )
+    box = ax.boxplot(finite_values, positions=positions, widths=width, patch_artist=True, showfliers=False, whis=1.5, zorder=2)
     for patch, color in zip(box["boxes"], colors):
         patch.set(facecolor=color, edgecolor=color, alpha=0.18, linewidth=1.0)
     for median in box["medians"]:
@@ -500,14 +427,7 @@ def _draw_boxplot(ax, values, positions, colors, width):
 
 
 def _subject_level_pairs(paired_df):
-    subject_df = (
-        paired_df.groupby("sub_tag", as_index=False)
-        .agg(
-            behavior_raw=("behavior_raw", "mean"),
-            projection_raw=("projection_raw", "mean"),
-            n_runs=("sub_tag", "size"),
-        )
-    )
+    subject_df = (paired_df.groupby("sub_tag", as_index=False) .agg(behavior_raw=("behavior_raw", "mean"), projection_raw=("projection_raw", "mean"), n_runs=("sub_tag", "size")))
     subject_df["_sort_key"] = subject_df["sub_tag"].astype(str).map(_category_sort_key)
     subject_df = subject_df.sort_values("_sort_key").drop(columns="_sort_key").reset_index(drop=True)
     subject_df["projection_minus_behavior"] = subject_df["projection_raw"] - subject_df["behavior_raw"]
@@ -522,35 +442,11 @@ def _plot_paired_estimation(ax, subject_df, y_limits):
     jitter = np.linspace(-0.045, 0.045, behavior_values.size) if behavior_values.size > 1 else np.array([0.0])
     x_behavior = jitter
     x_projection = 1.0 + jitter
-    _draw_boxplot(
-        ax,
-        [behavior_values, projection_values],
-        [0.0, 1.0],
-        [BEHAVIOUR_COLOR, PROJECTION_COLOR],
-        width=0.30,
-    )
+    _draw_boxplot(ax, [behavior_values, projection_values], [0.0, 1.0], [BEHAVIOUR_COLOR, PROJECTION_COLOR], width=0.30)
     for x0, x1, y0, y1 in zip(x_behavior, x_projection, behavior_values, projection_values):
         ax.plot([x0, x1], [y0, y1], color="0.55", linewidth=0.55, alpha=0.28, zorder=1)
-    ax.scatter(
-        x_behavior,
-        behavior_values,
-        s=SUBJECT_MARKER_SIZE,
-        facecolors=BEHAVIOUR_COLOR,
-        edgecolors="white",
-        linewidths=0.25,
-        alpha=0.72,
-        zorder=3,
-    )
-    ax.scatter(
-        x_projection,
-        projection_values,
-        s=SUBJECT_MARKER_SIZE,
-        facecolors=PROJECTION_COLOR,
-        edgecolors="white",
-        linewidths=0.25,
-        alpha=0.72,
-        zorder=3,
-    )
+    ax.scatter(x_behavior, behavior_values, s=SUBJECT_MARKER_SIZE, facecolors=BEHAVIOUR_COLOR, edgecolors="white", linewidths=0.25, alpha=0.72, zorder=3)
+    ax.scatter(x_projection, projection_values, s=SUBJECT_MARKER_SIZE, facecolors=PROJECTION_COLOR, edgecolors="white", linewidths=0.25, alpha=0.72, zorder=3)
 
     y_low, y_high = y_limits
 
@@ -572,16 +468,7 @@ def _plot_behaviour_minus_projection(ax, subject_df):
     rng = np.random.default_rng(141)
     x = rng.uniform(-0.055, 0.055, size=reductions.size)
     _draw_boxplot(ax, [reductions], [0.0], [DIFFERENCE_COLOR], width=0.24)
-    ax.scatter(
-        x,
-        reductions,
-        s=SUBJECT_MARKER_SIZE,
-        facecolors=DIFFERENCE_COLOR,
-        alpha=0.74,
-        edgecolors="white",
-        linewidths=0.25,
-        zorder=3,
-    )
+    ax.scatter(x, reductions, s=SUBJECT_MARKER_SIZE, facecolors=DIFFERENCE_COLOR, alpha=0.74, edgecolors="white", linewidths=0.25, zorder=3)
     y_low, y_high = _expanded_limits(reductions, force_zero=True)
     y_high += (y_high - y_low) * 0.16
 
@@ -623,9 +510,7 @@ def _subject_pairs_and_y_limits(metric_df):
     paired_df["projection_raw"] = paired_df[projection_col].to_numpy(dtype=np.float64)
     paired_df["behavior_raw"] = paired_df[behavior_col].to_numpy(dtype=np.float64)
     subject_df = _subject_level_pairs(paired_df)
-    finite_values = np.concatenate(
-        [subject_df["behavior_raw"].to_numpy(dtype=np.float64), subject_df["projection_raw"].to_numpy(dtype=np.float64)]
-    )
+    finite_values = np.concatenate([subject_df["behavior_raw"].to_numpy(dtype=np.float64), subject_df["projection_raw"].to_numpy(dtype=np.float64)])
     y_limits = _expanded_limits(finite_values)
     return subject_df, y_limits
 
@@ -648,12 +533,7 @@ def _save_behavior_projection_figure(metric_df, out_dir, figure_stem=DEFAULT_FIG
             "ps.fonttype": 42,
         }
     ):
-        fig, axes = plt.subplots(
-            1,
-            2,
-            figsize=(8.2, 4.65),
-            gridspec_kw={"width_ratios": [1.45, 1.0]},
-        )
+        fig, axes = plt.subplots(1, 2, figsize=(8.2, 4.65), gridspec_kw={"width_ratios": [1.45, 1.0]})
         _plot_paired_estimation(axes[0], subject_df, y_limits)
         _plot_behaviour_minus_projection(axes[1], subject_df)
         _bold_figure_text(fig)
@@ -664,10 +544,7 @@ def _save_behavior_projection_figure(metric_df, out_dir, figure_stem=DEFAULT_FIG
 
 
 def _save_session_first_subplot_comparison(metric_df, out_dir):
-    session_specs = [
-        (2, "medication_on", "Medication on"),
-        (1, "medication_off", "Medication off"),
-    ]
+    session_specs = [(2, "medication_on", "Medication on"), (1, "medication_off", "Medication off")]
     figure_stem = "projection_behavior_subject_panel_first_subplots_session2_medication_on_session1_medication_off"
 
     with plt.rc_context(
@@ -695,12 +572,7 @@ def _save_session_first_subplot_comparison(metric_df, out_dir):
                 raise ValueError(f"No run metrics available for session {session}.")
             subject_df, _ = _subject_pairs_and_y_limits(session_df)
             session_panels.append((subject_df, title))
-            shared_values.extend(
-                [
-                    subject_df["behavior_raw"].to_numpy(dtype=np.float64),
-                    subject_df["projection_raw"].to_numpy(dtype=np.float64),
-                ]
-            )
+            shared_values.extend([subject_df["behavior_raw"].to_numpy(dtype=np.float64), subject_df["projection_raw"].to_numpy(dtype=np.float64)])
 
         shared_y_limits = _expanded_limits(np.concatenate(shared_values))
         for ax, (subject_df, title) in zip(axes, session_panels):
@@ -718,14 +590,7 @@ def _save_session_first_subplot_comparison(metric_df, out_dir):
 def main():
     args = _parse_args()
     weights = _load_weights(args.weight_map)
-    metric_df = _build_run_metric_table(
-        data_dir=args.data_dir,
-        behaviour_dir=args.behaviour_dir,
-        weights=weights,
-        projection_source=args.projection_source,
-        behaviour_column=args.behaviour_column,
-        bold_trial_reducer=args.bold_trial_reducer,
-    )
+    metric_df = _build_run_metric_table(data_dir=args.data_dir, behaviour_dir=args.behaviour_dir, weights=weights, projection_source=args.projection_source, behaviour_column=args.behaviour_column, bold_trial_reducer=args.bold_trial_reducer)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     metrics_path = args.out_dir / "projection_behavior_run_metrics.csv"
@@ -746,11 +611,7 @@ def main():
             session_metrics_path = args.out_dir / f"projection_behavior_run_metrics_session{session}_{medication_slug}.csv"
             session_df.to_csv(session_metrics_path, index=False)
             session_stem = f"projection_behavior_subject_panel_session{session}_{medication_slug}"
-            session_pdf_path, session_png_path = _save_behavior_projection_figure(
-                session_df,
-                args.out_dir,
-                figure_stem=session_stem,
-            )
+            session_pdf_path, session_png_path = _save_behavior_projection_figure(session_df, args.out_dir, figure_stem=session_stem)
             print(f"Saved session {session} run metrics to {session_metrics_path}")
             print(f"Saved session {session} paired variability figure to {session_png_path}")
             print(f"Saved session {session} paired variability PDF to {session_pdf_path}")
