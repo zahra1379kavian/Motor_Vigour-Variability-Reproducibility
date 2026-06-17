@@ -1,9 +1,7 @@
 # Motor Vigour Variability Reproducibility
 
 This repository contains the curated code, derived inputs, result tables, and
-main figure exports for the motor-vigour variability paper. It is intentionally
-smaller than the original working thesis repository: exploratory analyses and
-large intermediate folders were left out.
+main figure exports for the motor-vigour variability paper. 
 
 Supplementary figures are stored separately from the main figures.
 
