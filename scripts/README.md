@@ -12,5 +12,6 @@ python scripts/supp_figure_09_medication_fc_consistency.py
 Scripts that depend on subject-level data will report missing inputs if the
 external data paths in `data/external/README.md` are not available.
 
-Supplementary Figure 4 has no script yet because the requested FEAT output was
-not present in the source repository.
+`supp_figure_04_standard_glm_feat.py` checks that the curated FEAT figure and
+provenance files are present. Re-running that FSL analysis requires a working
+FSL installation and the external subject-level BOLD inputs.

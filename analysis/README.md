@@ -7,5 +7,7 @@ repository layout.
 `gvs_connectivity_coactivation/` contains the GVS connectivity scripts used for
 Figure 7.
 
-Use the descriptive entry points in `scripts/` for normal figure regeneration.
+`fsl_glm/` contains the copied FSL GLM workflow scripts used for the
+Supplementary Figure 4 FEAT analysis.
 
+Use the descriptive entry points in `scripts/` for normal figure regeneration.

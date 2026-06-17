@@ -40,8 +40,8 @@ See `figures/main/figure_manifest.csv` for the source result directory for
 each panel.
 
 See `figures/supplementary/supplementary_figure_manifest.csv` for the
-supplementary figure inventory. Supplementary Figure 4 is documented as missing
-because the requested FEAT output was not present in this repository.
+supplementary figure inventory. Supplementary Figure 4 includes a compact FEAT
+provenance package under `results/supplementary/figure_04_standard_glm_feat/`.
 
 ## Python Environment
 
