@@ -1,4 +1,36 @@
+<div align="center">
+
 # Motor Vigour Variability in Parkinson's Disease
+
+**A curated reproducibility package for a study of trial-to-trial motor vigour
+variability in Parkinson's disease, combining trial-wise fMRI, reaction-time
+behaviour, medication state, and galvanic vestibular stimulation (GVS).**
+
+![Python](https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white)
+&nbsp;
+![Field](https://img.shields.io/badge/Field-fMRI%20Neuroimaging-8A2BE2)
+&nbsp;
+![Built with](https://img.shields.io/badge/Built%20with-Nilearn%20%7C%20GLMsingle%20%7C%20FSL-E8710A)
+&nbsp;
+![Type](https://img.shields.io/badge/Type-Reproducibility%20Package-2ea44f)
+
+<br>
+
+<img src="figures/main/Figure1.png" alt="Overview of the behavioural task and the constrained optimization framework" width="100%">
+
+</div>
+
+<p align="center">
+<em><strong>Figure 1.</strong> Overview of the behavioural task and the constrained optimization
+framework. A ballistic hand-squeeze task (reward cue&nbsp;&rarr; delay&nbsp;&rarr; go cue&nbsp;&rarr; grip
+response) is acquired during fMRI; trial-wise GLM&nbsp;&beta; maps, BOLD, and behaviour feed an
+optimization model that returns a vigour-network projection signal and voxel weights under
+task-engagement, behavioural-relevance, low-variability, and spatial-smoothness constraints.</em>
+</p>
+
+---
+
+## Overview
 
 This repository is a curated reproducibility package for a study of
 trial-to-trial motor vigour variability in Parkinson's disease (PD). The
@@ -12,6 +44,20 @@ neural signal becomes more variable as it is translated into movement. The
 included code and outputs support the manuscript analyses identifying a
 vigour-related network whose activity remains related to behaviour while varying
 less abruptly than the behaviour itself.
+
+## Highlights
+
+- **Cohort & design** — 18 participants with PD scanned OFF- and ON-medication
+  during GVS, performing a ballistic hand-squeeze task.
+- **Trial-wise modelling** — single-trial fMRI responses estimated with GLMsingle
+  and entered into a constrained optimisation framework.
+- **Vigour network** — a network that is task-active, behaviourally relevant, and
+  low in trial-to-trial variability, recovered under explicit spatial-smoothness
+  constraints (see Figure 1).
+- **Mechanistic tests** — medication-related connectivity changes and GVS
+  perturbations of the network are characterised.
+- **Reproducible by design** — final figures, companion result tables, derived
+  brain maps, and figure-level entry scripts are packaged together.
 
 ## Repository Scope
 

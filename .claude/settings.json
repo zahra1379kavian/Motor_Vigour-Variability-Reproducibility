@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import fitz; print\\('pymupdf', fitz.__doc__\\)\")",
+      "Bash(python3 -c \"import pdf2image; print\\('pdf2image ok'\\)\")",
+      "Bash(pdfinfo Figure1.pdf)",
+      "Bash(pdftocairo -png -r 200 -singlefile Figure1.pdf Figure1)",
+      "Bash(python3 -c \"from PIL import Image; im=Image.open\\('Figure1.png'\\); print\\('PNG size:', im.size\\)\")",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}
