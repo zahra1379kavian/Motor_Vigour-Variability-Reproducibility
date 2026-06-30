@@ -153,11 +153,15 @@ the underlying analysis exposes command-line options.
 | Figure 6A | `figures/main/figure_06a_medication_fc_vigour_network.png` | `scripts/figure_06a_medication_vigour_network_fc.py` |
 | Figure 6B | `figures/main/figure_06b_medication_fc_task_activation.png` | `scripts/figure_06b_medication_task_activation_fc.py` |
 | Figure 7A | `figures/main/figure_07a_gvs_connectogram_vigour_network.png` | `scripts/figure_07a_gvs_vigour_connectogram.py` |
-| Figure 7B | `figures/main/figure_07b_gvs_connectogram_task_activation.png` | `scripts/figure_07b_gvs_task_activation_connectogram.py` |
+
+The corresponding task-activation GVS connectogram is provided as
+Supplementary Figure 14 in
+`figures/supplementary/supp_figure_14_gvs_connectogram_task_activation.png`
+with a matching PDF export.
 
 The full main-figure inventory is stored in
-`figures/main/figure_manifest.csv`. Supplementary figure exports and their
-source locations are listed in
+`figures/main/figure_manifest.csv`. Supplementary figure exports, including
+Supplementary Figure 14, and their source locations are listed in
 `figures/supplementary/supplementary_figure_manifest.csv`.
 
 ## Reproducibility Notes

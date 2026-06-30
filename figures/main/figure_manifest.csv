@@ -7,5 +7,3 @@ Figure 5,figure_05_full_model_vs_task_only_roi_summary.png,figure_05_full_model_
 Figure 6A,figure_06a_medication_fc_vigour_network.png,figure_06a_medication_fc_vigour_network.pdf,../../results/main/figure_06a_medication_vigour_network,../../scripts/figure_06a_medication_vigour_network_fc.py
 Figure 6B,figure_06b_medication_fc_task_activation.png,figure_06b_medication_fc_task_activation.pdf,../../results/main/figure_06b_medication_task_activation,../../scripts/figure_06b_medication_task_activation_fc.py
 Figure 7A,figure_07a_gvs_connectogram_vigour_network.png,figure_07a_gvs_connectogram_vigour_network.pdf,../../results/main/figure_07a_gvs_vigour_connectogram,../../scripts/figure_07a_gvs_vigour_connectogram.py
-Figure 7B,figure_07b_gvs_connectogram_task_activation.png,figure_07b_gvs_connectogram_task_activation.pdf,../../results/main/figure_07b_gvs_task_activation_connectogram,../../scripts/figure_07b_gvs_task_activation_connectogram.py
-

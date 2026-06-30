@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate Figure 7B: GVS connectogram for task-activation ROI betas."""
+"""Regenerate Supplementary Figure 14: task-activation GVS connectogram."""
 
 from _runner import run_script
 
