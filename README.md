@@ -157,14 +157,13 @@ the underlying analysis exposes command-line options.
 | Figure 8B | `figures/main/figure_08b_gvs_vigour_network_feature_delta.png` | `scripts/figure_08_gvs_effects.py` |
 | Figure 8C | `figures/main/figure_08c_gvs_task_activation_feature_delta.png` | `scripts/figure_08_gvs_effects.py` |
 
-The corresponding task-activation GVS connectogram is provided as
-Supplementary Figure 14 in
-`figures/supplementary/supp_figure_14_gvs_connectogram_task_activation.png`
-with a matching PDF export.
+Additional GVS supplementary exports are provided in `figures/supplementary/`,
+including Supplementary Figures 13A-B, 14, 15A-B, 16A-B, and 17, with matching
+PDF exports.
 
 The full main-figure inventory is stored in
-`figures/main/figure_manifest.csv`. Supplementary figure exports, including
-Supplementary Figure 14, and their source locations are listed in
+`figures/main/figure_manifest.csv`. Supplementary figure exports and their
+source locations are listed in
 `figures/supplementary/supplementary_figure_manifest.csv`.
 
 ## Reproducibility Notes

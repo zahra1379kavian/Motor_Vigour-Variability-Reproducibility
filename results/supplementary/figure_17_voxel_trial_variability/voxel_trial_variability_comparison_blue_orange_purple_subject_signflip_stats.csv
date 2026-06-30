@@ -1,0 +1,4 @@
+reference_network,reference_label,comparison_network,comparison_label,tested_direction,n_subjects,mean_delta_subject_median_variability,median_delta_subject_median_variability,p_signflip_less,p_signflip_two_sided
+Task activation,standard_glm_zgte3.1,Without variability penalty,task0_bold0_beta0_smooth0_gamma1.5,Without variability penalty < Task activation,18,-0.0002749006003367996,-0.000467773569697983,0.13503646850585938,0.27007293701171875
+Task activation,standard_glm_zgte3.1,Final vigour network,task1_bold0.6_beta0.6_smooth1.25_gamma1.5,Final vigour network < Task activation,18,-0.0012974627387798104,-0.0013628238366834183,1.1444091796875e-05,2.288818359375e-05
+Without variability penalty,task0_bold0_beta0_smooth0_gamma1.5,Final vigour network,task1_bold0.6_beta0.6_smooth1.25_gamma1.5,Final vigour network < Without variability penalty,18,-0.001022562138443011,-0.0008097363374689824,3.814697265625e-06,7.62939453125e-06
