@@ -7,3 +7,6 @@ Figure 5,figure_05_full_model_vs_task_only_roi_summary.png,figure_05_full_model_
 Figure 6A,figure_06a_medication_fc_vigour_network.png,figure_06a_medication_fc_vigour_network.pdf,../../results/main/figure_06a_medication_vigour_network,../../scripts/figure_06a_medication_vigour_network_fc.py
 Figure 6B,figure_06b_medication_fc_task_activation.png,figure_06b_medication_fc_task_activation.pdf,../../results/main/figure_06b_medication_task_activation,../../scripts/figure_06b_medication_task_activation_fc.py
 Figure 7A,figure_07a_gvs_connectogram_vigour_network.png,figure_07a_gvs_connectogram_vigour_network.pdf,../../results/main/figure_07a_gvs_vigour_connectogram,../../scripts/figure_07a_gvs_vigour_connectogram.py
+Figure 8A,figure_08a_gvs_rt_lme_boxplot.png,figure_08a_gvs_rt_lme_boxplot.pdf,../../results/main/figure_08_gvs_effects/rt_lme,../../scripts/figure_08_gvs_effects.py
+Figure 8B,figure_08b_gvs_vigour_network_feature_delta.png,figure_08b_gvs_vigour_network_feature_delta.pdf,../../results/main/figure_08_gvs_effects/vigour_network_feature_delta,../../scripts/figure_08_gvs_effects.py
+Figure 8C,figure_08c_gvs_task_activation_feature_delta.png,figure_08c_gvs_task_activation_feature_delta.pdf,../../results/main/figure_08_gvs_effects/task_activation_feature_delta,../../scripts/figure_08_gvs_effects.py

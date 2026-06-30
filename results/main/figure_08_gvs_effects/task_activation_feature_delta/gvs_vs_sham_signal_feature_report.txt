@@ -1,0 +1,39 @@
+GVS task-map voxel-mean BOLD feature analysis
+
+Sham/no-GVS reference: gvs-01
+Input source: data/Task_map_BOLD_trials.npy; reducer=voxel mean; GVS split from data/GVS_projection_BOLD/gvs_projection_trial_metadata.tsv
+
+Primary statistical unit: subject.
+Within each subject/session/run, each active GVS block is paired with that run's sham block.
+Run-level active-minus-sham deltas are averaged within subject before inference.
+Primary p-values are paired exact sign-flip permutation tests on subject mean deltas.
+Feature q-values are Benjamini-Hochberg FDR corrections across all GVS-by-tested-feature tests.
+Tested features: Linear slope, Late minus early, Max abs. baseline response, Peak-to-peak amplitude
+Time-point q-values are FDR corrections across all GVS-by-time-point tests.
+
+Input arrays:
+- gvs-01: shape=(602, 9)
+- gvs-02: shape=(607, 9)
+- gvs-03: shape=(608, 9)
+- gvs-04: shape=(599, 9)
+- gvs-05: shape=(611, 9)
+- gvs-06: shape=(607, 9)
+- gvs-07: shape=(610, 9)
+- gvs-08: shape=(608, 9)
+- gvs-09: shape=(611, 9)
+
+Feature tests passing q < 0.05:
+- gvs-07 Max abs. baseline response: mean active-sham=0.00182797, 95% CI [0.000920064, 0.00284488], p_perm=0.000961304, q=0.0307617, dz=0.849
+
+Best feature result per active GVS condition:
+- gvs-02: Linear slope, mean active-sham=-0.000232723, p_perm=0.0155334, q=0.090332, n_subjects=18
+- gvs-03: Linear slope, mean active-sham=-0.000132077, p_perm=0.0312271, q=0.10625, n_subjects=18
+- gvs-04: Max abs. baseline response, mean active-sham=0.00122915, p_perm=0.0365524, q=0.106334, n_subjects=18
+- gvs-05: Late minus early, mean active-sham=-0.000745041, p_perm=0.0821609, q=0.175277, n_subjects=18
+- gvs-06: Max abs. baseline response, mean active-sham=0.001444, p_perm=0.00476837, q=0.0762939, n_subjects=18
+- gvs-07: Max abs. baseline response, mean active-sham=0.00182797, p_perm=0.000961304, q=0.0307617, n_subjects=18
+- gvs-08: Linear slope, mean active-sham=-0.000173387, p_perm=0.0169983, q=0.090332, n_subjects=18
+- gvs-09: Late minus early, mean active-sham=-0.00111777, p_perm=0.0197601, q=0.090332, n_subjects=18
+
+Time points passing q < 0.05:
+- None

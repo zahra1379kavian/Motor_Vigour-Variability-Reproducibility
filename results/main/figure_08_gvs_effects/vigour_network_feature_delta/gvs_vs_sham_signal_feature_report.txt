@@ -1,0 +1,42 @@
+GVS HTML-mask weighted BOLD feature analysis
+
+Sham/no-GVS reference: gvs-01
+Input source: data/active_bold_group.npy; weights=data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5.nii.gz; html_mask=data/voxel_weights_task1_bold0.6_beta0.6_smooth1.25_gamma1.5_bold_thr90.html; selected_active_voxels=6545/6638
+
+Primary statistical unit: subject.
+Within each subject/session/run, each active GVS block is paired with that run's sham block.
+Run-level active-minus-sham deltas are averaged within subject before inference.
+Primary p-values are paired exact sign-flip permutation tests on subject mean deltas.
+Feature q-values are Benjamini-Hochberg FDR corrections across all GVS-by-tested-feature tests.
+Tested features: Linear slope, Late minus early, Max abs. baseline response, Peak-to-peak amplitude
+Time-point q-values are FDR corrections across all GVS-by-time-point tests.
+
+Input arrays:
+- gvs-01: shape=(602, 9)
+- gvs-02: shape=(607, 9)
+- gvs-03: shape=(608, 9)
+- gvs-04: shape=(599, 9)
+- gvs-05: shape=(611, 9)
+- gvs-06: shape=(607, 9)
+- gvs-07: shape=(610, 9)
+- gvs-08: shape=(608, 9)
+- gvs-09: shape=(611, 9)
+
+Feature tests passing q < 0.05:
+- gvs-06 Max abs. baseline response: mean active-sham=0.00226209, 95% CI [0.000985584, 0.00364153], p_perm=0.00363159, q=0.0290527, dz=0.76
+- gvs-07 Max abs. baseline response: mean active-sham=0.00365535, 95% CI [0.00167822, 0.00586264], p_perm=0.0019989, q=0.0213216, dz=0.788
+- gvs-08 Late minus early: mean active-sham=-0.00377491, 95% CI [-0.00571617, -0.00208221], p_perm=0.000167847, q=0.00427246, dz=-0.906
+- gvs-08 Linear slope: mean active-sham=-0.000590857, 95% CI [-0.000907401, -0.000308971], p_perm=0.000267029, q=0.00427246, dz=-0.868
+
+Best feature result per active GVS condition:
+- gvs-02: Linear slope, mean active-sham=-0.000479775, p_perm=0.0235977, q=0.117536, n_subjects=18
+- gvs-03: Late minus early, mean active-sham=-0.00217333, p_perm=0.0452881, q=0.181152, n_subjects=18
+- gvs-04: Max abs. baseline response, mean active-sham=0.00274188, p_perm=0.0754776, q=0.241528, n_subjects=18
+- gvs-05: Linear slope, mean active-sham=-0.000307264, p_perm=0.104866, q=0.305065, n_subjects=18
+- gvs-06: Max abs. baseline response, mean active-sham=0.00226209, p_perm=0.00363159, q=0.0290527, n_subjects=18
+- gvs-07: Max abs. baseline response, mean active-sham=0.00365535, p_perm=0.0019989, q=0.0213216, n_subjects=18
+- gvs-08: Late minus early, mean active-sham=-0.00377491, p_perm=0.000167847, q=0.00427246, n_subjects=18
+- gvs-09: Late minus early, mean active-sham=-0.00191421, p_perm=0.146431, q=0.308151, n_subjects=18
+
+Time points passing q < 0.05:
+- None

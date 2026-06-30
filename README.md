@@ -153,6 +153,9 @@ the underlying analysis exposes command-line options.
 | Figure 6A | `figures/main/figure_06a_medication_fc_vigour_network.png` | `scripts/figure_06a_medication_vigour_network_fc.py` |
 | Figure 6B | `figures/main/figure_06b_medication_fc_task_activation.png` | `scripts/figure_06b_medication_task_activation_fc.py` |
 | Figure 7A | `figures/main/figure_07a_gvs_connectogram_vigour_network.png` | `scripts/figure_07a_gvs_vigour_connectogram.py` |
+| Figure 8A | `figures/main/figure_08a_gvs_rt_lme_boxplot.png` | `scripts/figure_08_gvs_effects.py` |
+| Figure 8B | `figures/main/figure_08b_gvs_vigour_network_feature_delta.png` | `scripts/figure_08_gvs_effects.py` |
+| Figure 8C | `figures/main/figure_08c_gvs_task_activation_feature_delta.png` | `scripts/figure_08_gvs_effects.py` |
 
 The corresponding task-activation GVS connectogram is provided as
 Supplementary Figure 14 in
